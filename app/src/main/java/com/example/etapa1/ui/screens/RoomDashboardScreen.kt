@@ -275,7 +275,8 @@ fun RoomDashboardScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "$absentCount",
+                            text = "$absentCount/${
+                                children.size}",
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = StatusAbsentOrange

@@ -141,12 +141,13 @@ fun AppBottomBar(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = CardBackground,
-        shadowElevation = 8.dp
+        shadowElevation = 8.dp,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 10.dp, horizontal = 16.dp),
+                .padding(vertical = 10.dp, horizontal = 16.dp)
+                .padding(bottom = 28.dp),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -213,6 +214,7 @@ fun AppBottomBar(
                 onClick = { onTabSelected(3) }
             )
         }
+
     }
 }
 
