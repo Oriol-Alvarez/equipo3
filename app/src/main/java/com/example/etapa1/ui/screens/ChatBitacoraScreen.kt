@@ -2,6 +2,7 @@ package com.example.etapa1.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,16 +23,20 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NightlightRound
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -79,6 +84,7 @@ fun ChatBitacoraScreen(
     child: Child,
     timelineItems: List<TimelineItem>,
     onBack: () -> Unit,
+    onChildInfoClick: () -> Unit = {},
     onNewActivityClick: () -> Unit,
     onAttendanceClick: () -> Unit = {},
     onSendMessage: (String) -> Unit
@@ -125,12 +131,12 @@ fun ChatBitacoraScreen(
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { /* Adjuntar foto */ }) {
+                    IconButton(onClick = { /* Abrir cámara / Tomar foto */ }) {
                         Icon(
-                            imageVector = Icons.Default.AttachFile,
-                            contentDescription = "Adjuntar archivo",
+                            imageVector = Icons.Default.PhotoCamera,
+                            contentDescription = "Tomar foto",
                             tint = TextSecondary,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
 
@@ -211,28 +217,36 @@ fun ChatBitacoraScreen(
                             )
                         }
 
-                        ChildAvatar(
-                            initials = child.avatarInitials,
-                            bgColor = Color(child.avatarBgColor),
-                            size = 38.dp,
-                            showStatusDot = true,
-                            isPresent = child.isPresent
-                        )
-
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        Column {
-                            Text(
-                                text = child.shortName,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { onChildInfoClick() }
+                                .padding(horizontal = 4.dp, vertical = 4.dp)
+                        ) {
+                            ChildAvatar(
+                                initials = child.avatarInitials,
+                                bgColor = Color(child.avatarBgColor),
+                                size = 38.dp,
+                                showStatusDot = true,
+                                isPresent = child.isPresent
                             )
-                            Text(
-                                text = "${child.ageText} • ${child.roomText}",
-                                fontSize = 12.sp,
-                                color = TextSecondary
-                            )
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            Column {
+                                Text(
+                                    text = child.shortName,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary
+                                )
+                                Text(
+                                    text = "${child.ageText} • ${child.roomText}",
+                                    fontSize = 12.sp,
+                                    color = TextSecondary
+                                )
+                            }
                         }
                     }
 
@@ -403,6 +417,16 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage) {
 
 @Composable
 private fun ActivityTimelineCard(act: TimelineItem.ActivityCard) {
+    val (categoryIcon, categoryTint) = when (act.category) {
+        "Alimentación" -> Pair(Icons.Default.Restaurant, Color(0xFFE65100))
+        "Descanso", "Siesta" -> Pair(Icons.Default.NightlightRound, Color(0xFF5E35B1))
+        "Funciones Excretoras" -> Pair(Icons.Default.Wc, Color(0xFF0288D1))
+        "Estado de Ánimo" -> Pair(Icons.Default.Face, Color(0xFF00897B))
+        "Accidentes" -> Pair(Icons.Default.WarningAmber, Color(0xFFD32F2F))
+        "Salud" -> Pair(Icons.Default.LocalHospital, Color(0xFFC2185B))
+        else -> Pair(Icons.AutoMirrored.Filled.EventNote, Color(0xFF1E88E5))
+    }
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -435,9 +459,9 @@ private fun ActivityTimelineCard(act: TimelineItem.ActivityCard) {
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Default.Restaurant,
+                            imageVector = categoryIcon,
                             contentDescription = null,
-                            tint = Color(0xFFE65100),
+                            tint = categoryTint,
                             modifier = Modifier.size(15.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -448,11 +472,13 @@ private fun ActivityTimelineCard(act: TimelineItem.ActivityCard) {
                                 fontWeight = FontWeight.Bold,
                                 color = BrandBlue
                             )
-                            Text(
-                                text = act.portionLabel,
-                                fontSize = 10.sp,
-                                color = TextSecondary
-                            )
+                            if (act.portionLabel.isNotBlank()) {
+                                Text(
+                                    text = act.portionLabel,
+                                    fontSize = 10.sp,
+                                    color = TextSecondary
+                                )
+                            }
                         }
                     }
                 }

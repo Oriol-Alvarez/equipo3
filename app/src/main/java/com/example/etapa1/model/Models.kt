@@ -41,9 +41,32 @@ data class LostItem(
 
 enum class ActivityCategory(val label: String) {
     ALIMENTACION("Alimentación"),
-    SIESTA("Siesta"),
+    DESCANSO("Descanso"),
+    FUNCIONES_EXCRETORAS("Funciones Excretoras"),
     ESTADO_ANIMO("Estado de Ánimo"),
+    ACCIDENTES("Accidentes"),
+    SALUD("Salud"),
+    SIESTA("Descanso"),
     OTROS("Otros")
+}
+
+enum class MealType(val label: String) {
+    DESAYUNO("Desayuno"),
+    COLACION("Colación"),
+    COMIDA("Comida")
+}
+
+enum class FoodConsumptionOption(val label: String) {
+    NADA("Nada"),
+    POCO("Poco"),
+    TODO("Todo"),
+    PIDIO_MAS("Pidió más")
+}
+
+enum class MoodState(val label: String, val emoji: String) {
+    FELIZ("Feliz", "🙂"),
+    TRISTE("Triste", "😢"),
+    ENOJADO("Enojado", "😠")
 }
 
 enum class PortionOption(val label: String, val fractionText: String) {
@@ -405,5 +428,299 @@ object MockDataRepository {
             location = "Entrada principal"
         )
     )
+
+    fun getChildFullProfile(child: Child): ChildFullProfile {
+        return ChildFullProfile(
+            child = child,
+            birthDate = when (child.id) {
+                "mateo_garcia" -> "14/04/2024"
+                "sofia_lopez" -> "18/06/2024"
+                "lucas_martinez" -> "02/02/2024"
+                "valentina_ruiz" -> "25/03/2024"
+                else -> "10/05/2024"
+            },
+            studentId = "EST-${child.id.take(4).uppercase()}-2026",
+            bloodType = when (child.id) {
+                "mateo_garcia" -> "O+"
+                "sofia_lopez" -> "A+"
+                "lucas_martinez" -> "B+"
+                else -> "O+"
+            },
+            pediatrician = "Dra. Sofía Morales",
+            pediatricianPhone = "+34 912 334 455",
+            emergencyPhone = "+34 612 345 678",
+            motherName = "María López Fernández",
+            motherPhone = "+34 612 345 678",
+            fatherName = "Carlos García Ramos",
+            fatherPhone = "+34 611 987 654",
+            authorizedPickups = listOf(
+                "Rosa Fernández (Abuela materna) - DNI ***4521",
+                "Elena García (Tía paterna) - DNI ***9812"
+            ),
+            medicalNotes = if (child.allergyAlert != null) {
+                "${child.allergyAlert}. Se requiere extremo cuidado en las meriendas y almuerzos. Botiquín de emergencia revisado."
+            } else {
+                "Sin alergias diagnosticadas. Cartilla de vacunación completa y verificada por el centro."
+            },
+            generalNotes = "Muy sociable y participativo. Se adapta muy bien a las rutinas de la sala y duerme tranquilo con su objeto de apego."
+        )
+    }
+
+    fun getDailyBitacorasForChild(child: Child): List<DailyBitacora> {
+        return listOf(
+            DailyBitacora(
+                date = "29/09/2026",
+                dayLabel = "Hoy, 29 Sep",
+                isToday = true,
+                ingreso = if (child.isPresent) {
+                    DailyIngresoInfo(
+                        time = child.arrivalTime ?: "08:15 AM",
+                        delivererName = "María López (Madre)",
+                        receiverName = "Laura Gómez (Educadora)",
+                        physicalCondition = "Buen estado general, alegre y sin lesiones.",
+                        hasSymptoms = false,
+                        observations = "Durmió 9 horas continuas. Desayunó un tazón de leche en casa."
+                    )
+                } else null,
+                egreso = null,
+                activities = if (child.isPresent) {
+                    listOf(
+                        DailyActivityInfo(
+                            id = "act_today_1",
+                            time = "09:30 AM",
+                            title = "Asamblea y cantos matutinos",
+                            category = ActivityCategory.ESTADO_ANIMO,
+                            description = "Participó entusiasmado en el círculo de bienvenida e interactuó amistosamente con sus compañeros."
+                        ),
+                        DailyActivityInfo(
+                            id = "act_today_2",
+                            time = "10:30 AM",
+                            title = "Merienda matutina",
+                            category = ActivityCategory.ALIMENTACION,
+                            portion = PortionOption.TODO,
+                            description = "Comió toda su porción de plátano y pera cortada. Tomó agua con autonomía."
+                        ),
+                        DailyActivityInfo(
+                            id = "act_today_3",
+                            time = "12:15 PM",
+                            title = "Almuerzo - Menú del día",
+                            category = ActivityCategory.ALIMENTACION,
+                            portion = PortionOption.MEDIO,
+                            description = "Tomó la crema de calabaza completa. Del plato de pollo con patatas consumió la mitad."
+                        ),
+                        DailyActivityInfo(
+                            id = "act_today_4",
+                            time = "13:00 - 14:15 PM",
+                            title = "Siesta y descanso",
+                            category = ActivityCategory.SIESTA,
+                            description = "Descanso reparador de 1 hora y 15 minutos en su cuna habitual sin interrupciones."
+                        )
+                    )
+                } else emptyList()
+            ),
+            DailyBitacora(
+                date = "28/09/2026",
+                dayLabel = "Ayer, 28 Sep",
+                isToday = false,
+                ingreso = DailyIngresoInfo(
+                    time = "08:20 AM",
+                    delivererName = "Carlos García (Padre)",
+                    receiverName = "Laura Gómez (Educadora)",
+                    physicalCondition = "Buen estado físico, sin rasguños ni temperatura.",
+                    hasSymptoms = false,
+                    observations = "Trae ropa de recambio limpia en su mochila."
+                ),
+                egreso = DailyEgresoInfo(
+                    time = "16:30 PM",
+                    collectorName = "María López (Madre)",
+                    delivererName = "Laura Gómez (Educadora)",
+                    physicalCondition = "Excelente estado general, aseado y tranquilo.",
+                    observations = "Jornada muy agradable. Merendó compota de frutas completa a las 15:45."
+                ),
+                activities = listOf(
+                    DailyActivityInfo(
+                        id = "act_yest_1",
+                        time = "10:15 AM",
+                        title = "Juego sensorial y psicomotricidad",
+                        category = ActivityCategory.OTROS,
+                        description = "Exploró texturas con plastilina no tóxica y armó torres de bloques de madera."
+                    ),
+                    DailyActivityInfo(
+                        id = "act_yest_2",
+                        time = "12:30 PM",
+                        title = "Almuerzo - Lentejas con arroz",
+                        category = ActivityCategory.ALIMENTACION,
+                        portion = PortionOption.TODO,
+                        description = "Almorzó lentejas con arroz y puré de zanahorias. Comió todo el plato con gran apetito."
+                    ),
+                    DailyActivityInfo(
+                        id = "act_yest_3",
+                        time = "13:10 - 14:30 PM",
+                        title = "Siesta",
+                        category = ActivityCategory.SIESTA,
+                        description = "Descanso reparador de 1 hora y 20 minutos."
+                    ),
+                    DailyActivityInfo(
+                        id = "act_yest_4",
+                        time = "15:45 PM",
+                        title = "Merienda de la tarde",
+                        category = ActivityCategory.ALIMENTACION,
+                        portion = PortionOption.TODO,
+                        description = "Yogur natural con cereales blandos y vaso de agua."
+                    )
+                )
+            ),
+            DailyBitacora(
+                date = "25/09/2026",
+                dayLabel = "Viernes, 25 Sep",
+                isToday = false,
+                ingreso = DailyIngresoInfo(
+                    time = "08:10 AM",
+                    delivererName = "Rosa Fernández (Abuela)",
+                    receiverName = "Laura Gómez (Educadora)",
+                    physicalCondition = "Buen estado general.",
+                    hasSymptoms = false,
+                    observations = "Entregó autorización médica para actividades al aire libre."
+                ),
+                egreso = DailyEgresoInfo(
+                    time = "16:25 PM",
+                    collectorName = "Carlos García (Padre)",
+                    delivererName = "Laura Gómez (Educadora)",
+                    physicalCondition = "Entregado en perfecto estado, despierto y sonriente.",
+                    observations = "Lleva en su mochila los dibujos y manualidades de la semana."
+                ),
+                activities = listOf(
+                    DailyActivityInfo(
+                        id = "act_fri_1",
+                        time = "11:00 AM",
+                        title = "Taller de pintura con dedos",
+                        category = ActivityCategory.ESTADO_ANIMO,
+                        description = "Pintó con pintura al agua no tóxica sobre mural de papel continuo."
+                    ),
+                    DailyActivityInfo(
+                        id = "act_fri_2",
+                        time = "12:20 PM",
+                        title = "Almuerzo - Menú de pescado",
+                        category = ActivityCategory.ALIMENTACION,
+                        portion = PortionOption.TODO,
+                        description = "Pescado blanco al vapor con patatas hervidas y calabacín. Comió todo sin problema."
+                    ),
+                    DailyActivityInfo(
+                        id = "act_fri_3",
+                        time = "13:00 - 14:10 PM",
+                        title = "Siesta",
+                        category = ActivityCategory.SIESTA,
+                        description = "Siesta tranquila de 1 hora y 10 minutos."
+                    )
+                )
+            )
+        )
+    }
+
+    fun getWeeklySummaryForChild(child: Child): WeeklySummary {
+        val allergyText = if (child.allergyAlert != null) {
+            "Protocolo estricto para ${child.allergyAlert}. Menú especial de cocina cumplido al 100% sin ninguna reacción adversa durante la semana."
+        } else {
+            "Sin incidentes de salud ni alergias registradas. Temperatura y estado físico óptimos en todas las jornadas."
+        }
+
+        return WeeklySummary(
+            weekRangeText = "Semana del 22 al 29 de Septiembre, 2026",
+            attendanceDaysCount = if (child.isPresent) 5 else 4,
+            totalSchoolDays = 5,
+            attendancePercentageText = if (child.isPresent) "100%" else "80%",
+            averageArrivalTime = child.arrivalTime ?: "08:20 AM",
+            foodIntakePercentage = if (child.isPresent) "92%" else "85%",
+            totalNapHours = "6h 15m",
+            averageNapDaily = "1h 15m/día",
+            moodSummary = if (child.isPresent) "Muy participativo y sociable" else "Tranquilo y afectuoso",
+            executiveSummary = "Semana sumamente positiva para ${child.fullName}. Ha mantenido una asistencia constante con horario puntual de ingreso. En alimentación mostró gran apetito y excelente autonomía con los cubiertos. En el descanso mantuvo siestas continuas de más de una hora. Su interacción con educadoras y compañeros en actividades sensoriales fue sobresaliente.",
+            foodHighlights = listOf(
+                "Gran aceptación en cremas de verduras, sopa de pollo con fideos y lentejas con arroz.",
+                "Excelente autonomía: come sin ayuda y pide agua con naturalidad cuando la necesita.",
+                "Oportunidad de refuerzo: Introducción gradual de verduras enteras (rechazó el brócoli hervido, aunque lo tomó en puré)."
+            ),
+            napHighlights = "Ritmo biológico de descanso muy estable. Siesta diaria entre las 13:00 y las 14:15 h. Duerme tranquilo con su objeto de apego y despierta con excelente disposición.",
+            pedagogicalHighlights = listOf(
+                "Motricidad fina: Modelado con plastilina y construcción de torres de bloques de madera.",
+                "Sensorial y creativo: Taller de pintura con dedos sobre mural grande y exploración de texturas.",
+                "Socioemocional: Participación activa en las canciones de asamblea matutina y juego cooperativo en patio."
+            ),
+            healthAndSafetySummary = allergyText
+        )
+    }
 }
+
+data class DailyBitacora(
+    val date: String,
+    val dayLabel: String,
+    val isToday: Boolean = false,
+    val ingreso: DailyIngresoInfo?,
+    val egreso: DailyEgresoInfo?,
+    val activities: List<DailyActivityInfo>
+)
+
+data class DailyIngresoInfo(
+    val time: String,
+    val delivererName: String,
+    val receiverName: String,
+    val physicalCondition: String,
+    val hasSymptoms: Boolean,
+    val symptomsDetail: String = "",
+    val observations: String = ""
+)
+
+data class DailyEgresoInfo(
+    val time: String,
+    val collectorName: String,
+    val delivererName: String,
+    val physicalCondition: String,
+    val observations: String = ""
+)
+
+data class DailyActivityInfo(
+    val id: String,
+    val time: String,
+    val title: String,
+    val category: ActivityCategory,
+    val portion: PortionOption? = null,
+    val description: String
+)
+
+data class ChildFullProfile(
+    val child: Child,
+    val birthDate: String = "12/03/2024",
+    val enrollmentDate: String = "01/09/2025",
+    val studentId: String = "AL-2025-042",
+    val bloodType: String = "A+",
+    val pediatrician: String = "Dra. Sofía Morales",
+    val pediatricianPhone: String = "+34 912 334 455",
+    val emergencyPhone: String = "+34 612 345 678",
+    val motherName: String = "María López Fernández",
+    val motherPhone: String = "+34 612 345 678",
+    val fatherName: String = "Carlos García Ramos",
+    val fatherPhone: String = "+34 611 987 654",
+    val authorizedPickups: List<String> = listOf("Rosa Fernández (Abuela)", "Elena García (Tía)"),
+    val medicalNotes: String = "Vacunación al día. No presenta intolerancias alimentarias adicionales.",
+    val generalNotes: String = "Se adapta con facilidad a las rutinas de la sala. Duerme con su mantita en la siesta."
+)
+
+data class WeeklySummary(
+    val weekRangeText: String = "Semana del 22 al 29 de Septiembre, 2026",
+    val attendanceDaysCount: Int = 5,
+    val totalSchoolDays: Int = 5,
+    val attendancePercentageText: String = "100%",
+    val averageArrivalTime: String = "08:18 AM",
+    val foodIntakePercentage: String = "92%",
+    val totalNapHours: String = "6h 15m",
+    val averageNapDaily: String = "1h 15m/día",
+    val moodSummary: String = "Feliz y participativo",
+    val executiveSummary: String,
+    val foodHighlights: List<String>,
+    val napHighlights: String,
+    val pedagogicalHighlights: List<String>,
+    val healthAndSafetySummary: String
+)
+
+
 

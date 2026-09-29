@@ -81,6 +81,7 @@ fun RoomDashboardScreen(
     children: List<Child> = MockDataRepository.childrenSala1A,
     onBack: () -> Unit,
     onChildSelected: (Child) -> Unit,
+    onChildInfo: (Child) -> Unit = {},
     onPassAttendance: (Child?) -> Unit = {},
     onNavigateToMore: () -> Unit = {}
 ) {
@@ -316,6 +317,7 @@ fun RoomDashboardScreen(
                                 selectedChildIds.add(child.id)
                             }
                         },
+                        onInfoClick = { onChildInfo(child) },
                         onPassAttendance = { onPassAttendance(child) }
                     )
                 }
@@ -336,6 +338,7 @@ private fun ChildRowCard(
     isSelectionMode: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    onInfoClick: () -> Unit,
     onPassAttendance: () -> Unit
 ) {
     Card(
@@ -465,13 +468,13 @@ private fun ChildRowCard(
                                 .size(34.dp)
                                 .clip(CircleShape)
                                 .background(Color(0xFFF1F5F9))
-                                .clickable { onClick() },
+                                .clickable { onInfoClick() },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Info,
                                 contentDescription = "Detalle del niño",
-                                tint = TextSecondary,
+                                tint = BrandBlue,
                                 modifier = Modifier.size(18.dp)
                             )
                         }

@@ -25,6 +25,7 @@ import com.example.etapa1.model.Room
 import com.example.etapa1.model.TimelineItem
 import com.example.etapa1.ui.screens.AttendanceScreen
 import com.example.etapa1.ui.screens.ChatBitacoraScreen
+import com.example.etapa1.ui.screens.ChildDetailScreen
 import com.example.etapa1.ui.screens.LoginScreen
 import com.example.etapa1.ui.screens.LostObjectsCatalogScreen
 import com.example.etapa1.ui.screens.MoreMenuScreen
@@ -39,6 +40,7 @@ sealed interface Screen {
     data object RoomSelection : Screen
     data class RoomDashboard(val room: Room) : Screen
     data class ChatBitacora(val child: Child) : Screen
+    data class ChildDetail(val child: Child) : Screen
     data class NewActivity(val child: Child) : Screen
     data object MoreMenu : Screen
     data object LostObjectsCatalog : Screen
@@ -121,11 +123,32 @@ fun SonrisasApp() {
                         onChildSelected = { selectedChild ->
                             backStack.add(Screen.ChatBitacora(selectedChild))
                         },
+                        onChildInfo = { selectedChild ->
+                            backStack.add(Screen.ChildDetail(selectedChild))
+                        },
                         onPassAttendance = { targetChild ->
                             backStack.add(Screen.Attendance(screen.room, targetChild))
                         },
                         onNavigateToMore = {
                             backStack.add(Screen.MoreMenu)
+                        }
+                    )
+                }
+
+                is Screen.ChildDetail -> {
+                    ChildDetailScreen(
+                        child = screen.child,
+                        onBack = {
+                            if (backStack.size > 1) {
+                                backStack.removeAt(backStack.lastIndex)
+                            }
+                        },
+                        onNavigateToChat = {
+                            backStack.add(Screen.ChatBitacora(screen.child))
+                        },
+                        onNavigateToAttendance = {
+                            val currentRoom = MockDataRepository.rooms.first()
+                            backStack.add(Screen.Attendance(currentRoom, screen.child))
                         }
                     )
                 }
@@ -138,6 +161,9 @@ fun SonrisasApp() {
                             if (backStack.size > 1) {
                                 backStack.removeAt(backStack.lastIndex)
                             }
+                        },
+                        onChildInfoClick = {
+                            backStack.add(Screen.ChildDetail(screen.child))
                         },
                         onNewActivityClick = {
                             backStack.add(Screen.NewActivity(screen.child))
@@ -167,22 +193,16 @@ fun SonrisasApp() {
                                 backStack.removeAt(backStack.lastIndex)
                             }
                         },
-                        onSubmitActivity = { category, portion, comments ->
-                            val portionSuffix = when (portion) {
-                                PortionOption.POCO -> "Poco plato"
-                                PortionOption.MEDIO -> "Medio plato"
-                                PortionOption.TODO -> "Todo el plato"
-                            }
+                        onSubmitActivity = { category, summaryBadge, description ->
+                            val currentTime = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
                             // Agregar nueva actividad maquetada exactamente como en la imagen
                             mateoTimeline.add(
                                 TimelineItem.ActivityCard(
                                     id = "act_${System.currentTimeMillis()}",
-                                    time = "01:45 PM",
+                                    time = currentTime,
                                     category = category.label,
-                                    portionLabel = portionSuffix,
-                                    description = comments.ifBlank {
-                                        "Mateo disfrutó mucho su comida de hoy y pidió un poco más de fruta."
-                                    }
+                                    portionLabel = summaryBadge,
+                                    description = description
                                 )
                             )
                             // Regresar al chat de bitácora
