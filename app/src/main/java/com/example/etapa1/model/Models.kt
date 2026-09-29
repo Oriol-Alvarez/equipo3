@@ -52,6 +52,22 @@ enum class PortionOption(val label: String, val fractionText: String) {
     TODO("Todo", "1/1")
 }
 
+enum class MedicationPrescriptionOption(val label: String) {
+    SI("Sí"),
+    NO("No"),
+    NO_APLICA("No aplica")
+}
+
+data class AttendanceRecord(
+    val id: String = "att_${System.currentTimeMillis()}",
+    val childId: String,
+    val isIngreso: Boolean, // true = Ingreso (Entrada), false = Egreso (Salida)
+    val date: String,
+    val dayOfWeek: String, // L, M, M, J, V
+    val time: String,
+    val observations: String = ""
+)
+
 sealed interface TimelineItem {
     val id: String
     val time: String
@@ -162,6 +178,160 @@ object MockDataRepository {
             allergyAlert = null,
             avatarInitials = "VR",
             avatarBgColor = 0xFFBA68C8
+        ),
+        Child(
+            id = "santiago_gomez",
+            fullName = "Santiago Gómez",
+            shortName = "Santiago G.",
+            ageText = "2 años y 1 mes",
+            roomText = "Sala 1A",
+            groupText = "Grupo Sala 1A",
+            statusText = "08:05 AM • Presente",
+            isPresent = true,
+            arrivalTime = "08:05 AM",
+            allergyAlert = null,
+            avatarInitials = "SG",
+            avatarBgColor = 0xFF4DD0E1
+        ),
+        Child(
+            id = "camila_hernandez",
+            fullName = "Camila Hernández",
+            shortName = "Camila H.",
+            ageText = "1 año y 9 meses",
+            roomText = "Sala 1A",
+            groupText = "Grupo Sala 1A",
+            statusText = "08:10 AM • Presente",
+            isPresent = true,
+            arrivalTime = "08:10 AM",
+            allergyAlert = null,
+            avatarInitials = "CH",
+            avatarBgColor = 0xFFF06292
+        ),
+        Child(
+            id = "diego_fernandez",
+            fullName = "Diego Fernández",
+            shortName = "Diego F.",
+            ageText = "2 años",
+            roomText = "Sala 1A",
+            groupText = "Grupo Sala 1A",
+            statusText = "08:25 AM • Presente",
+            isPresent = true,
+            arrivalTime = "08:25 AM",
+            allergyAlert = null,
+            avatarInitials = "DF",
+            avatarBgColor = 0xFF4FC3F7
+        ),
+        Child(
+            id = "isabella_torres",
+            fullName = "Isabella Torres",
+            shortName = "Isabella T.",
+            ageText = "1 año y 10 meses",
+            roomText = "Sala 1A",
+            groupText = "Grupo Sala 1A",
+            statusText = "08:35 AM • Presente",
+            isPresent = true,
+            arrivalTime = "08:35 AM",
+            allergyAlert = "Alergia a la Lactosa",
+            avatarInitials = "IT",
+            avatarBgColor = 0xFFAED581
+        ),
+        Child(
+            id = "thiago_diaz",
+            fullName = "Thiago Díaz",
+            shortName = "Thiago D.",
+            ageText = "2 años y 2 meses",
+            roomText = "Sala 1A",
+            groupText = "Grupo Sala 1A",
+            statusText = "08:40 AM • Presente",
+            isPresent = true,
+            arrivalTime = "08:40 AM",
+            allergyAlert = null,
+            avatarInitials = "TD",
+            avatarBgColor = 0xFFFFD54F
+        ),
+        Child(
+            id = "emma_morales",
+            fullName = "Emma Morales",
+            shortName = "Emma M.",
+            ageText = "1 año y 7 meses",
+            roomText = "Sala 1A",
+            groupText = "Grupo Sala 1A",
+            statusText = "08:42 AM • Presente",
+            isPresent = true,
+            arrivalTime = "08:42 AM",
+            allergyAlert = null,
+            avatarInitials = "EM",
+            avatarBgColor = 0xFFE57373
+        ),
+        Child(
+            id = "leo_navarro",
+            fullName = "Leo Navarro",
+            shortName = "Leo N.",
+            ageText = "2 años",
+            roomText = "Sala 1A",
+            groupText = "Grupo Sala 1A",
+            statusText = "08:45 AM • Presente",
+            isPresent = true,
+            arrivalTime = "08:45 AM",
+            allergyAlert = null,
+            avatarInitials = "LN",
+            avatarBgColor = 0xFF7986CB
+        ),
+        Child(
+            id = "mia_ramirez",
+            fullName = "Mia Ramírez",
+            shortName = "Mia R.",
+            ageText = "1 año y 11 meses",
+            roomText = "Sala 1A",
+            groupText = "Grupo Sala 1A",
+            statusText = "08:50 AM • Presente",
+            isPresent = true,
+            arrivalTime = "08:50 AM",
+            allergyAlert = null,
+            avatarInitials = "MR",
+            avatarBgColor = 0xFF4DB6AC
+        ),
+        Child(
+            id = "gael_castro",
+            fullName = "Gael Castro",
+            shortName = "Gael C.",
+            ageText = "2 años y 1 mes",
+            roomText = "Sala 1A",
+            groupText = "Grupo Sala 1A",
+            statusText = "08:55 AM • Presente",
+            isPresent = true,
+            arrivalTime = "08:55 AM",
+            allergyAlert = null,
+            avatarInitials = "GC",
+            avatarBgColor = 0xFFFF8A65
+        ),
+        Child(
+            id = "lucia_vargas",
+            fullName = "Lucía Vargas",
+            shortName = "Lucía V.",
+            ageText = "1 año y 10 meses",
+            roomText = "Sala 1A",
+            groupText = "Grupo Sala 1A",
+            statusText = "Ausente",
+            isPresent = false,
+            arrivalTime = null,
+            allergyAlert = null,
+            avatarInitials = "LV",
+            avatarBgColor = 0xFFA1887F
+        ),
+        Child(
+            id = "bruno_benitez",
+            fullName = "Bruno Benítez",
+            shortName = "Bruno B.",
+            ageText = "2 años",
+            roomText = "Sala 1A",
+            groupText = "Grupo Sala 1A",
+            statusText = "No ha ingresado",
+            isPresent = false,
+            arrivalTime = null,
+            allergyAlert = null,
+            avatarInitials = "BB",
+            avatarBgColor = 0xFF9E9E9E
         )
     )
 

@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AttachFile
@@ -79,6 +80,7 @@ fun ChatBitacoraScreen(
     timelineItems: List<TimelineItem>,
     onBack: () -> Unit,
     onNewActivityClick: () -> Unit,
+    onAttendanceClick: () -> Unit = {},
     onSendMessage: (String) -> Unit
 ) {
     var messageText by remember { mutableStateOf("") }
@@ -235,6 +237,14 @@ fun ChatBitacoraScreen(
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onAttendanceClick) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.FactCheck,
+                                contentDescription = "Pasar Asistencia",
+                                tint = BrandBlue,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                         IconButton(onClick = { /* Llamada */ }) {
                             Icon(
                                 imageVector = Icons.Default.Phone,

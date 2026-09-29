@@ -89,7 +89,6 @@ fun LostObjectsCatalogScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Header Top Bar - Centrado y consistente
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -203,7 +202,6 @@ private fun LostItemCard(
                 .fillMaxWidth()
                 .padding(14.dp)
         ) {
-            // Recuadro claro para la imagen (sin foto por defecto según solicitud)
             ImagePlaceholderBox(
                 imageUri = item.imageUri,
                 height = 175.dp,

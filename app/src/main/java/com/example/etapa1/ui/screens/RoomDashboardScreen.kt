@@ -1,8 +1,16 @@
 package com.example.etapa1.ui.screens
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,13 +29,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.automirrored.filled.ListAlt
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -35,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -66,12 +78,21 @@ import com.example.etapa1.ui.theme.Etapa1Theme
 @Composable
 fun RoomDashboardScreen(
     room: Room,
+    children: List<Child> = MockDataRepository.childrenSala1A,
     onBack: () -> Unit,
     onChildSelected: (Child) -> Unit,
+    onPassAttendance: (Child?) -> Unit = {},
     onNavigateToMore: () -> Unit = {}
 ) {
-    val children = MockDataRepository.childrenSala1A
+    val presentCount = children.count { it.isPresent }
+    val absentCount = children.size - presentCount
     var selectedBottomTab by remember { mutableIntStateOf(0) }
+    val selectedChildIds = remember { mutableStateListOf<String>() }
+    val isSelectionMode = selectedChildIds.isNotEmpty()
+
+    BackHandler(enabled = isSelectionMode) {
+        selectedChildIds.clear()
+    }
 
     Scaffold(
         containerColor = AppBackground,
@@ -86,27 +107,31 @@ fun RoomDashboardScreen(
                 }
             )
         },
+        floatingActionButtonPosition = FabPosition.End,
         floatingActionButton = {
-            Button(
-                onClick = { /* Acción Registro Múltiple */ },
-                shape = RoundedCornerShape(24.dp),
-                colors = ButtonDefaults.buttonColors(
+            AnimatedVisibility(
+                visible = selectedChildIds.size >= 2,
+                enter = fadeIn() + scaleIn(),
+                exit = fadeOut() + scaleOut()
+            ) {
+                ExtendedFloatingActionButton(
+                    onClick = { onPassAttendance(null) },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ListAlt,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = "Registro múltiple",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    },
                     containerColor = BrandBlue,
                     contentColor = Color.White
-                ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
-                modifier = Modifier.padding(bottom = 8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ListAlt,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Registro Múltiple",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
@@ -123,12 +148,18 @@ fun RoomDashboardScreen(
                     .padding(horizontal = 10.dp, vertical = 8.dp)
             ) {
                 IconButton(
-                    onClick = onBack,
+                    onClick = {
+                        if (isSelectionMode) {
+                            selectedChildIds.clear()
+                        } else {
+                            onBack()
+                        }
+                    },
                     modifier = Modifier.align(Alignment.CenterStart)
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Volver",
+                        imageVector = if (isSelectionMode) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = if (isSelectionMode) "Cancelar selección" else "Volver",
                         tint = BrandBlue,
                         modifier = Modifier.size(24.dp)
                     )
@@ -139,7 +170,7 @@ fun RoomDashboardScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "${room.name} - ${room.level}",
+                        text = if (isSelectionMode) "${selectedChildIds.size} seleccionados" else "${room.name} - ${room.level}",
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
                         color = BrandBlue,
@@ -157,7 +188,7 @@ fun RoomDashboardScreen(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Sincronizado",
+                            text = if (isSelectionMode) "Modo selección" else "Sincronizado",
                             fontSize = 11.sp,
                             color = TextSecondary
                         )
@@ -213,7 +244,7 @@ fun RoomDashboardScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "${room.presentCount}/${room.totalCount}",
+                            text = "$presentCount/${children.size}",
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = BrandBlue
@@ -243,7 +274,7 @@ fun RoomDashboardScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "${room.totalCount - room.presentCount}",
+                            text = "$absentCount",
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = StatusAbsentOrange
@@ -262,33 +293,68 @@ fun RoomDashboardScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(children, key = { it.id }) { child ->
+                    val isSelected = child.id in selectedChildIds
                     ChildRowCard(
                         child = child,
-                        onClick = { onChildSelected(child) }
+                        isSelected = isSelected,
+                        isSelectionMode = isSelectionMode,
+                        onClick = {
+                            if (isSelectionMode) {
+                                if (isSelected) {
+                                    selectedChildIds.remove(child.id)
+                                } else {
+                                    selectedChildIds.add(child.id)
+                                }
+                            } else {
+                                onChildSelected(child)
+                            }
+                        },
+                        onLongClick = {
+                            if (isSelected) {
+                                selectedChildIds.remove(child.id)
+                            } else {
+                                selectedChildIds.add(child.id)
+                            }
+                        },
+                        onPassAttendance = { onPassAttendance(child) }
                     )
                 }
 
                 item {
-                    Spacer(modifier = Modifier.height(72.dp))
+                    Spacer(modifier = Modifier.height(84.dp))
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ChildRowCard(
     child: Child,
-    onClick: () -> Unit
+    isSelected: Boolean,
+    isSelectionMode: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    onPassAttendance: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, BorderSubtle, RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            .border(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = if (isSelected) BrandBlue else BorderSubtle,
+                shape = RoundedCornerShape(14.dp)
+            )
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) Color(0xFFF0F7FF) else CardBackground
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 3.dp else 1.dp)
     ) {
         Row(
             modifier = Modifier
@@ -350,20 +416,66 @@ private fun ChildRowCard(
                     }
                 }
 
-                // Botón circular de información (i)
-                Box(
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(CircleShape)
-                        .background(BrandBlueContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = "Detalle del niño",
-                        tint = BrandBlue,
-                        modifier = Modifier.size(18.dp)
-                    )
+                if (isSelectionMode) {
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(if (isSelected) BrandBlue else Color.Transparent)
+                            .border(
+                                width = if (isSelected) 0.dp else 2.dp,
+                                color = if (isSelected) Color.Transparent else BorderSubtle,
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Seleccionado",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Botón directo para pasar asistencia
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .background(BrandBlueContainer)
+                                .clickable { onPassAttendance() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.FactCheck,
+                                contentDescription = "Pasar asistencia a ${child.shortName}",
+                                tint = BrandBlue,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(6.dp))
+
+                        // Botón circular de información (i)
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFF1F5F9))
+                                .clickable { onClick() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = "Detalle del niño",
+                                tint = TextSecondary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
