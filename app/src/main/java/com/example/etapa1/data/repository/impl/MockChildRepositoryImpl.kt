@@ -14,8 +14,11 @@ class MockChildRepositoryImpl : ChildRepository {
     private val _childrenSala1A = MutableStateFlow<List<Child>>(MockDataRepository.childrenSala1A)
     override val childrenSala1A: StateFlow<List<Child>> = _childrenSala1A.asStateFlow()
 
+    private val _parentChildren = MutableStateFlow<List<Child>>(MockDataRepository.parentChildren)
+    override val parentChildren: StateFlow<List<Child>> = _parentChildren.asStateFlow()
+
     override fun getChildById(childId: String): Child? {
-        return _childrenSala1A.value.find { it.id == childId }
+        return _childrenSala1A.value.find { it.id == childId } ?: _parentChildren.value.find { it.id == childId }
     }
 
     override fun updateChildAttendance(childId: String, isPresent: Boolean, time: String, statusText: String) {

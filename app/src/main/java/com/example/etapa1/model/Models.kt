@@ -161,6 +161,23 @@ object MockDataRepository {
         avatarBgColor = 0xFFFFB74D
     )
 
+    val luciaGarcia = Child(
+        id = "lucia_garcia",
+        fullName = "Lucía García López",
+        shortName = "Lucía G.",
+        ageText = "1 año y 2 meses",
+        roomText = "Sala Bebés",
+        groupText = "Lactantes A",
+        statusText = "08:45 AM • Presente",
+        isPresent = true,
+        arrivalTime = "08:45 AM",
+        allergyAlert = null,
+        avatarInitials = "LG",
+        avatarBgColor = 0xFFF06292
+    )
+
+    val parentChildren: List<Child> = listOf(mateoGarcia, luciaGarcia)
+
     val childrenSala1A = listOf(
         mateoGarcia,
         Child(

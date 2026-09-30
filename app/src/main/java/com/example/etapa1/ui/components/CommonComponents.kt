@@ -139,6 +139,7 @@ fun DaycareLogo(
 @Composable
 fun AppBottomBar(
     selectedTab: Int = 0,
+    showMessagesTab: Boolean = true,
     onTabSelected: (Int) -> Unit = {}
 ) {
     Surface(
@@ -168,75 +169,80 @@ fun AppBottomBar(
                 onClick = { onTabSelected(0) }
             )
 
-            // Tab 1: Mensajes
-            BottomNavItem(
-                modifier = Modifier.weight(1f),
-                icon = {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.MailOutline,
-                            contentDescription = "Mensajes",
-                            tint = if (selectedTab == 1) BrandBlue else TextMuted
-                        )
-                        // Notification dot
-                        Box(
-                            modifier = Modifier
-                                .size(7.dp)
-                                .align(Alignment.TopEnd)
-                                .offset(x = 2.dp, y = (-2).dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFE53935))
-                        )
-                    }
-                },
-                label = "Mensajes",
-                isSelected = selectedTab == 1,
-                onClick = { onTabSelected(1) }
-            )
+            // Tab 1 (opcional): Mensajes
+            if (showMessagesTab) {
+                BottomNavItem(
+                    modifier = Modifier.weight(1f),
+                    icon = {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.MailOutline,
+                                contentDescription = "Mensajes",
+                                tint = if (selectedTab == 1) BrandBlue else TextMuted
+                            )
+                            // Notification dot
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 2.dp, y = (-2).dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFE53935))
+                            )
+                        }
+                    },
+                    label = "Mensajes",
+                    isSelected = selectedTab == 1,
+                    onClick = { onTabSelected(1) }
+                )
+            }
 
-            // Tab 2: Buzón de sugerencias
+            // Tab Sugerencias (índice 2 con mensajes, índice 1 sin mensajes)
+            val suggestionsTabIndex = if (showMessagesTab) 2 else 1
             BottomNavItem(
                 modifier = Modifier.weight(1f),
                 icon = {
                     Icon(
                         imageVector = Icons.Default.Inbox,
                         contentDescription = "Buzón de sugerencias",
-                        tint = if (selectedTab == 2) BrandBlue else TextMuted
+                        tint = if (selectedTab == suggestionsTabIndex) BrandBlue else TextMuted
                     )
                 },
                 label = "Sugerencias",
-                isSelected = selectedTab == 2,
-                onClick = { onTabSelected(2) }
+                isSelected = selectedTab == suggestionsTabIndex,
+                onClick = { onTabSelected(suggestionsTabIndex) }
             )
 
-            // Tab 3: Objetos perdidos
+            // Tab Objetos perdidos (índice 3 con mensajes, índice 2 sin mensajes)
+            val lostObjectsTabIndex = if (showMessagesTab) 3 else 2
             BottomNavItem(
                 modifier = Modifier.weight(1f),
                 icon = {
                     Icon(
                         imageVector = Icons.Default.Inventory2,
                         contentDescription = "Objetos perdidos",
-                        tint = if (selectedTab == 3) BrandBlue else TextMuted
+                        tint = if (selectedTab == lostObjectsTabIndex) BrandBlue else TextMuted
                     )
                 },
                 label = "Obj. perdidos",
-                isSelected = selectedTab == 3,
-                onClick = { onTabSelected(3) }
+                isSelected = selectedTab == lostObjectsTabIndex,
+                onClick = { onTabSelected(lostObjectsTabIndex) }
             )
 
-            // Tab 4: Más
+            // Tab Más (índice 4 con mensajes, índice 3 sin mensajes)
+            val moreTabIndex = if (showMessagesTab) 4 else 3
             BottomNavItem(
                 modifier = Modifier.weight(1f),
                 icon = {
                     Icon(
                         imageVector = Icons.Default.MoreHoriz,
                         contentDescription = "Más",
-                        tint = if (selectedTab == 4) BrandBlue else TextMuted
+                        tint = if (selectedTab == moreTabIndex) BrandBlue else TextMuted
                     )
                 },
                 label = "Más",
-                isSelected = selectedTab == 4,
-                onClick = { onTabSelected(4) }
+                isSelected = selectedTab == moreTabIndex,
+                onClick = { onTabSelected(moreTabIndex) }
             )
         }
     }

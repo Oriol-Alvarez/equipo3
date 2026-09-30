@@ -48,6 +48,15 @@ class AppViewModelFactory(
             modelClass.isAssignableFrom(ChildDetailViewModel::class.java) -> {
                 ChildDetailViewModel(appContainer.childRepository) as T
             }
+            modelClass.isAssignableFrom(ParentChildSelectionViewModel::class.java) -> {
+                ParentChildSelectionViewModel(appContainer.childRepository) as T
+            }
+            modelClass.isAssignableFrom(ParentHomeViewModel::class.java) -> {
+                ParentHomeViewModel(appContainer.childRepository) as T
+            }
+            modelClass.isAssignableFrom(ParentSuggestionsViewModel::class.java) -> {
+                ParentSuggestionsViewModel(appContainer.suggestionsRepository) as T
+            }
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }

@@ -396,20 +396,13 @@ fun WeeklySummaryContent(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "Resumen Automático Semanal",
+                                text = "Resumen Semanal",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = BrandBlue
                             )
                         }
                     }
-
-                    Text(
-                        text = "Semanal",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextSecondary
-                    )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))

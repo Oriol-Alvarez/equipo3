@@ -13,14 +13,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.etapa1.ui.components.AppBottomBar
 import com.example.etapa1.model.Announcement
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.Room
+import com.example.etapa1.model.UserRole
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.etapa1.SonrisasApplication
@@ -34,6 +40,9 @@ import com.example.etapa1.ui.state.LoginViewModel
 import com.example.etapa1.ui.state.LostObjectsViewModel
 import com.example.etapa1.ui.state.MessagesViewModel
 import com.example.etapa1.ui.state.NewActivityViewModel
+import com.example.etapa1.ui.state.ParentChildSelectionViewModel
+import com.example.etapa1.ui.state.ParentHomeViewModel
+import com.example.etapa1.ui.state.ParentSuggestionsViewModel
 import com.example.etapa1.ui.state.PublishLostObjectViewModel
 import com.example.etapa1.ui.state.RoomDashboardViewModel
 import com.example.etapa1.ui.state.RoomSelectionViewModel
@@ -47,6 +56,9 @@ import com.example.etapa1.ui.screens.LostObjectsCatalogScreen
 import com.example.etapa1.ui.screens.MessagesScreen
 import com.example.etapa1.ui.screens.MoreMenuScreen
 import com.example.etapa1.ui.screens.NewActivityScreen
+import com.example.etapa1.ui.screens.ParentChildSelectionScreen
+import com.example.etapa1.ui.screens.ParentHomeScreen
+import com.example.etapa1.ui.screens.ParentSuggestionsScreen
 import com.example.etapa1.ui.screens.PublishLostObjectScreen
 import com.example.etapa1.ui.screens.RoomDashboardScreen
 import com.example.etapa1.ui.screens.RoomSelectionScreen
@@ -67,6 +79,9 @@ sealed interface Screen {
     data class PublishLostObject(val roomName: String = "Sala 1A") : Screen
     data class Attendance(val room: Room, val initialChild: Child? = null) : Screen
     data object Announcements : Screen
+    data object ParentChildSelection : Screen
+    data class ParentHome(val child: Child) : Screen
+    data object ParentSuggestions : Screen
 }
 
 @Composable
@@ -87,6 +102,13 @@ fun SonrisasApp() {
     val publishLostObjectViewModel: PublishLostObjectViewModel = viewModel(factory = viewModelFactory)
     val suggestionsViewModel: SuggestionsViewModel = viewModel(factory = viewModelFactory)
     val messagesViewModel: MessagesViewModel = viewModel(factory = viewModelFactory)
+    val parentChildSelectionViewModel: ParentChildSelectionViewModel = viewModel(factory = viewModelFactory)
+    val parentHomeViewModel: ParentHomeViewModel = viewModel(factory = viewModelFactory)
+    val parentSuggestionsViewModel: ParentSuggestionsViewModel = viewModel(factory = viewModelFactory)
+
+    val currentRole by container.authRepository.currentUserRole.collectAsState()
+    val isFamiliar = currentRole == UserRole.FAMILIAR
+    var selectedParentChild by remember { mutableStateOf<Child?>(MockDataRepository.mateoGarcia) }
 
     val backStack = remember { mutableStateListOf<Screen>(Screen.Login) }
     val currentScreen = backStack.lastOrNull() ?: Screen.Login
@@ -104,18 +126,52 @@ fun SonrisasApp() {
 
     val showBottomBar = currentScreen is Screen.RoomSelection ||
             currentScreen is Screen.RoomDashboard ||
+            currentScreen is Screen.ParentChildSelection ||
+            currentScreen is Screen.ParentHome ||
             currentScreen is Screen.Messages ||
             currentScreen is Screen.Suggestions ||
+            currentScreen is Screen.ParentSuggestions ||
             currentScreen is Screen.LostObjectsCatalog ||
             currentScreen is Screen.MoreMenu
 
-    val selectedBottomTab = when (currentScreen) {
-        is Screen.RoomSelection, is Screen.RoomDashboard -> 0
-        is Screen.Messages -> 1
-        is Screen.Suggestions -> 2
-        is Screen.LostObjectsCatalog -> 3
-        is Screen.MoreMenu -> 4
-        else -> 0
+    val showMessagesTab = !isFamiliar
+
+    val selectedBottomTab = if (isFamiliar) {
+        when (currentScreen) {
+            is Screen.ParentChildSelection, is Screen.ParentHome -> 0
+            is Screen.ParentSuggestions -> 1
+            is Screen.LostObjectsCatalog -> 2
+            is Screen.MoreMenu -> 3
+            else -> 0
+        }
+    } else {
+        when (currentScreen) {
+            is Screen.RoomSelection, is Screen.RoomDashboard -> 0
+            is Screen.Messages -> 1
+            is Screen.Suggestions -> 2
+            is Screen.LostObjectsCatalog -> 3
+            is Screen.MoreMenu -> 4
+            else -> 0
+        }
+    }
+
+    val navigateToHome: () -> Unit = {
+        if (isFamiliar) {
+            val targetHome = if (selectedParentChild != null) Screen.ParentHome(selectedParentChild!!) else Screen.ParentChildSelection
+            while (backStack.size > 1 && backStack.last() !is Screen.ParentHome && backStack.last() !is Screen.ParentChildSelection) {
+                backStack.removeAt(backStack.lastIndex)
+            }
+            if (backStack.none { it is Screen.ParentHome || it is Screen.ParentChildSelection }) {
+                backStack.add(targetHome)
+            }
+        } else {
+            while (backStack.size > 1 && backStack.last() !is Screen.RoomSelection) {
+                backStack.removeAt(backStack.lastIndex)
+            }
+            if (backStack.none { it is Screen.RoomSelection }) {
+                backStack.add(Screen.RoomSelection)
+            }
+        }
     }
 
     Scaffold(
@@ -124,38 +180,72 @@ fun SonrisasApp() {
             if (showBottomBar) {
                 AppBottomBar(
                     selectedTab = selectedBottomTab,
+                    showMessagesTab = showMessagesTab,
                     onTabSelected = { tab ->
-                        when (tab) {
-                            0 -> {
-                                if (currentScreen !is Screen.RoomSelection && currentScreen !is Screen.RoomDashboard) {
-                                    val lastHomeIndex = backStack.indexOfLast { it is Screen.RoomDashboard || it is Screen.RoomSelection }
-                                    if (lastHomeIndex >= 0) {
-                                        while (backStack.size > lastHomeIndex + 1) {
-                                            backStack.removeAt(backStack.lastIndex)
+                        if (isFamiliar) {
+                            when (tab) {
+                                0 -> {
+                                    val targetChild = selectedParentChild ?: MockDataRepository.mateoGarcia
+                                    if (currentScreen !is Screen.ParentHome && currentScreen !is Screen.ParentChildSelection) {
+                                        val lastHomeIndex = backStack.indexOfLast { it is Screen.ParentHome || it is Screen.ParentChildSelection }
+                                        if (lastHomeIndex >= 0) {
+                                            while (backStack.size > lastHomeIndex + 1) {
+                                                backStack.removeAt(backStack.lastIndex)
+                                            }
+                                        } else {
+                                            backStack.add(Screen.ParentHome(targetChild))
                                         }
-                                    } else {
-                                        backStack.add(Screen.RoomSelection)
+                                    }
+                                }
+                                1 -> {
+                                    if (currentScreen !is Screen.ParentSuggestions) {
+                                        backStack.add(Screen.ParentSuggestions)
+                                    }
+                                }
+                                2 -> {
+                                    if (currentScreen !is Screen.LostObjectsCatalog) {
+                                        backStack.add(Screen.LostObjectsCatalog)
+                                    }
+                                }
+                                3 -> {
+                                    if (currentScreen !is Screen.MoreMenu) {
+                                        backStack.add(Screen.MoreMenu)
                                     }
                                 }
                             }
-                            1 -> {
-                                if (currentScreen !is Screen.Messages) {
-                                    backStack.add(Screen.Messages)
+                        } else {
+                            when (tab) {
+                                0 -> {
+                                    if (currentScreen !is Screen.RoomSelection && currentScreen !is Screen.RoomDashboard) {
+                                        val lastHomeIndex = backStack.indexOfLast { it is Screen.RoomDashboard || it is Screen.RoomSelection }
+                                        if (lastHomeIndex >= 0) {
+                                            while (backStack.size > lastHomeIndex + 1) {
+                                                backStack.removeAt(backStack.lastIndex)
+                                            }
+                                        } else {
+                                            backStack.add(Screen.RoomSelection)
+                                        }
+                                    }
                                 }
-                            }
-                            2 -> {
-                                if (currentScreen !is Screen.Suggestions) {
-                                    backStack.add(Screen.Suggestions)
+                                1 -> {
+                                    if (currentScreen !is Screen.Messages) {
+                                        backStack.add(Screen.Messages)
+                                    }
                                 }
-                            }
-                            3 -> {
-                                if (currentScreen !is Screen.LostObjectsCatalog) {
-                                    backStack.add(Screen.LostObjectsCatalog)
+                                2 -> {
+                                    if (currentScreen !is Screen.Suggestions) {
+                                        backStack.add(Screen.Suggestions)
+                                    }
                                 }
-                            }
-                            4 -> {
-                                if (currentScreen !is Screen.MoreMenu) {
-                                    backStack.add(Screen.MoreMenu)
+                                3 -> {
+                                    if (currentScreen !is Screen.LostObjectsCatalog) {
+                                        backStack.add(Screen.LostObjectsCatalog)
+                                    }
+                                }
+                                4 -> {
+                                    if (currentScreen !is Screen.MoreMenu) {
+                                        backStack.add(Screen.MoreMenu)
+                                    }
                                 }
                             }
                         }
@@ -183,7 +273,11 @@ fun SonrisasApp() {
                     LoginScreen(
                         viewModel = loginViewModel,
                         onLoginSuccess = { role ->
-                            backStack.add(Screen.RoomSelection)
+                            if (role == UserRole.FAMILIAR) {
+                                backStack.add(Screen.ParentChildSelection)
+                            } else {
+                                backStack.add(Screen.RoomSelection)
+                            }
                         }
                     )
                 }
@@ -261,6 +355,7 @@ fun SonrisasApp() {
                     ChatBitacoraScreen(
                         viewModel = chatBitacoraViewModel,
                         child = screen.child,
+                        isWorkerRole = !isFamiliar,
                         onBack = {
                             if (backStack.size > 1) {
                                 backStack.removeAt(backStack.lastIndex)
@@ -299,14 +394,7 @@ fun SonrisasApp() {
                 is Screen.Messages -> {
                     MessagesScreen(
                         viewModel = messagesViewModel,
-                        onNavigateToHome = {
-                            while (backStack.size > 1 && backStack.last() !is Screen.RoomSelection) {
-                                backStack.removeAt(backStack.lastIndex)
-                            }
-                            if (backStack.none { it is Screen.RoomSelection }) {
-                                backStack.add(Screen.RoomSelection)
-                            }
-                        },
+                        onNavigateToHome = navigateToHome,
                         onNavigateToChildChat = { selectedChild ->
                             backStack.add(Screen.ChatBitacora(selectedChild))
                         },
@@ -319,14 +407,7 @@ fun SonrisasApp() {
                 is Screen.Suggestions -> {
                     SuggestionsScreen(
                         viewModel = suggestionsViewModel,
-                        onNavigateToHome = {
-                            while (backStack.size > 1 && backStack.last() !is Screen.RoomSelection) {
-                                backStack.removeAt(backStack.lastIndex)
-                            }
-                            if (backStack.none { it is Screen.RoomSelection }) {
-                                backStack.add(Screen.RoomSelection)
-                            }
-                        }
+                        onNavigateToHome = navigateToHome
                     )
                 }
 
@@ -335,16 +416,14 @@ fun SonrisasApp() {
                         onNavigateToLostObjects = {
                             backStack.add(Screen.LostObjectsCatalog)
                         },
-                        onNavigateToHome = {
-                            while (backStack.size > 1 && backStack.last() !is Screen.RoomSelection) {
-                                backStack.removeAt(backStack.lastIndex)
-                            }
-                            if (backStack.none { it is Screen.RoomSelection }) {
-                                backStack.add(Screen.RoomSelection)
-                            }
-                        },
+                        onNavigateToHome = navigateToHome,
                         onNavigateToMessages = {
-                            backStack.add(Screen.Messages)
+                            if (isFamiliar) {
+                                val targetChild = selectedParentChild ?: MockDataRepository.mateoGarcia
+                                backStack.add(Screen.ChatBitacora(targetChild))
+                            } else {
+                                backStack.add(Screen.Messages)
+                            }
                         },
                         onLogout = {
                             container.authRepository.logout()
@@ -365,16 +444,14 @@ fun SonrisasApp() {
                         onNavigateToPublish = {
                             backStack.add(Screen.PublishLostObject("Sala 1A"))
                         },
-                        onNavigateToHome = {
-                            while (backStack.size > 1 && backStack.last() !is Screen.RoomSelection) {
-                                backStack.removeAt(backStack.lastIndex)
-                            }
-                            if (backStack.none { it is Screen.RoomSelection }) {
-                                backStack.add(Screen.RoomSelection)
-                            }
-                        },
+                        onNavigateToHome = navigateToHome,
                         onNavigateToMessages = {
-                            backStack.add(Screen.Messages)
+                            if (isFamiliar) {
+                                val targetChild = selectedParentChild ?: MockDataRepository.mateoGarcia
+                                backStack.add(Screen.ChatBitacora(targetChild))
+                            } else {
+                                backStack.add(Screen.Messages)
+                            }
                         }
                     )
                 }
@@ -412,6 +489,53 @@ fun SonrisasApp() {
                 is Screen.Announcements -> {
                     AnnouncementsScreen(
                         announcements = announcementsState,
+                        onBack = {
+                            if (backStack.size > 1) {
+                                backStack.removeAt(backStack.lastIndex)
+                            }
+                        }
+                    )
+                }
+
+                is Screen.ParentChildSelection -> {
+                    ParentChildSelectionScreen(
+                        viewModel = parentChildSelectionViewModel,
+                        unreadAnnouncementsCount = announcementsState.count { it.isUnread },
+                        onChildSelected = { child ->
+                            selectedParentChild = child
+                            backStack.add(Screen.ParentHome(child))
+                        },
+                        onNavigateToAnnouncements = {
+                            backStack.add(Screen.Announcements)
+                        }
+                    )
+                }
+
+                is Screen.ParentHome -> {
+                    LaunchedEffect(screen.child.id) {
+                        parentHomeViewModel.selectChild(screen.child)
+                    }
+                    ParentHomeScreen(
+                        viewModel = parentHomeViewModel,
+                        unreadAnnouncementsCount = announcementsState.count { it.isUnread },
+                        onNavigateToChat = { child ->
+                            backStack.add(Screen.ChatBitacora(child))
+                        },
+                        onNavigateToChildDetail = { child ->
+                            backStack.add(Screen.ChildDetail(child))
+                        },
+                        onNavigateToAnnouncements = {
+                            backStack.add(Screen.Announcements)
+                        },
+                        onSwitchChild = {
+                            backStack.add(Screen.ParentChildSelection)
+                        }
+                    )
+                }
+
+                is Screen.ParentSuggestions -> {
+                    ParentSuggestionsScreen(
+                        viewModel = parentSuggestionsViewModel,
                         onBack = {
                             if (backStack.size > 1) {
                                 backStack.removeAt(backStack.lastIndex)

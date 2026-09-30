@@ -100,6 +100,7 @@ import com.example.etapa1.ui.state.ChatBitacoraViewModel
 fun ChatBitacoraScreen(
     viewModel: ChatBitacoraViewModel,
     child: Child,
+    isWorkerRole: Boolean = true,
     onBack: () -> Unit,
     onChildInfoClick: () -> Unit = {},
     onNewActivityClick: () -> Unit,
@@ -110,6 +111,7 @@ fun ChatBitacoraScreen(
     ChatBitacoraScreen(
         child = child,
         timelineItems = timelineItems,
+        isWorkerRole = isWorkerRole,
         onBack = onBack,
         onChildInfoClick = onChildInfoClick,
         onNewActivityClick = onNewActivityClick,
@@ -124,6 +126,7 @@ fun ChatBitacoraScreen(
 fun ChatBitacoraScreen(
     child: Child,
     timelineItems: List<TimelineItem>,
+    isWorkerRole: Boolean = true,
     onBack: () -> Unit,
     onChildInfoClick: () -> Unit = {},
     onNewActivityClick: () -> Unit,
@@ -177,20 +180,22 @@ fun ChatBitacoraScreen(
     Scaffold(
         containerColor = AppBackground,
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNewActivityClick,
-                containerColor = BrandBlue,
-                contentColor = Color.White,
-                shape = CircleShape,
-                modifier = Modifier
-                    .size(52.dp)
-                    .padding(bottom = 4.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Nueva Actividad",
-                    modifier = Modifier.size(26.dp)
-                )
+            if (isWorkerRole) {
+                FloatingActionButton(
+                    onClick = onNewActivityClick,
+                    containerColor = BrandBlue,
+                    contentColor = Color.White,
+                    shape = CircleShape,
+                    modifier = Modifier
+                        .size(52.dp)
+                        .padding(bottom = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Nueva Actividad",
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
             }
         },
         bottomBar = {
@@ -394,13 +399,15 @@ fun ChatBitacoraScreen(
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = onAttendanceClick) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.FactCheck,
-                                contentDescription = "Pasar Asistencia",
-                                tint = BrandBlue,
-                                modifier = Modifier.size(22.dp)
-                            )
+                        if (isWorkerRole) {
+                            IconButton(onClick = onAttendanceClick) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.FactCheck,
+                                    contentDescription = "Pasar Asistencia",
+                                    tint = BrandBlue,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
                         }
                         IconButton(onClick = { showCallDialog = true }) {
                             Icon(
