@@ -47,6 +47,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -65,10 +66,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.etapa1.model.Child
+import com.example.etapa1.model.ChildFullProfile
+import com.example.etapa1.model.DailyBitacora
 import com.example.etapa1.model.MockDataRepository
+import com.example.etapa1.model.WeeklySummary
 import com.example.etapa1.ui.components.ChildAvatar
 import com.example.etapa1.ui.components.ChildFullDataContent
 import com.example.etapa1.ui.components.DailyBitacoraContent
+import com.example.etapa1.ui.components.EditChildProfileDialog
 import com.example.etapa1.ui.components.MedicalAlertBanner
 import com.example.etapa1.ui.components.WeeklySummaryContent
 import com.example.etapa1.ui.state.ParentHomeViewModel
@@ -99,12 +104,29 @@ fun ParentHomeScreen(
     ParentHomeScreen(
         child = uiState.selectedChild,
         allChildren = uiState.allChildren,
+        fullProfile = uiState.fullProfile,
+        dailyBitacoras = uiState.dailyBitacoras,
+        weeklySummaries = uiState.weeklySummaries,
+        weeklySummary = uiState.weeklySummary,
         unreadAnnouncementsCount = unreadAnnouncementsCount,
         onNavigateToChat = { onNavigateToChat(uiState.selectedChild) },
         onNavigateToChildDetail = { onNavigateToChildDetail(uiState.selectedChild) },
         onNavigateToAnnouncements = onNavigateToAnnouncements,
         onSwitchChild = onSwitchChild,
-        onSelectChild = { child -> viewModel.selectChild(child) }
+        onSelectChild = { child -> viewModel.selectChild(child) },
+        onUpdateProfile = { ped, pedPhone, medNotes, habits, emergPhone, pickups, uri, certName, certDate ->
+            viewModel.updateChildProfile(
+                pediatrician = ped,
+                pediatricianPhone = pedPhone,
+                medicalNotes = medNotes,
+                habitsAndPedagogicalNotes = habits,
+                emergencyPhone = emergPhone,
+                authorizedPickups = pickups,
+                medicalCertificateUri = uri,
+                medicalCertificateName = certName,
+                medicalCertificateDate = certDate
+            )
+        }
     )
 }
 
@@ -112,19 +134,38 @@ fun ParentHomeScreen(
 fun ParentHomeScreen(
     child: Child = MockDataRepository.mateoGarcia,
     allChildren: List<Child> = MockDataRepository.parentChildren,
+    fullProfile: ChildFullProfile = MockDataRepository.getChildFullProfile(child),
+    dailyBitacoras: List<DailyBitacora> = MockDataRepository.getDailyBitacorasForChild(child),
+    weeklySummaries: List<WeeklySummary> = MockDataRepository.getWeeklySummariesForChild(child),
+    weeklySummary: WeeklySummary = MockDataRepository.getWeeklySummaryForChild(child),
     unreadAnnouncementsCount: Int = 0,
     onNavigateToChat: () -> Unit = {},
     onNavigateToChildDetail: () -> Unit = {},
     onNavigateToAnnouncements: () -> Unit = {},
     onSwitchChild: () -> Unit = {},
-    onSelectChild: (Child) -> Unit = {}
+    onSelectChild: (Child) -> Unit = {},
+    onUpdateProfile: (
+        pediatrician: String,
+        pediatricianPhone: String,
+        medicalNotes: String,
+        habitsAndPedagogicalNotes: String,
+        emergencyPhone: String,
+        authorizedPickups: List<String>,
+        medicalCertificateUri: String?,
+        medicalCertificateName: String?,
+        medicalCertificateDate: String?
+    ) -> Unit = { _, _, _, _, _, _, _, _, _ -> }
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) } // 0 = Hoy en Vivo, 1 = Historial Bitácora, 2 = Resumen Semanal, 3 = Ficha
-    val fullProfile = remember(child.id) { MockDataRepository.getChildFullProfile(child) }
-    val bitacoras = remember(child.id) { MockDataRepository.getDailyBitacorasForChild(child) }
+    var selectedTab by remember { mutableIntStateOf(0) } // 0 = Datos del Niño, 1 = Bitácora Diaria, 2 = Resumen Semanal
     var selectedDayIndex by remember { mutableIntStateOf(0) }
-    val weeklySummary = remember(child.id) { MockDataRepository.getWeeklySummaryForChild(child) }
+    var selectedWeekIndex by remember { mutableIntStateOf(0) }
+    var showEditDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
+
+    LaunchedEffect(child.id) {
+        selectedDayIndex = 0
+        selectedWeekIndex = 0
+    }
 
     Scaffold(
         containerColor = AppBackground,
@@ -399,19 +440,22 @@ fun ParentHomeScreen(
 
             // 4. Contenido según pestaña seleccionada
             item {
-                Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Box(modifier = Modifier.fillMaxWidth()) {
                     when (selectedTab) {
                         0 -> ChildFullDataContent(
                             child = child,
-                            fullProfile = fullProfile
+                            fullProfile = fullProfile,
+                            onEditClick = { showEditDialog = true }
                         )
                         1 -> DailyBitacoraContent(
-                            bitacoras = bitacoras,
+                            bitacoras = dailyBitacoras,
                             selectedDayIndex = selectedDayIndex,
                             onSelectDay = { index -> selectedDayIndex = index }
                         )
                         2 -> WeeklySummaryContent(
-                            summary = weeklySummary,
+                            summaries = weeklySummaries,
+                            selectedWeekIndex = selectedWeekIndex,
+                            onSelectWeek = { index -> selectedWeekIndex = index },
                             child = child
                         )
                     }
@@ -421,6 +465,28 @@ fun ParentHomeScreen(
             item {
                 Spacer(modifier = Modifier.height(24.dp))
             }
+        }
+
+        if (showEditDialog) {
+            EditChildProfileDialog(
+                child = child,
+                fullProfile = fullProfile,
+                onDismiss = { showEditDialog = false },
+                onSave = { ped, pedPhone, medNotes, habits, emergPhone, pickups, certUri, certName, certDate ->
+                    onUpdateProfile(
+                        ped,
+                        pedPhone,
+                        medNotes,
+                        habits,
+                        emergPhone,
+                        pickups,
+                        certUri,
+                        certName,
+                        certDate
+                    )
+                    showEditDialog = false
+                }
+            )
         }
     }
 }

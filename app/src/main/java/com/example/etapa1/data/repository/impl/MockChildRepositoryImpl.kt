@@ -37,11 +37,23 @@ class MockChildRepositoryImpl : ChildRepository {
         }
     }
 
+    private val _childProfiles = mutableMapOf<String, ChildFullProfile>()
+
     override fun getChildFullProfile(child: Child): ChildFullProfile {
-        return MockDataRepository.getChildFullProfile(child)
+        return _childProfiles.getOrPut(child.id) {
+            MockDataRepository.getChildFullProfile(child)
+        }
+    }
+
+    override fun updateChildFullProfile(childId: String, profile: ChildFullProfile) {
+        _childProfiles[childId] = profile
     }
 
     override fun getWeeklySummaryForChild(child: Child): WeeklySummary {
         return MockDataRepository.getWeeklySummaryForChild(child)
+    }
+
+    override fun getWeeklySummariesForChild(child: Child): List<WeeklySummary> {
+        return MockDataRepository.getWeeklySummariesForChild(child)
     }
 }

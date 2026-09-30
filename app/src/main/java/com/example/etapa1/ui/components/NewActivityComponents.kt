@@ -270,22 +270,6 @@ fun DescansoSectionContent(
         title = "Descanso",
         icon = Icons.Default.NightlightRound
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "¿La niña o el niño durmió?",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                color = TextPrimary
-            )
-            YesNoSegmentSelector(
-                selected = durmio,
-                onSelect = onDurmioChange
-            )
-        }
 
         AnimatedVisibility(visible = durmio) {
             Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
@@ -582,60 +566,43 @@ fun AccidentesSectionContent(
         title = "Accidentes",
         icon = Icons.Default.WarningAmber
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "¿La niña o el niño tuvo algún accidente?",
-                fontSize = 12.5.sp,
-                fontWeight = FontWeight.Medium,
-                color = TextPrimary,
-                modifier = Modifier.weight(1f)
+
+
+        Column(modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
+            OutlinedTextField(
+                value = descripcion,
+                onValueChange = onDescripcionChange,
+                label = { Text("Descripción breve del accidente", fontSize = 12.sp) },
+                placeholder = { Text("Ej. Raspón leve en la rodilla izquierda jugando...", fontSize = 12.sp) },
+                modifier = Modifier.fillMaxWidth().height(86.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = AppBackground,
+                    unfocusedContainerColor = AppBackground,
+                    focusedBorderColor = AlertRed,
+                    unfocusedBorderColor = BorderSubtle
+                )
             )
-            YesNoSegmentSelector(
-                selected = tuvoAccidente,
-                onSelect = onTuvoAccidenteChange
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            OutlinedTextField(
+                value = folio,
+                onValueChange = onFolioChange,
+                label = { Text("Folio de reporte de accidentes", fontSize = 12.sp) },
+                placeholder = { Text("Ej. ACC-2026-089", fontSize = 12.sp) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = AppBackground,
+                    unfocusedContainerColor = AppBackground,
+                    focusedBorderColor = BrandBlue,
+                    unfocusedBorderColor = BorderSubtle
+                )
             )
         }
 
-        AnimatedVisibility(visible = tuvoAccidente) {
-            Column(modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
-                OutlinedTextField(
-                    value = descripcion,
-                    onValueChange = onDescripcionChange,
-                    label = { Text("Descripción breve del accidente", fontSize = 12.sp) },
-                    placeholder = { Text("Ej. Raspón leve en la rodilla izquierda jugando...", fontSize = 12.sp) },
-                    modifier = Modifier.fillMaxWidth().height(86.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = AppBackground,
-                        unfocusedContainerColor = AppBackground,
-                        focusedBorderColor = AlertRed,
-                        unfocusedBorderColor = BorderSubtle
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                OutlinedTextField(
-                    value = folio,
-                    onValueChange = onFolioChange,
-                    label = { Text("Folio de reporte de accidentes", fontSize = 12.sp) },
-                    placeholder = { Text("Ej. ACC-2026-089", fontSize = 12.sp) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = AppBackground,
-                        unfocusedContainerColor = AppBackground,
-                        focusedBorderColor = BrandBlue,
-                        unfocusedBorderColor = BorderSubtle
-                    )
-                )
-            }
-        }
     }
 }
 
@@ -657,60 +624,44 @@ fun SaludSectionContent(
         title = "Salud",
         icon = Icons.Default.LocalHospital
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "¿Presentó algún problema de salud?",
-                fontSize = 12.5.sp,
-                fontWeight = FontWeight.Medium,
-                color = TextPrimary,
-                modifier = Modifier.weight(1f)
+
+
+
+        Column(modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
+            OutlinedTextField(
+                value = cualProblema,
+                onValueChange = onCualProblemaChange,
+                label = { Text("¿Cuál?", fontSize = 12.sp) },
+                placeholder = { Text("Fiebre 37.8°C, vómito, cólico...", fontSize = 12.sp) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = AppBackground,
+                    unfocusedContainerColor = AppBackground,
+                    focusedBorderColor = BrandBlue,
+                    unfocusedBorderColor = BorderSubtle
+                )
             )
-            YesNoSegmentSelector(
-                selected = presentoProblema,
-                onSelect = onPresentoProblemaChange
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            OutlinedTextField(
+                value = atencionProporcionada,
+                onValueChange = onAtencionProporcionadaChange,
+                label = { Text("Atención proporcionada", fontSize = 12.sp) },
+                placeholder = { Text("Toma de temperatura, aviso a padres, reposo...", fontSize = 12.sp) },
+                modifier = Modifier.fillMaxWidth().height(86.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = AppBackground,
+                    unfocusedContainerColor = AppBackground,
+                    focusedBorderColor = BrandBlue,
+                    unfocusedBorderColor = BorderSubtle
+                )
             )
         }
 
-        AnimatedVisibility(visible = presentoProblema) {
-            Column(modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
-                OutlinedTextField(
-                    value = cualProblema,
-                    onValueChange = onCualProblemaChange,
-                    label = { Text("¿Cuál?", fontSize = 12.sp) },
-                    placeholder = { Text("Fiebre 37.8°C, vómito, cólico...", fontSize = 12.sp) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = AppBackground,
-                        unfocusedContainerColor = AppBackground,
-                        focusedBorderColor = BrandBlue,
-                        unfocusedBorderColor = BorderSubtle
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                OutlinedTextField(
-                    value = atencionProporcionada,
-                    onValueChange = onAtencionProporcionadaChange,
-                    label = { Text("Atención proporcionada", fontSize = 12.sp) },
-                    placeholder = { Text("Toma de temperatura, aviso a padres, reposo...", fontSize = 12.sp) },
-                    modifier = Modifier.fillMaxWidth().height(86.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = AppBackground,
-                        unfocusedContainerColor = AppBackground,
-                        focusedBorderColor = BrandBlue,
-                        unfocusedBorderColor = BorderSubtle
-                    )
-                )
-            }
-        }
 
         Spacer(modifier = Modifier.height(12.dp))
 

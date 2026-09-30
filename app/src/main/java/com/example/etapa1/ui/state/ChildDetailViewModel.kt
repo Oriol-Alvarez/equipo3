@@ -16,4 +16,8 @@ class ChildDetailViewModel(
     fun getWeeklySummary(child: Child): WeeklySummary {
         return childRepository.getWeeklySummaryForChild(child)
     }
+
+    fun getWeeklySummaries(child: Child): List<WeeklySummary> {
+        return childRepository.getWeeklySummariesForChild(child)
+    }
 }

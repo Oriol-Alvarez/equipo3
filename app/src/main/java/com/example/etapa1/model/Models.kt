@@ -637,15 +637,16 @@ object MockDataRepository {
         )
     }
 
-    fun getWeeklySummaryForChild(child: Child): WeeklySummary {
+    fun getWeeklySummariesForChild(child: Child): List<WeeklySummary> {
         val allergyText = if (child.allergyAlert != null) {
             "Protocolo estricto para ${child.allergyAlert}. Menú especial de cocina cumplido al 100% sin ninguna reacción adversa durante la semana."
         } else {
             "Sin incidentes de salud ni alergias registradas. Temperatura y estado físico óptimos en todas las jornadas."
         }
 
-        return WeeklySummary(
-            weekRangeText = "Semana del 22 al 29 de Septiembre, 2026",
+        val currentWeek = WeeklySummary(
+            weekLabel = "Semana actual",
+            weekRangeText = "Semana del 22 al 26 de Septiembre, 2026",
             attendanceDaysCount = if (child.isPresent) 5 else 4,
             totalSchoolDays = 5,
             attendancePercentageText = if (child.isPresent) "100%" else "80%",
@@ -668,6 +669,88 @@ object MockDataRepository {
             ),
             healthAndSafetySummary = allergyText
         )
+
+        val previousWeek1 = WeeklySummary(
+            weekLabel = "15 - 19 Sep",
+            weekRangeText = "Semana del 15 al 19 de Septiembre, 2026",
+            attendanceDaysCount = 5,
+            totalSchoolDays = 5,
+            attendancePercentageText = "100%",
+            averageArrivalTime = "08:25 AM",
+            foodIntakePercentage = "88%",
+            totalNapHours = "5h 45m",
+            averageNapDaily = "1h 09m/día",
+            moodSummary = "Curioso y alegre",
+            executiveSummary = "Durante la semana del 15 al 19 de septiembre, ${child.fullName} consolidó su integración al grupo. Mostró mucho entusiasmo en el taller de psicomotricidad gruesa y gateo/marcha, y participó con gran alegría en la asamblea de música. La relación con sus compañeros fue muy armónica.",
+            foodHighlights = listOf(
+                "Probó frutas de temporada en la merienda (plátano y compota de manzana con canela).",
+                "Buen manejo del vaso de aprendizaje sin apenas derrames.",
+                "Terminó por completo la ración de arroz con verduras y pavo."
+            ),
+            napHighlights = "Siestas regulares tras el almuerzo de 1h y 10m en promedio. Descanso profundo y sin despertares bruscos.",
+            pedagogicalHighlights = listOf(
+                "Circuito de psicomotricidad con colchonetas, rampa y túnel blando.",
+                "Cuentacuentos participativo sobre animales de la granja y onomatopeyas.",
+                "Iniciación al orden: ayuda entusiasmado a guardar los juguetes en sus cajas."
+            ),
+            healthAndSafetySummary = if (child.allergyAlert != null) "Control de ${child.allergyAlert} cumplido sin incidencias." else "Salud excelente, sin cuadros febriles ni síntomas."
+        )
+
+        val previousWeek2 = WeeklySummary(
+            weekLabel = "8 - 12 Sep",
+            weekRangeText = "Semana del 8 al 12 de Septiembre, 2026",
+            attendanceDaysCount = 4,
+            totalSchoolDays = 5,
+            attendancePercentageText = "80%",
+            averageArrivalTime = "08:35 AM",
+            foodIntakePercentage = "84%",
+            totalNapHours = "5h 15m",
+            averageNapDaily = "1h 18m/día",
+            moodSummary = "Adaptación progresiva",
+            executiveSummary = "Semana de reingreso y adaptación al ritmo escolar. ${child.fullName} tuvo momentos iniciales de apego a la llegada el lunes, pero se tranquilizó rápidamente con los juegos de encaje y el afecto de las educadoras.",
+            foodHighlights = listOf(
+                "Comió muy bien purés y papillas; algo más selectivo con el pescado blanco.",
+                "Buena hidratación ofrecida a lo largo de toda la jornada."
+            ),
+            napHighlights = "Le costó conciliar el sueño el primer día, pero a partir del miércoles durmió profundamente con su mantita.",
+            pedagogicalHighlights = listOf(
+                "Juegos de integración y bienvenida con canciones y títeres.",
+                "Estimulación táctil con telas de diferentes texturas y pelotas sensoriales.",
+                "Pintura con esponjas y témperas al agua hipoalergénicas."
+            ),
+            healthAndSafetySummary = "Una jornada de ausencia justificada por revisión pediátrica programada."
+        )
+
+        val previousWeek3 = WeeklySummary(
+            weekLabel = "1 - 5 Sep",
+            weekRangeText = "Semana del 1 al 5 de Septiembre, 2026",
+            attendanceDaysCount = 5,
+            totalSchoolDays = 5,
+            attendancePercentageText = "100%",
+            averageArrivalTime = "08:30 AM",
+            foodIntakePercentage = "86%",
+            totalNapHours = "5h 30m",
+            averageNapDaily = "1h 06m/día",
+            moodSummary = "Activo y comunicativo",
+            executiveSummary = "Comienzo del ciclo escolar. ${child.fullName} demostró una gran curiosidad explorando cada rincón del aula, familiarizándose con sus percheros y disfrutando del patio de juegos.",
+            foodHighlights = listOf(
+                "Excelente aceptación de compotas naturales y legumbres suaves.",
+                "Interés activo por usar la cuchara de forma autónoma."
+            ),
+            napHighlights = "Siestas en colchoneta individual con luz tenue y música relajante ambiental.",
+            pedagogicalHighlights = listOf(
+                "Conocimiento del aula y reconocimiento de su perchero y pertenencias.",
+                "Juegos de coordinación visomotora con bloques apilables.",
+                "Canciones infantiles de saludo y rutinas diarias."
+            ),
+            healthAndSafetySummary = "Ficha médica y cartilla de vacunación revisadas y archivadas en secretaría médica."
+        )
+
+        return listOf(currentWeek, previousWeek1, previousWeek2, previousWeek3)
+    }
+
+    fun getWeeklySummaryForChild(child: Child): WeeklySummary {
+        return getWeeklySummariesForChild(child).first()
     }
 
     val staffMembers = listOf(
@@ -1106,10 +1189,14 @@ data class ChildFullProfile(
     val fatherPhone: String = "+34 555 987 654",
     val authorizedPickups: List<String> = listOf("Rosa Fernández (Abuela)", "Elena García (Tía)"),
     val medicalNotes: String = "Vacunación al día. No presenta intolerancias alimentarias adicionales.",
-    val generalNotes: String = "Se adapta con facilidad a las rutinas de la sala. Duerme con su mantita en la siesta."
+    val generalNotes: String = "Se adapta con facilidad a las rutinas de la sala. Duerme con su mantita en la siesta.",
+    val medicalCertificateUri: String? = null,
+    val medicalCertificateName: String? = null,
+    val medicalCertificateDate: String? = null
 )
 
 data class WeeklySummary(
+    val weekLabel: String = "Semana actual",
     val weekRangeText: String = "Semana del 22 al 29 de Septiembre, 2026",
     val attendanceDaysCount: Int = 5,
     val totalSchoolDays: Int = 5,

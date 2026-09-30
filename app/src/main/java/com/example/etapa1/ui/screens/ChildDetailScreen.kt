@@ -76,8 +76,9 @@ fun ChildDetailScreen(
     var selectedTab by remember { mutableIntStateOf(0) } // 0 = Datos del Niño (Default), 1 = Bitácora Diaria, 2 = Resumen Semanal
     val bitacoras = remember(child.id) { MockDataRepository.getDailyBitacorasForChild(child) }
     var selectedDayIndex by remember { mutableIntStateOf(0) }
+    var selectedWeekIndex by remember { mutableIntStateOf(0) }
     val fullProfile = remember(child.id) { MockDataRepository.getChildFullProfile(child) }
-    val weeklySummary = remember(child.id) { MockDataRepository.getWeeklySummaryForChild(child) }
+    val weeklySummaries = remember(child.id) { MockDataRepository.getWeeklySummariesForChild(child) }
 
     Scaffold(
         containerColor = AppBackground,
@@ -231,7 +232,9 @@ fun ChildDetailScreen(
                 2 -> {
                     item {
                         WeeklySummaryContent(
-                            summary = weeklySummary,
+                            summaries = weeklySummaries,
+                            selectedWeekIndex = selectedWeekIndex,
+                            onSelectWeek = { selectedWeekIndex = it },
                             child = child
                         )
                     }

@@ -1,5 +1,6 @@
 package com.example.etapa1.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,6 +24,9 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.FamilyRestroom
 import androidx.compose.material.icons.filled.LocalHospital
@@ -131,7 +135,8 @@ fun ChildHeaderSummaryCard(
 @Composable
 fun ChildFullDataContent(
     child: Child,
-    fullProfile: ChildFullProfile
+    fullProfile: ChildFullProfile,
+    onEditClick: (() -> Unit)? = null
 ) {
     Column(
         modifier = Modifier
@@ -139,6 +144,66 @@ fun ChildFullDataContent(
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Botón Modificar Datos (si se permite edición, ej: vista de familiares)
+        if (onEditClick != null) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onEditClick() },
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = BrandBlue.copy(alpha = 0.08f)),
+                border = BorderStroke(1.dp, BrandBlue.copy(alpha = 0.25f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(BrandBlue),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Modificar datos",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "Modificar Ficha del Alumno",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = BrandBlue
+                            )
+                            Text(
+                                text = "Pediatra, observaciones, emergencias y autorizados",
+                                fontSize = 11.5.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = BrandBlue,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+
         // Card 1: Identificación y Matrícula
         SectionDetailCard(title = "Datos Personales y Escolares", icon = Icons.Default.Badge) {
             DetailRowItem(label = "Nombre completo", value = child.fullName)
@@ -215,6 +280,57 @@ fun ChildFullDataContent(
             DetailRowItem(label = "Grupo sanguíneo", value = fullProfile.bloodType)
             DetailRowItem(label = "Pediatra de referencia", value = "${fullProfile.pediatrician} (${fullProfile.pediatricianPhone})")
             DetailRowItem(label = "Observaciones médicas", value = fullProfile.medicalNotes)
+
+            if (!fullProfile.medicalCertificateName.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(BrandBlue.copy(alpha = 0.08f))
+                        .border(1.dp, BrandBlue.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
+                        .padding(10.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Description,
+                            contentDescription = null,
+                            tint = BrandBlue,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "Certificado Médico Oficial",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = BrandBlue
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = "Acreditado",
+                                    tint = StatusPresentGreen,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                            Text(
+                                text = fullProfile.medicalCertificateName,
+                                fontSize = 12.sp,
+                                color = TextPrimary
+                            )
+                            if (!fullProfile.medicalCertificateDate.isNullOrBlank()) {
+                                Text(
+                                    text = fullProfile.medicalCertificateDate,
+                                    fontSize = 11.sp,
+                                    color = TextSecondary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // Card 4: Observaciones Generales
@@ -358,191 +474,245 @@ fun DailyBitacoraContent(
 
 @Composable
 fun WeeklySummaryContent(
-    summary: WeeklySummary,
+    summaries: List<WeeklySummary>,
+    selectedWeekIndex: Int = 0,
+    onSelectWeek: (Int) -> Unit = {},
     child: Child
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Tarjeta Principal: Síntesis Automática Inteligente
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, BrandBlue.copy(alpha = 0.35f), RoundedCornerShape(14.dp)),
-            colors = CardDefaults.cardColors(containerColor = CardBackground),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+    val currentSummary = summaries.getOrNull(selectedWeekIndex) ?: summaries.firstOrNull()
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // Selector horizontal de semanas (igual que en Bitácora Diaria)
+        if (summaries.isNotEmpty()) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(BrandBlueContainer)
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.AutoAwesome,
-                                contentDescription = null,
-                                tint = BrandBlue,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
+                    itemsIndexed(summaries) { index, item ->
+                        val isSelected = index == selectedWeekIndex
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isSelected) BrandBlue else CardBackground)
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isSelected) BrandBlue else BorderSubtle,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .clickable { onSelectWeek(index) }
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text(
-                                text = "Resumen Semanal",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = BrandBlue
+                                text = item.weekLabel,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) Color.White else TextPrimary
                             )
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = summary.weekRangeText,
-                    fontSize = 12.sp,
-                    color = TextSecondary
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = summary.executiveSummary,
-                    fontSize = 13.sp,
-                    color = TextPrimary,
-                    lineHeight = 19.sp
-                )
             }
         }
 
-        // Métricas Rápidas en Cuadrícula (2x2)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            WeeklyMetricCard(
-                title = "Asistencia",
-                value = "${summary.attendanceDaysCount}/${summary.totalSchoolDays} días",
-                subtext = "${summary.attendancePercentageText} • Entrada ${summary.averageArrivalTime}",
-                icon = Icons.AutoMirrored.Filled.FactCheck,
-                color = StatusPresentGreen,
-                modifier = Modifier.weight(1f)
-            )
+        if (currentSummary != null) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Tarjeta Principal: Síntesis Automática Inteligente
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, BrandBlue.copy(alpha = 0.35f), RoundedCornerShape(14.dp)),
+                    colors = CardDefaults.cardColors(containerColor = CardBackground),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(BrandBlueContainer)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.AutoAwesome,
+                                        contentDescription = null,
+                                        tint = BrandBlue,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Resumen Semanal • ${currentSummary.weekLabel}",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = BrandBlue
+                                    )
+                                }
+                            }
+                        }
 
-            WeeklyMetricCard(
-                title = "Alimentación",
-                value = summary.foodIntakePercentage,
-                subtext = "Aceptación general",
-                icon = Icons.Default.Restaurant,
-                color = Color(0xFFE65100),
-                modifier = Modifier.weight(1f)
-            )
-        }
+                        Spacer(modifier = Modifier.height(8.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            WeeklyMetricCard(
-                title = "Descanso",
-                value = summary.totalNapHours,
-                subtext = "Prom. ${summary.averageNapDaily}",
-                icon = Icons.Default.NightlightRound,
-                color = Color(0xFF5E35B1),
-                modifier = Modifier.weight(1f)
-            )
-
-            WeeklyMetricCard(
-                title = "Estado General",
-                value = "Excelente",
-                subtext = summary.moodSummary,
-                icon = Icons.Default.Face,
-                color = Color(0xFF00897B),
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        // Alimentación y Hábitos de la Semana
-        SectionDetailCard(title = "Alimentación y Hábitos de la Semana", icon = Icons.Default.Restaurant) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                summary.foodHighlights.forEach { highlight ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.Top
-                    ) {
                         Text(
-                            text = "•",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = BrandBlue,
-                            modifier = Modifier.padding(end = 6.dp)
+                            text = currentSummary.weekRangeText,
+                            fontSize = 12.sp,
+                            color = TextSecondary
                         )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
                         Text(
-                            text = highlight,
+                            text = currentSummary.executiveSummary,
                             fontSize = 13.sp,
                             color = TextPrimary,
-                            lineHeight = 18.sp
+                            lineHeight = 19.sp
                         )
                     }
                 }
-            }
-        }
 
-        // Descanso y Siestas
-        SectionDetailCard(title = "Descanso y Sueño", icon = Icons.Default.NightlightRound) {
-            Text(
-                text = summary.napHighlights,
-                fontSize = 13.sp,
-                color = TextPrimary,
-                lineHeight = 18.sp
-            )
-        }
+                // Métricas Rápidas en Cuadrícula (2x2)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    WeeklyMetricCard(
+                        title = "Asistencia",
+                        value = "${currentSummary.attendanceDaysCount}/${currentSummary.totalSchoolDays} días",
+                        subtext = "${currentSummary.attendancePercentageText} • Entrada ${currentSummary.averageArrivalTime}",
+                        icon = Icons.AutoMirrored.Filled.FactCheck,
+                        color = StatusPresentGreen,
+                        modifier = Modifier.weight(1f)
+                    )
 
-        // Hitos y Actividades Pedagógicas
-        SectionDetailCard(title = "Actividades Pedagógicas y Aprendizaje", icon = Icons.Default.Star) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                summary.pedagogicalHighlights.forEach { highlight ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        Text(
-                            text = "✓",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = StatusPresentGreen,
-                            modifier = Modifier.padding(end = 6.dp)
-                        )
-                        Text(
-                            text = highlight,
-                            fontSize = 13.sp,
-                            color = TextPrimary,
-                            lineHeight = 18.sp
-                        )
+                    WeeklyMetricCard(
+                        title = "Alimentación",
+                        value = currentSummary.foodIntakePercentage,
+                        subtext = "Aceptación general",
+                        icon = Icons.Default.Restaurant,
+                        color = Color(0xFFE65100),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    WeeklyMetricCard(
+                        title = "Descanso",
+                        value = currentSummary.totalNapHours,
+                        subtext = "Prom. ${currentSummary.averageNapDaily}",
+                        icon = Icons.Default.NightlightRound,
+                        color = Color(0xFF5E35B1),
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    WeeklyMetricCard(
+                        title = "Estado General",
+                        value = currentSummary.moodSummary,
+                        subtext = "Comportamiento semanal",
+                        icon = Icons.Default.Face,
+                        color = Color(0xFF00897B),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                // Alimentación y Hábitos de la Semana
+                SectionDetailCard(title = "Alimentación y Hábitos de la Semana", icon = Icons.Default.Restaurant) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        currentSummary.foodHighlights.forEach { highlight ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Text(
+                                    text = "•",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = BrandBlue,
+                                    modifier = Modifier.padding(end = 6.dp)
+                                )
+                                Text(
+                                    text = highlight,
+                                    fontSize = 13.sp,
+                                    color = TextPrimary,
+                                    lineHeight = 18.sp
+                                )
+                            }
+                        }
                     }
                 }
-            }
-        }
 
-        // Salud y Protocolos
-        SectionDetailCard(title = "Salud, Bienestar y Seguridad", icon = Icons.Default.LocalHospital) {
-            Text(
-                text = summary.healthAndSafetySummary,
-                fontSize = 13.sp,
-                color = TextPrimary,
-                lineHeight = 18.sp
-            )
+                // Descanso y Siestas
+                SectionDetailCard(title = "Descanso y Sueño", icon = Icons.Default.NightlightRound) {
+                    Text(
+                        text = currentSummary.napHighlights,
+                        fontSize = 13.sp,
+                        color = TextPrimary,
+                        lineHeight = 18.sp
+                    )
+                }
+
+                // Hitos y Actividades Pedagógicas
+                SectionDetailCard(title = "Actividades Pedagógicas y Aprendizaje", icon = Icons.Default.Star) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        currentSummary.pedagogicalHighlights.forEach { highlight ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Text(
+                                    text = "✓",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = StatusPresentGreen,
+                                    modifier = Modifier.padding(end = 6.dp)
+                                )
+                                Text(
+                                    text = highlight,
+                                    fontSize = 13.sp,
+                                    color = TextPrimary,
+                                    lineHeight = 18.sp
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Salud y Protocolos
+                SectionDetailCard(title = "Salud, Bienestar y Seguridad", icon = Icons.Default.LocalHospital) {
+                    Text(
+                        text = currentSummary.healthAndSafetySummary,
+                        fontSize = 13.sp,
+                        color = TextPrimary,
+                        lineHeight = 18.sp
+                    )
+                }
+            }
         }
     }
+}
+
+@Composable
+fun WeeklySummaryContent(
+    summary: WeeklySummary,
+    child: Child
+) {
+    WeeklySummaryContent(
+        summaries = listOf(summary),
+        selectedWeekIndex = 0,
+        onSelectWeek = {},
+        child = child
+    )
 }
 
 @Composable

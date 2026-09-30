@@ -11,5 +11,7 @@ interface ChildRepository {
     fun getChildById(childId: String): Child?
     fun updateChildAttendance(childId: String, isPresent: Boolean, time: String, statusText: String)
     fun getChildFullProfile(child: Child): ChildFullProfile
+    fun updateChildFullProfile(childId: String, profile: ChildFullProfile)
     fun getWeeklySummaryForChild(child: Child): WeeklySummary
+    fun getWeeklySummariesForChild(child: Child): List<WeeklySummary>
 }
