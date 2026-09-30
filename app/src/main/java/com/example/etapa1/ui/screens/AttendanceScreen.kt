@@ -80,6 +80,7 @@ fun AttendanceScreen(
     var showValidationDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var successDialogMessage by remember { mutableStateOf("") }
+    var showErrors by remember { mutableStateOf(false) }
 
     // Fecha y hora automáticas
     val calendar = remember { Calendar.getInstance() }
@@ -222,7 +223,10 @@ fun AttendanceScreen(
                                     .weight(1f)
                                     .clip(RoundedCornerShape(14.dp))
                                     .background(if (isSelected) BrandBlue else Color.Transparent)
-                                    .clickable { activeTab = index }
+                                    .clickable {
+                                        activeTab = index
+                                        showErrors = false
+                                    }
                                     .padding(vertical = 10.dp),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -247,7 +251,9 @@ fun AttendanceScreen(
                         state = ingresoState
                     )
                 } else {
-                    EgresoFormSection(state = egresoState)
+                    EgresoFormSection(
+                        state = egresoState
+                    )
                 }
 
                 // Botón principal
@@ -255,6 +261,7 @@ fun AttendanceScreen(
                     onClick = {
                         val isIngreso = activeTab == 0
                         if (!isFormValid) {
+                            showErrors = true
                             showValidationDialog = true
                             return@Button
                         }
@@ -294,7 +301,8 @@ fun AttendanceScreen(
                 Text(
                     text = "* Todos los campos y firmas son obligatorios excepto observaciones",
                     fontSize = 11.5.sp,
-                    color = TextSecondary,
+                    color = if (showErrors && !isFormValid) AlertRed else TextSecondary,
+                    fontWeight = if (showErrors && !isFormValid) FontWeight.Bold else FontWeight.Normal,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()

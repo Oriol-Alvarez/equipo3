@@ -65,7 +65,7 @@ import com.example.etapa1.ui.theme.Etapa1Theme
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: (UserRole) -> Unit = {}
 ) {
     var selectedRole by remember { mutableStateOf(UserRole.EDUCADORA) }
     var email by remember { mutableStateOf("correo@ejemplo.com") }
@@ -220,7 +220,7 @@ fun LoginScreen(
                     if (email.isBlank() || password.isBlank()) {
                         hasError = true
                     } else {
-                        onLoginSuccess()
+                        onLoginSuccess(selectedRole)
                     }
                 },
                 modifier = Modifier

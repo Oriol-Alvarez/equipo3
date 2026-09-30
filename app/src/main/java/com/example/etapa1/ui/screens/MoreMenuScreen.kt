@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -46,7 +47,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.etapa1.ui.components.AppBottomBar
 import com.example.etapa1.ui.theme.AlertRed
 import com.example.etapa1.ui.theme.AlertRedBg
 import com.example.etapa1.ui.theme.AlertRedBorder
@@ -63,25 +63,14 @@ import com.example.etapa1.ui.theme.Etapa1Theme
 
 @Composable
 fun MoreMenuScreen(
-    onNavigateToLostObjects: () -> Unit,
+    onNavigateToLostObjects: () -> Unit = {},
     onNavigateToHome: () -> Unit,
+    onNavigateToMessages: () -> Unit = {},
     onLogout: () -> Unit
 ) {
-    var selectedBottomTab by remember { mutableIntStateOf(3) }
-
     Scaffold(
         containerColor = AppBackground,
-        bottomBar = {
-            AppBottomBar(
-                selectedTab = selectedBottomTab,
-                onTabSelected = { tab ->
-                    selectedBottomTab = tab
-                    if (tab == 0) {
-                        onNavigateToHome()
-                    }
-                }
-            )
-        }
+        contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -121,21 +110,6 @@ fun MoreMenuScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    // Opción 1: Objetos Perdidos
-                    MoreMenuItem(
-                        icon = Icons.Default.Inventory2,
-                        iconTint = Color(0xFFF97316),
-                        iconBg = Color(0xFFFFF7ED),
-                        title = "Objetos Perdidos",
-                        subtitle = "Gestionar reportes y entregas",
-                        onClick = onNavigateToLostObjects
-                    )
-
-                    HorizontalDivider(
-                        color = BorderSubtle,
-                        thickness = 0.8.dp,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
 
                     // Opción 2: Administración de Cuentas
                     MoreMenuItem(

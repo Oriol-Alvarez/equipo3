@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -59,7 +60,6 @@ import androidx.compose.ui.unit.sp
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.Room
-import com.example.etapa1.ui.components.AppBottomBar
 import com.example.etapa1.ui.components.ChildAvatar
 import com.example.etapa1.ui.theme.AlertRed
 import com.example.etapa1.ui.theme.AppBackground
@@ -83,11 +83,11 @@ fun RoomDashboardScreen(
     onChildSelected: (Child) -> Unit,
     onChildInfo: (Child) -> Unit = {},
     onPassAttendance: (Child?) -> Unit = {},
+    onNavigateToMessages: () -> Unit = {},
     onNavigateToMore: () -> Unit = {}
 ) {
     val presentCount = children.count { it.isPresent }
     val absentCount = children.size - presentCount
-    var selectedBottomTab by remember { mutableIntStateOf(0) }
     val selectedChildIds = remember { mutableStateListOf<String>() }
     val isSelectionMode = selectedChildIds.isNotEmpty()
 
@@ -97,17 +97,7 @@ fun RoomDashboardScreen(
 
     Scaffold(
         containerColor = AppBackground,
-        bottomBar = {
-            AppBottomBar(
-                selectedTab = selectedBottomTab,
-                onTabSelected = { tab ->
-                    selectedBottomTab = tab
-                    if (tab == 3) {
-                        onNavigateToMore()
-                    }
-                }
-            )
-        },
+        contentWindowInsets = WindowInsets(0.dp),
         floatingActionButtonPosition = FabPosition.End,
         floatingActionButton = {
             AnimatedVisibility(
@@ -324,7 +314,7 @@ fun RoomDashboardScreen(
                 }
 
                 item {
-                    Spacer(modifier = Modifier.height(84.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }

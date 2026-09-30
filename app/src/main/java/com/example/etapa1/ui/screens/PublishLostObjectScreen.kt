@@ -448,7 +448,7 @@ fun PublishLostObjectScreen(
                                 title = title.ifBlank { "Objeto Encontrado" },
                                 description = description.trim(),
                                 category = selectedCategory,
-                                location = location.ifBlank { "Patio central" },
+                                location = location.trim().ifBlank { null },
                                 imageUri = selectedImageUri,
                                 room = roomName
                             )

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -42,7 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.Room
-import com.example.etapa1.ui.components.AppBottomBar
 import com.example.etapa1.ui.theme.AppBackground
 import com.example.etapa1.ui.theme.BorderSubtle
 import com.example.etapa1.ui.theme.BrandBlue
@@ -57,24 +57,14 @@ import com.example.etapa1.ui.theme.Etapa1Theme
 @Composable
 fun RoomSelectionScreen(
     onRoomSelected: (Room) -> Unit,
+    onNavigateToMessages: () -> Unit = {},
     onNavigateToMore: () -> Unit = {}
 ) {
     val rooms = MockDataRepository.rooms
-    var selectedBottomTab by remember { mutableIntStateOf(0) }
 
     Scaffold(
         containerColor = AppBackground,
-        bottomBar = {
-            AppBottomBar(
-                selectedTab = selectedBottomTab,
-                onTabSelected = { tab ->
-                    selectedBottomTab = tab
-                    if (tab == 3) {
-                        onNavigateToMore()
-                    }
-                }
-            )
-        }
+        contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
         Column(
             modifier = Modifier

@@ -649,7 +649,348 @@ object MockDataRepository {
             healthAndSafetySummary = allergyText
         )
     }
+
+    val staffMembers = listOf(
+        WorkerMember("staff_1", "Laura Méndez", "Dirección General", "LM", 0xFF8E24AA, isOnline = true),
+        WorkerMember("staff_2", "Carlos Ruiz", "Educador Lactantes", "CR", 0xFF0288D1, isOnline = true),
+        WorkerMember("staff_3", "Dra. Elena Vega", "Servicio Médico / Pediatría", "EV", 0xFFD81B60, isOnline = false),
+        WorkerMember("staff_4", "Marta Sánchez", "Coordinadora Pedagógica", "MS", 0xFF00897B, isOnline = true),
+        WorkerMember("staff_5", "Lucía Martín", "Auxiliar Sala 1A", "LM", 0xFFFB8C00, isOnline = true),
+        WorkerMember("staff_6", "Javier Ortiz", "Mantenimiento y Cocina", "JO", 0xFF546E7A, isOnline = false),
+        WorkerMember("staff_7", "Sara Navarro", "Psicopedagoga", "SN", 0xFF3949AB, isOnline = true)
+    )
+
+    val initialGlobalWorkerChat = WorkerChat(
+        id = "global_staff_chat",
+        title = "Chat Global de Trabajadores",
+        subtitle = "📌 Canal general del centro • 18 miembros",
+        lastMessage = "Laura Méndez: Recordad registrar los partes de descanso y alimentación antes de las 14:30.",
+        lastMessageTime = "12:45 PM",
+        unreadCount = 2,
+        isGlobal = true,
+        isGroup = true,
+        membersCount = 18,
+        avatarInitials = "SC",
+        avatarBgColor = 0xFF1565C0,
+        messages = listOf(
+            WorkerChatMessage("gm_1", "staff_1", "Laura Méndez", "Buenos días equipo. Hoy a las 16:30 reunión rápida de coordinación en sala polivalente.", "09:00 AM"),
+            WorkerChatMessage("gm_2", "staff_2", "Carlos Ruiz", "Entendido Laura, Sala 1A tendrá listos los informes de avance.", "09:15 AM"),
+            WorkerChatMessage("gm_3", "staff_3", "Dra. Elena Vega", "Recordatorio: Se han revisado las fichas de alergias de los nuevos ingresos de este mes.", "11:20 AM"),
+            WorkerChatMessage("gm_4", "staff_1", "Laura Méndez", "Recordad registrar los partes de descanso y alimentación antes de las 14:30.", "12:45 PM")
+        )
+    )
+
+    fun getInitialWorkerChats(): List<WorkerChat> = listOf(
+        WorkerChat(
+            id = "wchat_1",
+            title = "Laura Méndez",
+            subtitle = "Dirección General • En línea",
+            lastMessage = "¿Cómo va la adaptación de Mateo García en el grupo?",
+            lastMessageTime = "11:30 AM",
+            unreadCount = 1,
+            isGlobal = false,
+            isGroup = false,
+            avatarInitials = "LM",
+            avatarBgColor = 0xFF8E24AA,
+            messages = listOf(
+                WorkerChatMessage("wm_1", "staff_1", "Laura Méndez", "Hola Oriol, cuando tengas un momento confírmame si llegó la autorización médica de Mateo.", "10:15 AM"),
+                WorkerChatMessage("wm_2", "me", "Yo", "Hola Laura, sí, la mamá la entregó a primera hora en secretaría.", "10:30 AM", isOutgoing = true),
+                WorkerChatMessage("wm_3", "staff_1", "Laura Méndez", "¿Cómo va la adaptación de Mateo García en el grupo?", "11:30 AM")
+            )
+        ),
+        WorkerChat(
+            id = "wchat_2",
+            title = "Carlos Ruiz",
+            subtitle = "Educador Sala 2B • En línea",
+            lastMessage = "Te dejé el material sensorial en el casillero común.",
+            lastMessageTime = "10:15 AM",
+            unreadCount = 0,
+            isGlobal = false,
+            isGroup = false,
+            avatarInitials = "CR",
+            avatarBgColor = 0xFF0288D1,
+            messages = listOf(
+                WorkerChatMessage("cm_1", "staff_2", "Carlos Ruiz", "Te dejé el material sensorial en el casillero común.", "10:15 AM")
+            )
+        ),
+        WorkerChat(
+            id = "wchat_3",
+            title = "Dra. Elena Vega",
+            subtitle = "Servicio Médico • Desconectada",
+            lastMessage = "La revisión de Isabella Torres está lista, sin molestias.",
+            lastMessageTime = "Ayer",
+            unreadCount = 0,
+            isGlobal = false,
+            isGroup = false,
+            avatarInitials = "EV",
+            avatarBgColor = 0xFFD81B60,
+            messages = listOf(
+                WorkerChatMessage("em_1", "staff_3", "Dra. Elena Vega", "La revisión de Isabella Torres está lista, sin molestias.", "Ayer")
+            )
+        ),
+        WorkerChat(
+            id = "wchat_4",
+            title = "Marta Sánchez",
+            subtitle = "Coordinadora Pedagógica • En línea",
+            lastMessage = "¿Revisaste el plan de psicomotricidad para el jueves?",
+            lastMessageTime = "Ayer",
+            unreadCount = 0,
+            isGlobal = false,
+            isGroup = false,
+            avatarInitials = "MS",
+            avatarBgColor = 0xFF00897B,
+            messages = listOf(
+                WorkerChatMessage("mm_1", "staff_4", "Marta Sánchez", "¿Revisaste el plan de psicomotricidad para el jueves?", "Ayer")
+            )
+        ),
+        WorkerChat(
+            id = "wchat_5",
+            title = "Lucía Martín",
+            subtitle = "Auxiliar Sala 1A • En línea",
+            lastMessage = "Pañales y toallitas reposicionados en el cambiador.",
+            lastMessageTime = "Lun",
+            unreadCount = 0,
+            isGlobal = false,
+            isGroup = false,
+            avatarInitials = "LM",
+            avatarBgColor = 0xFFFB8C00,
+            messages = listOf(
+                WorkerChatMessage("lm_1", "staff_5", "Lucía Martín", "Pañales y toallitas reposicionados en el cambiador.", "Lun")
+            )
+        )
+    )
+
+    fun getInitialParentChats(): List<ParentChatSummary> = listOf(
+        ParentChatSummary(
+            child = mateoGarcia,
+            parentName = "María López (Mamá)",
+            lastMessage = "Mateo disfrutó mucho su comida de hoy y pidió un poco más de fruta.",
+            lastMessageTime = "01:50 PM",
+            unreadCount = 0
+        ),
+        ParentChatSummary(
+            child = childrenSala1A[1],
+            parentName = "Marcos Rossi (Papá)",
+            lastMessage = "Siesta completa de 1h 15m. Se despertó de muy buen humor.",
+            lastMessageTime = "01:15 PM",
+            unreadCount = 1
+        ),
+        ParentChatSummary(
+            child = childrenSala1A[2],
+            parentName = "Andrea Benítez (Mamá)",
+            lastMessage = "Ingreso registrado a las 08:00 AM con su padre.",
+            lastMessageTime = "08:00 AM",
+            unreadCount = 0
+        ),
+        ParentChatSummary(
+            child = childrenSala1A[3],
+            parentName = "Carmen Soto (Mamá)",
+            lastMessage = "Actividad sensorial de pintura de dedos completada.",
+            lastMessageTime = "11:45 AM",
+            unreadCount = 2
+        ),
+        ParentChatSummary(
+            child = childrenSala1A[4],
+            parentName = "Jorge Hernández (Papá)",
+            lastMessage = "Colación de la mañana consumida en su totalidad.",
+            lastMessageTime = "10:30 AM",
+            unreadCount = 0
+        ),
+        ParentChatSummary(
+            child = childrenSala1A[5],
+            parentName = "Laura Ramos (Mamá)",
+            lastMessage = "Ingreso registrado con normalidad a las 08:25 AM.",
+            lastMessageTime = "08:25 AM",
+            unreadCount = 0
+        ),
+        ParentChatSummary(
+            child = childrenSala1A[6],
+            parentName = "Andrés Torres (Papá)",
+            lastMessage = "⚠️ Menú adaptado sin lactosa aplicado con éxito.",
+            lastMessageTime = "12:30 PM",
+            unreadCount = 0
+        ),
+        ParentChatSummary(
+            child = childrenSala1A[7],
+            parentName = "Valentina Pérez (Mamá)",
+            lastMessage = "Juegos matutinos en el patio y asamblea participativa.",
+            lastMessageTime = "09:20 AM",
+            unreadCount = 0
+        ),
+        ParentChatSummary(
+            child = childrenSala1A[8],
+            parentName = "Patricia Morales (Mamá)",
+            lastMessage = "Ingreso a las 08:45 AM en perfectas condiciones.",
+            lastMessageTime = "08:45 AM",
+            unreadCount = 0
+        ),
+        ParentChatSummary(
+            child = childrenSala1A[9],
+            parentName = "Roberto Castro (Papá)",
+            lastMessage = "Almorzó puré de verduras con buena aceptación.",
+            lastMessageTime = "12:50 PM",
+            unreadCount = 0
+        ),
+        ParentChatSummary(
+            child = childrenSala1A[10],
+            parentName = "Claudia Vargas (Mamá)",
+            lastMessage = "Entrada puntual a las 08:55 AM.",
+            lastMessageTime = "08:55 AM",
+            unreadCount = 0
+        ),
+        ParentChatSummary(
+            child = childrenSala1A[11],
+            parentName = "Gabriel Ortiz (Papá)",
+            lastMessage = "Siesta reparadora de 45 minutos.",
+            lastMessageTime = "01:40 PM",
+            unreadCount = 0
+        )
+    )
+
+    fun getInitialSuggestions(): List<ParentSuggestion> = listOf(
+        ParentSuggestion(
+            id = "sug_1",
+            parentName = "Elena Ramos",
+            childName = "Mateo García",
+            roomName = "Sala 1A",
+            date = "Hoy",
+            time = "09:30 AM",
+            category = SuggestionCategory.ALIMENTACION,
+            subject = "Variedad de frutas frescas en merienda matutina",
+            content = "Buenos días equipo. Nos gustaría proponer si es posible incluir mayor variedad de frutas de temporada (como plátano maduro o mandarina) en el tentempié de media mañana para los pequeños de Sala 1A.",
+            status = SuggestionStatus.PENDIENTE
+        ),
+        ParentSuggestion(
+            id = "sug_2",
+            parentName = "Marcos López",
+            childName = "Sofía López",
+            roomName = "Sala 1A",
+            date = "Ayer",
+            time = "17:15 PM",
+            category = SuggestionCategory.INSTALACIONES,
+            subject = "Toldo de sombra para el arenero del patio",
+            content = "Hola a la dirección. Notamos que en los días soleados la zona del arenero exterior recibe sol directo al mediodía. ¿Podría valorarse instalar una lona o vela de sombra para cuidar su piel mientras juegan?",
+            status = SuggestionStatus.EN_REVISION,
+            response = "Muchas gracias por la observación, Marcos. El área de mantenimiento ya está evaluando presupuesto y anclajes para instalarlo esta misma semana.",
+            responseDate = "Ayer, 18:00 PM",
+            responderName = "Laura Méndez (Dirección)"
+        ),
+        ParentSuggestion(
+            id = "sug_3",
+            parentName = "Claudia Torres",
+            childName = "Lucas Martínez",
+            roomName = "Sala 1A",
+            date = "28 Sep",
+            time = "14:20 PM",
+            category = SuggestionCategory.ACTIVIDADES,
+            subject = "Taller familiar de psicomotricidad o música",
+            content = "Sería una experiencia fantástica poder compartir un taller abierto un viernes al mes donde los padres podamos participar en dinámicas de estimulación temprana junto a nuestros hijos.",
+            status = SuggestionStatus.ATENDIDA,
+            response = "¡Excelente iniciativa Claudia! Estamos coordinando el primer taller conjunto para el mes de octubre. Les enviaremos la circular con fechas.",
+            responseDate = "28 Sep, 16:30 PM",
+            responderName = "Marta Sánchez (Coord. Pedagógica)"
+        ),
+        ParentSuggestion(
+            id = "sug_4",
+            parentName = "Javier Ruiz",
+            childName = "Valentina Ruiz",
+            roomName = "Sala 1A",
+            date = "25 Sep",
+            time = "11:05 AM",
+            category = SuggestionCategory.GENERAL,
+            subject = "Campaña de marcado de prendas exteriores",
+            content = "Sería muy útil enviar una recomendación general a las familias para marcar chaquetas y zapatos con nombres visibles, ya que a veces con el cambio de tiempo coinciden modelos similares.",
+            status = SuggestionStatus.ATENDIDA,
+            response = "Agradecemos la idea Javier. Se ha enviado un recordatorio formal a través del canal de avisos generales.",
+            responseDate = "25 Sep, 12:00 PM",
+            responderName = "Carlos Ruiz (Educador)"
+        ),
+        ParentSuggestion(
+            id = "sug_5",
+            parentName = "Patricia Vega",
+            childName = "Santiago Gómez",
+            roomName = "Sala 1A",
+            date = "22 Sep",
+            time = "08:45 AM",
+            category = SuggestionCategory.HORARIOS,
+            subject = "Apertura anticipada de acceso con lluvia",
+            content = "En días de lluvia intensa el acceso principal se congestiona a la hora pico de salida de carritos. ¿Podría habilitarse la puerta lateral 10 minutos antes?",
+            status = SuggestionStatus.PENDIENTE
+        )
+    )
 }
+
+enum class SuggestionCategory(val label: String) {
+    TODAS("Todas"),
+    ALIMENTACION("Alimentación"),
+    INSTALACIONES("Instalaciones"),
+    ACTIVIDADES("Actividades"),
+    HORARIOS("Horarios"),
+    GENERAL("General")
+}
+
+enum class SuggestionStatus(val label: String, val color: Long, val bgColor: Long) {
+    PENDIENTE("Pendiente", 0xFFE65100, 0xFFFFF3E0),
+    EN_REVISION("En proceso", 0xFF0288D1, 0xFFE1F5FE),
+    ATENDIDA("Atendida", 0xFF2E7D32, 0xFFE8F5E9)
+}
+
+data class ParentSuggestion(
+    val id: String,
+    val parentName: String,
+    val childName: String,
+    val roomName: String,
+    val date: String,
+    val time: String,
+    val category: SuggestionCategory,
+    val subject: String,
+    val content: String,
+    val status: SuggestionStatus = SuggestionStatus.PENDIENTE,
+    val response: String? = null,
+    val responseDate: String? = null,
+    val responderName: String? = null
+)
+
+data class WorkerMember(
+    val id: String,
+    val name: String,
+    val role: String,
+    val avatarInitials: String,
+    val avatarBgColor: Long,
+    val isOnline: Boolean = true
+)
+
+data class WorkerChatMessage(
+    val id: String,
+    val senderId: String,
+    val senderName: String,
+    val message: String,
+    val time: String,
+    val isOutgoing: Boolean = false
+)
+
+data class WorkerChat(
+    val id: String,
+    val title: String,
+    val subtitle: String,
+    val lastMessage: String,
+    val lastMessageTime: String,
+    val unreadCount: Int = 0,
+    val isGlobal: Boolean = false,
+    val isGroup: Boolean = false,
+    val membersCount: Int = 2,
+    val avatarInitials: String = "SC",
+    val avatarBgColor: Long = 0xFF1976D2,
+    val messages: List<WorkerChatMessage> = emptyList()
+)
+
+data class ParentChatSummary(
+    val child: Child,
+    val parentName: String,
+    val lastMessage: String,
+    val lastMessageTime: String,
+    val unreadCount: Int = 0
+)
 
 data class DailyBitacora(
     val date: String,

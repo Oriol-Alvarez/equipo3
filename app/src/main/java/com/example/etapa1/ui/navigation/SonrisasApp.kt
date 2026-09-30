@@ -7,7 +7,11 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -16,23 +20,29 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.example.etapa1.ui.components.AppBottomBar
 import com.example.etapa1.model.ActivityCategory
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.LostItem
 import com.example.etapa1.model.MockDataRepository
+import com.example.etapa1.model.ParentSuggestion
 import com.example.etapa1.model.PortionOption
 import com.example.etapa1.model.Room
+import com.example.etapa1.model.SuggestionStatus
 import com.example.etapa1.model.TimelineItem
+import com.example.etapa1.model.UserRole
 import com.example.etapa1.ui.screens.AttendanceScreen
 import com.example.etapa1.ui.screens.ChatBitacoraScreen
 import com.example.etapa1.ui.screens.ChildDetailScreen
 import com.example.etapa1.ui.screens.LoginScreen
 import com.example.etapa1.ui.screens.LostObjectsCatalogScreen
+import com.example.etapa1.ui.screens.MessagesScreen
 import com.example.etapa1.ui.screens.MoreMenuScreen
 import com.example.etapa1.ui.screens.NewActivityScreen
 import com.example.etapa1.ui.screens.PublishLostObjectScreen
 import com.example.etapa1.ui.screens.RoomDashboardScreen
 import com.example.etapa1.ui.screens.RoomSelectionScreen
+import com.example.etapa1.ui.screens.SuggestionsScreen
 import com.example.etapa1.ui.theme.AppBackground
 
 sealed interface Screen {
@@ -42,6 +52,8 @@ sealed interface Screen {
     data class ChatBitacora(val child: Child) : Screen
     data class ChildDetail(val child: Child) : Screen
     data class NewActivity(val child: Child) : Screen
+    data object Messages : Screen
+    data object Suggestions : Screen
     data object MoreMenu : Screen
     data object LostObjectsCatalog : Screen
     data class PublishLostObject(val roomName: String = "Sala 1A") : Screen
@@ -52,6 +64,7 @@ sealed interface Screen {
 fun SonrisasApp() {
     val backStack = remember { mutableStateListOf<Screen>(Screen.Login) }
     val currentScreen = backStack.lastOrNull() ?: Screen.Login
+    var currentUserRole by remember { mutableStateOf(UserRole.EDUCADORA) }
 
     // Estado en memoria de la bitácora de Mateo
     val mateoTimeline = remember {
@@ -67,6 +80,13 @@ fun SonrisasApp() {
         }
     }
 
+    // Estado en memoria de las sugerencias de los padres
+    val suggestions = remember {
+        mutableStateListOf<ParentSuggestion>().apply {
+            addAll(MockDataRepository.getInitialSuggestions())
+        }
+    }
+
     // Estado en memoria de los niños para actualizar asistencias y métricas en tiempo real
     val childrenSala1AState = remember {
         mutableStateListOf<Child>().apply {
@@ -79,22 +99,87 @@ fun SonrisasApp() {
         backStack.removeAt(backStack.lastIndex)
     }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = AppBackground
-    ) {
-        AnimatedContent(
-            targetState = currentScreen,
-            transitionSpec = {
-                (slideInHorizontally { width -> width } + fadeIn())
-                    .togetherWith(slideOutHorizontally { width -> -width } + fadeOut())
-            },
-            label = "screen_transition"
-        ) { screen ->
+    val showBottomBar = currentScreen is Screen.RoomSelection ||
+            currentScreen is Screen.RoomDashboard ||
+            currentScreen is Screen.Messages ||
+            currentScreen is Screen.Suggestions ||
+            currentScreen is Screen.LostObjectsCatalog ||
+            currentScreen is Screen.MoreMenu
+
+    val selectedBottomTab = when (currentScreen) {
+        is Screen.RoomSelection, is Screen.RoomDashboard -> 0
+        is Screen.Messages -> 1
+        is Screen.Suggestions -> 2
+        is Screen.LostObjectsCatalog -> 3
+        is Screen.MoreMenu -> 4
+        else -> 0
+    }
+
+    Scaffold(
+        containerColor = AppBackground,
+        bottomBar = {
+            if (showBottomBar) {
+                AppBottomBar(
+                    selectedTab = selectedBottomTab,
+                    onTabSelected = { tab ->
+                        when (tab) {
+                            0 -> {
+                                if (currentScreen !is Screen.RoomSelection && currentScreen !is Screen.RoomDashboard) {
+                                    val lastHomeIndex = backStack.indexOfLast { it is Screen.RoomDashboard || it is Screen.RoomSelection }
+                                    if (lastHomeIndex >= 0) {
+                                        while (backStack.size > lastHomeIndex + 1) {
+                                            backStack.removeAt(backStack.lastIndex)
+                                        }
+                                    } else {
+                                        backStack.add(Screen.RoomSelection)
+                                    }
+                                }
+                            }
+                            1 -> {
+                                if (currentScreen !is Screen.Messages) {
+                                    backStack.add(Screen.Messages)
+                                }
+                            }
+                            2 -> {
+                                if (currentScreen !is Screen.Suggestions) {
+                                    backStack.add(Screen.Suggestions)
+                                }
+                            }
+                            3 -> {
+                                if (currentScreen !is Screen.LostObjectsCatalog) {
+                                    backStack.add(Screen.LostObjectsCatalog)
+                                }
+                            }
+                            4 -> {
+                                if (currentScreen !is Screen.MoreMenu) {
+                                    backStack.add(Screen.MoreMenu)
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .consumeWindowInsets(paddingValues)
+        ) {
+            AnimatedContent(
+                targetState = currentScreen,
+                transitionSpec = {
+                    (slideInHorizontally { width -> width } + fadeIn())
+                        .togetherWith(slideOutHorizontally { width -> -width } + fadeOut())
+                },
+                label = "screen_transition"
+            ) { screen ->
             when (screen) {
                 is Screen.Login -> {
                     LoginScreen(
-                        onLoginSuccess = {
+                        onLoginSuccess = { role ->
+                            currentUserRole = role
                             backStack.add(Screen.RoomSelection)
                         }
                     )
@@ -104,6 +189,9 @@ fun SonrisasApp() {
                     RoomSelectionScreen(
                         onRoomSelected = { selectedRoom ->
                             backStack.add(Screen.RoomDashboard(selectedRoom))
+                        },
+                        onNavigateToMessages = {
+                            backStack.add(Screen.Messages)
                         },
                         onNavigateToMore = {
                             backStack.add(Screen.MoreMenu)
@@ -128,6 +216,9 @@ fun SonrisasApp() {
                         },
                         onPassAttendance = { targetChild ->
                             backStack.add(Screen.Attendance(screen.room, targetChild))
+                        },
+                        onNavigateToMessages = {
+                            backStack.add(Screen.Messages)
                         },
                         onNavigateToMore = {
                             backStack.add(Screen.MoreMenu)
@@ -213,6 +304,52 @@ fun SonrisasApp() {
                     )
                 }
 
+                is Screen.Messages -> {
+                    MessagesScreen(
+                        children = childrenSala1AState,
+                        onNavigateToHome = {
+                            while (backStack.size > 1 && backStack.last() !is Screen.RoomSelection) {
+                                backStack.removeAt(backStack.lastIndex)
+                            }
+                            if (backStack.none { it is Screen.RoomSelection }) {
+                                backStack.add(Screen.RoomSelection)
+                            }
+                        },
+                        onNavigateToChildChat = { selectedChild ->
+                            backStack.add(Screen.ChatBitacora(selectedChild))
+                        },
+                        onNavigateToMore = {
+                            backStack.add(Screen.MoreMenu)
+                        }
+                    )
+                }
+
+                is Screen.Suggestions -> {
+                    SuggestionsScreen(
+                        suggestions = suggestions,
+                        onRespondSuggestion = { suggestionId, responseText, newStatus ->
+                            val index = suggestions.indexOfFirst { it.id == suggestionId }
+                            if (index != -1) {
+                                val current = suggestions[index]
+                                suggestions[index] = current.copy(
+                                    response = responseText,
+                                    responseDate = "Hoy, ahora",
+                                    responderName = "Laura Méndez (Dirección)",
+                                    status = newStatus
+                                )
+                            }
+                        },
+                        onNavigateToHome = {
+                            while (backStack.size > 1 && backStack.last() !is Screen.RoomSelection) {
+                                backStack.removeAt(backStack.lastIndex)
+                            }
+                            if (backStack.none { it is Screen.RoomSelection }) {
+                                backStack.add(Screen.RoomSelection)
+                            }
+                        }
+                    )
+                }
+
                 is Screen.MoreMenu -> {
                     MoreMenuScreen(
                         onNavigateToLostObjects = {
@@ -226,6 +363,9 @@ fun SonrisasApp() {
                                 backStack.add(Screen.RoomSelection)
                             }
                         },
+                        onNavigateToMessages = {
+                            backStack.add(Screen.Messages)
+                        },
                         onLogout = {
                             backStack.clear()
                             backStack.add(Screen.Login)
@@ -236,6 +376,7 @@ fun SonrisasApp() {
                 is Screen.LostObjectsCatalog -> {
                     LostObjectsCatalogScreen(
                         items = lostItems,
+                        userRole = currentUserRole,
                         onBack = {
                             if (backStack.size > 1) {
                                 backStack.removeAt(backStack.lastIndex)
@@ -251,6 +392,9 @@ fun SonrisasApp() {
                             if (backStack.none { it is Screen.RoomSelection }) {
                                 backStack.add(Screen.RoomSelection)
                             }
+                        },
+                        onNavigateToMessages = {
+                            backStack.add(Screen.Messages)
                         }
                     )
                 }
@@ -310,4 +454,5 @@ fun SonrisasApp() {
             }
         }
     }
+}
 }

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -38,7 +39,9 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -146,12 +149,13 @@ fun AppBottomBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 10.dp, horizontal = 16.dp)
-                .padding(bottom = 28.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
+                .navigationBarsPadding()
+                .padding(top = 12.dp, bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Tab 0: Inicio
             BottomNavItem(
+                modifier = Modifier.weight(1f),
                 icon = {
                     Icon(
                         imageVector = Icons.Default.Home,
@@ -164,26 +168,15 @@ fun AppBottomBar(
                 onClick = { onTabSelected(0) }
             )
 
+            // Tab 1: Mensajes
             BottomNavItem(
+                modifier = Modifier.weight(1f),
                 icon = {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Perfil",
-                        tint = if (selectedTab == 1) BrandBlue else TextMuted
-                    )
-                },
-                label = "Perfil",
-                isSelected = selectedTab == 1,
-                onClick = { onTabSelected(1) }
-            )
-
-            BottomNavItem(
-                icon = {
-                    Box {
+                    Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Default.MailOutline,
                             contentDescription = "Mensajes",
-                            tint = if (selectedTab == 2) BrandBlue else TextMuted
+                            tint = if (selectedTab == 1) BrandBlue else TextMuted
                         )
                         // Notification dot
                         Box(
@@ -197,61 +190,90 @@ fun AppBottomBar(
                     }
                 },
                 label = "Mensajes",
+                isSelected = selectedTab == 1,
+                onClick = { onTabSelected(1) }
+            )
+
+            // Tab 2: Buzón de sugerencias
+            BottomNavItem(
+                modifier = Modifier.weight(1f),
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Inbox,
+                        contentDescription = "Buzón de sugerencias",
+                        tint = if (selectedTab == 2) BrandBlue else TextMuted
+                    )
+                },
+                label = "Sugerencias",
                 isSelected = selectedTab == 2,
                 onClick = { onTabSelected(2) }
             )
 
+            // Tab 3: Objetos perdidos
             BottomNavItem(
+                modifier = Modifier.weight(1f),
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Inventory2,
+                        contentDescription = "Objetos perdidos",
+                        tint = if (selectedTab == 3) BrandBlue else TextMuted
+                    )
+                },
+                label = "Obj. perdidos",
+                isSelected = selectedTab == 3,
+                onClick = { onTabSelected(3) }
+            )
+
+            // Tab 4: Más
+            BottomNavItem(
+                modifier = Modifier.weight(1f),
                 icon = {
                     Icon(
                         imageVector = Icons.Default.MoreHoriz,
                         contentDescription = "Más",
-                        tint = if (selectedTab == 3) BrandBlue else TextMuted
+                        tint = if (selectedTab == 4) BrandBlue else TextMuted
                     )
                 },
                 label = "Más",
-                isSelected = selectedTab == 3,
-                onClick = { onTabSelected(3) }
+                isSelected = selectedTab == 4,
+                onClick = { onTabSelected(4) }
             )
         }
-
     }
 }
 
 @Composable
 private fun BottomNavItem(
+    modifier: Modifier = Modifier,
     icon: @Composable () -> Unit,
     label: String,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 4.dp),
+            .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (isSelected) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(BrandBlueContainer)
-                    .padding(horizontal = 14.dp, vertical = 4.dp)
-            ) {
-                icon()
-            }
-        } else {
-            Box(modifier = Modifier.padding(vertical = 4.dp)) {
-                icon()
-            }
+        Box(
+            modifier = Modifier
+                .size(width = 54.dp, height = 30.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(if (isSelected) BrandBlueContainer else Color.Transparent),
+            contentAlignment = Alignment.Center
+        ) {
+            icon()
         }
-        Spacer(modifier = Modifier.height(2.dp))
+        Spacer(modifier = Modifier.height(3.dp))
         Text(
             text = label,
             fontSize = 11.sp,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            color = if (isSelected) BrandBlue else TextMuted
+            color = if (isSelected) BrandBlue else TextMuted,
+            textAlign = TextAlign.Center,
+            maxLines = 1
         )
     }
 }

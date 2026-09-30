@@ -284,7 +284,9 @@ fun IngresoFormSection(
  * Sección IV: Formulario modular de Egreso de la Estancia Infantil.
  */
 @Composable
-fun EgresoFormSection(state: EgresoFormState) {
+fun EgresoFormSection(
+    state: EgresoFormState
+) {
     SectionCard {
         BinaryChoiceRow(
             question = "¿La niña o el niño se entrega en buen estado físico?",
