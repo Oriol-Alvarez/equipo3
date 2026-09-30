@@ -1,6 +1,7 @@
 package com.example.etapa1
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -15,6 +16,13 @@ import com.example.etapa1.ui.theme.Etapa1Theme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Evitar que se puedan tomar capturas de pantalla o grabar video de la app
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_SECURE,
+            WindowManager.LayoutParams.FLAG_SECURE
+        )
+        
         enableEdgeToEdge()
         setContent {
             Etapa1Theme {
