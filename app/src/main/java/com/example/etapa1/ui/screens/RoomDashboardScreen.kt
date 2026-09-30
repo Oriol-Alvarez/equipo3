@@ -46,10 +46,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,7 +59,6 @@ import com.example.etapa1.model.Child
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.Room
 import com.example.etapa1.ui.components.ChildAvatar
-import com.example.etapa1.ui.theme.AlertRed
 import com.example.etapa1.ui.theme.AppBackground
 import com.example.etapa1.ui.theme.BorderSubtle
 import com.example.etapa1.ui.theme.BrandBlue
@@ -69,11 +66,37 @@ import com.example.etapa1.ui.theme.BrandBlueContainer
 import com.example.etapa1.ui.theme.CardBackground
 import com.example.etapa1.ui.theme.StatusAbsentOrange
 import com.example.etapa1.ui.theme.StatusPresentGreen
-import com.example.etapa1.ui.theme.TextMuted
 import com.example.etapa1.ui.theme.TextPrimary
 import com.example.etapa1.ui.theme.TextSecondary
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.theme.Etapa1Theme
+import androidx.compose.runtime.collectAsState
+import com.example.etapa1.ui.state.RoomDashboardViewModel
+
+@Composable
+fun RoomDashboardScreen(
+    viewModel: RoomDashboardViewModel,
+    room: Room,
+    onBack: () -> Unit,
+    onChildSelected: (Child) -> Unit,
+    onChildInfo: (Child) -> Unit,
+    onPassAttendance: (Child?) -> Unit,
+    onNavigateToMessages: () -> Unit,
+    onNavigateToMore: () -> Unit
+) {
+    val children by viewModel.children.collectAsState()
+
+    RoomDashboardScreen(
+        room = room,
+        children = children,
+        onBack = onBack,
+        onChildSelected = onChildSelected,
+        onChildInfo = onChildInfo,
+        onPassAttendance = onPassAttendance,
+        onNavigateToMessages = onNavigateToMessages,
+        onNavigateToMore = onNavigateToMore
+    )
+}
 
 @Composable
 fun RoomDashboardScreen(

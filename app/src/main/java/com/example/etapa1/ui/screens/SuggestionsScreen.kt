@@ -27,10 +27,8 @@ import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.MarkEmailRead
-import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -63,7 +61,6 @@ import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.ParentSuggestion
 import com.example.etapa1.model.SuggestionCategory
 import com.example.etapa1.model.SuggestionStatus
-import com.example.etapa1.ui.theme.AlertRed
 import com.example.etapa1.ui.theme.AppBackground
 import com.example.etapa1.ui.theme.BorderSubtle
 import com.example.etapa1.ui.theme.BrandBlue
@@ -75,6 +72,23 @@ import com.example.etapa1.ui.theme.TextPrimary
 import com.example.etapa1.ui.theme.TextSecondary
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.theme.Etapa1Theme
+
+import androidx.compose.runtime.collectAsState
+import com.example.etapa1.ui.state.SuggestionsViewModel
+
+@Composable
+fun SuggestionsScreen(
+    viewModel: SuggestionsViewModel,
+    onNavigateToHome: () -> Unit = {}
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    SuggestionsScreen(
+        suggestions = uiState.suggestions,
+        onRespondSuggestion = viewModel::respondSuggestion,
+        onNavigateToHome = onNavigateToHome
+    )
+}
 
 /**
  * Pantalla de Buzón de Sugerencias donde el personal del centro puede consultar,

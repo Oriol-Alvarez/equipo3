@@ -67,6 +67,29 @@ import com.example.etapa1.ui.theme.StatusPresentGreen
 import com.example.etapa1.ui.theme.TextPrimary
 import com.example.etapa1.ui.theme.TextSecondary
 
+import androidx.compose.runtime.collectAsState
+import com.example.etapa1.ui.state.AttendanceViewModel
+
+@Composable
+fun AttendanceScreen(
+    viewModel: AttendanceViewModel,
+    room: Room,
+    initialChild: Child? = null,
+    onBack: () -> Unit
+) {
+    val children by viewModel.children.collectAsState()
+
+    AttendanceScreen(
+        room = room,
+        children = children,
+        initialChild = initialChild,
+        onBack = onBack,
+        onSaveAttendance = { child, isIngreso, time, notes ->
+            viewModel.saveAttendance(child, isIngreso, time, notes)
+        }
+    )
+}
+
 @Composable
 fun AttendanceScreen(
     room: Room,

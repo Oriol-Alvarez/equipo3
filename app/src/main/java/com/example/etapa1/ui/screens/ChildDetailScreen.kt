@@ -48,6 +48,24 @@ import com.example.etapa1.ui.theme.CardBackground
 import com.example.etapa1.ui.theme.Etapa1Theme
 import com.example.etapa1.ui.theme.TextSecondary
 
+import com.example.etapa1.ui.state.ChildDetailViewModel
+
+@Composable
+fun ChildDetailScreen(
+    viewModel: ChildDetailViewModel,
+    child: Child,
+    onBack: () -> Unit,
+    onNavigateToChat: () -> Unit = {},
+    onNavigateToAttendance: () -> Unit = {}
+) {
+    ChildDetailScreen(
+        child = child,
+        onBack = onBack,
+        onNavigateToChat = onNavigateToChat,
+        onNavigateToAttendance = onNavigateToAttendance
+    )
+}
+
 @Composable
 fun ChildDetailScreen(
     child: Child,

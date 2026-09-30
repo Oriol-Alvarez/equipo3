@@ -13,14 +13,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,12 +26,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -60,7 +55,6 @@ import androidx.compose.ui.unit.sp
 import com.example.etapa1.model.LostItem
 import com.example.etapa1.ui.theme.AlertRed
 import com.example.etapa1.ui.theme.AlertRedBg
-import com.example.etapa1.ui.theme.AlertRedBorder
 import com.example.etapa1.ui.theme.AppBackground
 import com.example.etapa1.ui.theme.BorderSubtle
 import com.example.etapa1.ui.theme.BrandBlue
@@ -71,6 +65,25 @@ import com.example.etapa1.ui.theme.TextPrimary
 import com.example.etapa1.ui.theme.TextSecondary
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.theme.Etapa1Theme
+
+import com.example.etapa1.ui.state.PublishLostObjectViewModel
+
+@Composable
+fun PublishLostObjectScreen(
+    viewModel: PublishLostObjectViewModel,
+    roomName: String = "Sala 1A",
+    onBack: () -> Unit,
+    onPublishSuccess: (LostItem) -> Unit = {}
+) {
+    PublishLostObjectScreen(
+        roomName = roomName,
+        onBack = onBack,
+        onPublishSuccess = { item ->
+            viewModel.publishItem(item)
+            onPublishSuccess(item)
+        }
+    )
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

@@ -22,7 +22,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -71,6 +70,33 @@ import com.example.etapa1.ui.theme.TextMuted
 import com.example.etapa1.ui.theme.TextPrimary
 import com.example.etapa1.ui.theme.TextSecondary
 
+import androidx.compose.runtime.collectAsState
+import com.example.etapa1.ui.state.LostObjectsViewModel
+import com.example.etapa1.ui.state.LostObjectsUiState
+
+@Composable
+fun LostObjectsCatalogScreen(
+    viewModel: LostObjectsViewModel,
+    onBack: () -> Unit,
+    onNavigateToPublish: () -> Unit,
+    onNavigateToHome: () -> Unit,
+    onNavigateToMessages: () -> Unit = {}
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    LostObjectsCatalogContent(
+        uiState = uiState,
+        onCategorySelect = viewModel::selectCategory,
+        onSearchQueryChange = viewModel::onSearchQueryChange,
+        onToggleSearch = viewModel::toggleSearch,
+        onClaimItem = viewModel::claimItem,
+        onBack = onBack,
+        onNavigateToPublish = onNavigateToPublish,
+        onNavigateToHome = onNavigateToHome,
+        onNavigateToMessages = onNavigateToMessages
+    )
+}
+
 @Composable
 fun LostObjectsCatalogScreen(
     items: List<LostItem>,
@@ -81,18 +107,15 @@ fun LostObjectsCatalogScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToMessages: () -> Unit = {}
 ) {
-    // Estado local para registrar si un padre reclamó el objeto
-    val claimedItems = remember { mutableStateMapOf<String, Boolean>() }
-    var isSearchOpen by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var isSearchOpen by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf("Todos") }
+    val claimedItems = remember { mutableStateMapOf<String, Boolean>() }
 
-    val categories = remember(items) {
-        val baseCategories = listOf("Todos", "Ropa", "Juguetes", "Útiles", "Otros")
-        (baseCategories + items.map { it.category }).distinct()
-    }
+    val baseCategories = listOf("Todos", "Ropa", "Juguetes", "Útiles", "Otros")
+    val categories = remember(items) { (baseCategories + items.map { it.category }).distinct() }
 
-    val filteredItems = items.filter { item ->
+    val filtered = items.filter { item ->
         val matchesCategory = selectedCategory == "Todos" || item.category.equals(selectedCategory, ignoreCase = true)
         val query = searchQuery.trim()
         val matchesSearch = query.isBlank() ||
@@ -102,6 +125,46 @@ fun LostObjectsCatalogScreen(
             (!item.location.isNullOrBlank() && item.location.contains(query, ignoreCase = true))
         matchesCategory && matchesSearch
     }
+
+    val uiState = LostObjectsUiState(
+        items = items,
+        categories = categories,
+        selectedCategory = selectedCategory,
+        searchQuery = searchQuery,
+        isSearchOpen = isSearchOpen,
+        isWorkerRole = isWorkerRole,
+        claimedItemsMap = claimedItems,
+        filteredItems = filtered
+    )
+
+    LostObjectsCatalogContent(
+        uiState = uiState,
+        onCategorySelect = { selectedCategory = it },
+        onSearchQueryChange = { searchQuery = it },
+        onToggleSearch = {
+            isSearchOpen = !isSearchOpen
+            if (!isSearchOpen) searchQuery = ""
+        },
+        onClaimItem = { claimedItems[it] = true },
+        onBack = onBack,
+        onNavigateToPublish = onNavigateToPublish,
+        onNavigateToHome = onNavigateToHome,
+        onNavigateToMessages = onNavigateToMessages
+    )
+}
+
+@Composable
+fun LostObjectsCatalogContent(
+    uiState: LostObjectsUiState,
+    onCategorySelect: (String) -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    onToggleSearch: () -> Unit,
+    onClaimItem: (String) -> Unit,
+    onBack: () -> Unit,
+    onNavigateToPublish: () -> Unit,
+    onNavigateToHome: () -> Unit,
+    onNavigateToMessages: () -> Unit = {}
+) {
 
     Scaffold(
         containerColor = AppBackground,
@@ -128,14 +191,11 @@ fun LostObjectsCatalogScreen(
                 )
 
                 IconButton(
-                    onClick = {
-                        isSearchOpen = !isSearchOpen
-                        if (!isSearchOpen) searchQuery = ""
-                    },
+                    onClick = onToggleSearch,
                     modifier = Modifier.align(Alignment.CenterEnd)
                 ) {
                     Icon(
-                        imageVector = if (isSearchOpen) Icons.Default.Close else Icons.Default.Search,
+                        imageVector = if (uiState.isSearchOpen) Icons.Default.Close else Icons.Default.Search,
                         contentDescription = "Buscar objeto perdido",
                         tint = BrandBlue,
                         modifier = Modifier.size(22.dp)
@@ -144,10 +204,10 @@ fun LostObjectsCatalogScreen(
             }
 
             // Barra de búsqueda desplegable al pulsar la lupa
-            AnimatedVisibility(visible = isSearchOpen) {
+            AnimatedVisibility(visible = uiState.isSearchOpen) {
                 OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
+                    value = uiState.searchQuery,
+                    onValueChange = onSearchQueryChange,
                     placeholder = {
                         Text(
                             text = "Buscar por palabra clave...",
@@ -164,8 +224,8 @@ fun LostObjectsCatalogScreen(
                         )
                     },
                     trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
+                        if (uiState.searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { onSearchQueryChange("") }) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "Limpiar búsqueda",
@@ -225,11 +285,11 @@ fun LostObjectsCatalogScreen(
                 contentPadding = PaddingValues(horizontal = 18.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(categories) { category ->
-                    val isSelected = selectedCategory == category
+                items(uiState.categories) { category ->
+                    val isSelected = uiState.selectedCategory == category
                     FilterChip(
                         selected = isSelected,
-                        onClick = { selectedCategory = category },
+                        onClick = { onCategorySelect(category) },
                         label = {
                             Text(
                                 text = category,
@@ -258,7 +318,7 @@ fun LostObjectsCatalogScreen(
             Spacer(modifier = Modifier.height(4.dp))
 
             // Lista de Tarjetas del Catálogo o Estado Vacío
-            if (filteredItems.isEmpty()) {
+            if (uiState.filteredItems.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -284,10 +344,10 @@ fun LostObjectsCatalogScreen(
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = if (searchQuery.isNotBlank()) {
-                                "No hay resultados para \"$searchQuery\"."
+                            text = if (uiState.searchQuery.isNotBlank()) {
+                                "No hay resultados para \"${uiState.searchQuery}\"."
                             } else {
-                                "No hay objetos registrados en la categoría \"$selectedCategory\"."
+                                "No hay objetos registrados en la categoría \"${uiState.selectedCategory}\"."
                             },
                             fontSize = 13.sp,
                             color = TextSecondary,
@@ -301,15 +361,15 @@ fun LostObjectsCatalogScreen(
                     contentPadding = PaddingValues(horizontal = 18.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(filteredItems, key = { it.id }) { item ->
-                        val isClaimed = claimedItems[item.id] ?: item.isClaimed
+                    items(uiState.filteredItems, key = { it.id }) { item ->
+                        val isClaimed = uiState.claimedItemsMap[item.id] ?: item.isClaimed
 
                         LostItemCard(
                             item = item,
                             isClaimed = isClaimed,
-                            isWorkerRole = isWorkerRole,
+                            isWorkerRole = uiState.isWorkerRole,
                             onClaimClick = {
-                                claimedItems[item.id] = true
+                                onClaimItem(item.id)
                             }
                         )
                     }

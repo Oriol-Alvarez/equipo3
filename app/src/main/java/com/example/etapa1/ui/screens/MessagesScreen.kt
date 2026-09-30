@@ -1,7 +1,6 @@
 package com.example.etapa1.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -22,7 +20,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -52,12 +48,24 @@ import com.example.etapa1.ui.components.WorkerChatConversationDialog
 import com.example.etapa1.ui.components.WorkerChatItem
 import com.example.etapa1.ui.theme.AppBackground
 import com.example.etapa1.ui.theme.BrandBlue
-import com.example.etapa1.ui.theme.CardBackground
 import com.example.etapa1.ui.theme.TextMuted
-import com.example.etapa1.ui.theme.TextPrimary
-import com.example.etapa1.ui.theme.TextSecondary
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.theme.Etapa1Theme
+import com.example.etapa1.ui.state.MessagesViewModel
+
+@Composable
+fun MessagesScreen(
+    viewModel: MessagesViewModel,
+    onNavigateToHome: () -> Unit,
+    onNavigateToChildChat: (Child) -> Unit,
+    onNavigateToMore: () -> Unit
+) {
+    MessagesScreen(
+        onNavigateToHome = onNavigateToHome,
+        onNavigateToChildChat = onNavigateToChildChat,
+        onNavigateToMore = onNavigateToMore
+    )
+}
 
 @Composable
 fun MessagesScreen(

@@ -56,6 +56,26 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.theme.Etapa1Theme
 import com.example.etapa1.model.MockDataRepository
 
+import com.example.etapa1.ui.state.NewActivityViewModel
+
+@Composable
+fun NewActivityScreen(
+    viewModel: NewActivityViewModel,
+    child: Child,
+    onBack: () -> Unit,
+    onSubmitActivity: (category: ActivityCategory, summaryBadge: String, description: String) -> Unit = { _, _, _ -> }
+) {
+    NewActivityScreen(
+        child = child,
+        onBack = onBack,
+        onSubmitActivity = { cat, badge, desc ->
+            val currentTime = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
+            viewModel.saveActivity(currentTime, cat.label, badge, desc)
+            onSubmitActivity(cat, badge, desc)
+        }
+    )
+}
+
 @Composable
 fun NewActivityScreen(
     child: Child,

@@ -13,9 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -30,7 +28,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,8 +57,23 @@ import com.example.etapa1.ui.theme.CardBackground
 import com.example.etapa1.ui.theme.TextMuted
 import com.example.etapa1.ui.theme.TextPrimary
 import com.example.etapa1.ui.theme.TextSecondary
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.theme.Etapa1Theme
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.etapa1.ui.state.LoginViewModel
+
+@Composable
+fun LoginScreen(
+    viewModel: LoginViewModel,
+    onLoginSuccess: (UserRole) -> Unit = {}
+) {
+    LoginScreen(
+        onLoginSuccess = { role ->
+            viewModel.onRoleSelected(role)
+            viewModel.submitLogin()
+            onLoginSuccess(role)
+        }
+    )
+}
 
 @Composable
 fun LoginScreen(

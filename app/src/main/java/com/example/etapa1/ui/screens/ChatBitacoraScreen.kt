@@ -59,6 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.etapa1.model.Child
+import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.TimelineItem
 import com.example.etapa1.ui.components.ChildAvatar
 import com.example.etapa1.ui.components.MedicalAlertBanner
@@ -77,7 +78,30 @@ import com.example.etapa1.ui.theme.TextPrimary
 import com.example.etapa1.ui.theme.TextSecondary
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.theme.Etapa1Theme
-import com.example.etapa1.model.MockDataRepository
+import androidx.compose.runtime.collectAsState
+import com.example.etapa1.ui.state.ChatBitacoraViewModel
+
+@Composable
+fun ChatBitacoraScreen(
+    viewModel: ChatBitacoraViewModel,
+    child: Child,
+    onBack: () -> Unit,
+    onChildInfoClick: () -> Unit = {},
+    onNewActivityClick: () -> Unit,
+    onAttendanceClick: () -> Unit = {}
+) {
+    val timelineItems by viewModel.timelineItems.collectAsState()
+
+    ChatBitacoraScreen(
+        child = child,
+        timelineItems = timelineItems,
+        onBack = onBack,
+        onChildInfoClick = onChildInfoClick,
+        onNewActivityClick = onNewActivityClick,
+        onAttendanceClick = onAttendanceClick,
+        onSendMessage = viewModel::sendMessage
+    )
+}
 
 @Composable
 fun ChatBitacoraScreen(
@@ -267,14 +291,7 @@ fun ChatBitacoraScreen(
                                 modifier = Modifier.size(22.dp)
                             )
                         }
-                        IconButton(onClick = { /* Menú */ }) {
-                            Icon(
-                                imageVector = Icons.Default.MoreVert,
-                                contentDescription = "Opciones",
-                                tint = TextSecondary,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
+
                     }
                 }
             }
