@@ -37,9 +37,24 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.filled.Wc
+import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material3.FloatingActionButton
+import android.content.Intent
+import android.net.Uri
+import android.provider.OpenableColumns
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.window.Dialog
+import androidx.core.content.FileProvider
+import java.io.File
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -99,7 +114,9 @@ fun ChatBitacoraScreen(
         onChildInfoClick = onChildInfoClick,
         onNewActivityClick = onNewActivityClick,
         onAttendanceClick = onAttendanceClick,
-        onSendMessage = viewModel::sendMessage
+        onSendMessage = { text, uri, name, mime ->
+            viewModel.sendMessage(text, uri?.toString(), name, mime)
+        }
     )
 }
 
@@ -111,10 +128,44 @@ fun ChatBitacoraScreen(
     onChildInfoClick: () -> Unit = {},
     onNewActivityClick: () -> Unit,
     onAttendanceClick: () -> Unit = {},
-    onSendMessage: (String) -> Unit
+    onSendMessage: (String, Uri?, String?, String?) -> Unit
 ) {
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+    
+    var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedFileName by remember { mutableStateOf<String?>(null) }
+    var selectedFileMimeType by remember { mutableStateOf<String?>(null) }
+    
+    val context = LocalContext.current
+    var currentPhotoUri by remember { mutableStateOf<Uri?>(null) }
+
+    var showCallDialog by remember { mutableStateOf(false) }
+
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && currentPhotoUri != null) {
+            selectedFileUri = currentPhotoUri
+            selectedFileName = "Foto_tomada.jpg"
+            selectedFileMimeType = "image/jpeg"
+        }
+    }
+
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            selectedFileUri = it
+            selectedFileMimeType = context.contentResolver.getType(it)
+            context.contentResolver.query(it, null, null, null, null)?.use { cursor ->
+                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (nameIndex != -1 && cursor.moveToFirst()) {
+                    selectedFileName = cursor.getString(nameIndex)
+                }
+            }
+        }
+    }
 
     // Auto scroll to bottom when items change
     LaunchedEffect(timelineItems.size) {
@@ -149,64 +200,132 @@ fun ChatBitacoraScreen(
                 shadowElevation = 8.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { /* Abrir cámara / Tomar foto */ }) {
-                        Icon(
-                            imageVector = Icons.Default.PhotoCamera,
-                            contentDescription = "Tomar foto",
-                            tint = TextSecondary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-
-                    OutlinedTextField(
-                        value = messageText,
-                        onValueChange = { messageText = it },
-                        placeholder = {
-                            Text(
-                                text = "Escribe un mensaje...",
-                                fontSize = 14.sp,
-                                color = TextMuted
-                            )
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(50.dp),
-                        shape = RoundedCornerShape(25.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = AppBackground,
-                            unfocusedContainerColor = AppBackground,
-                            focusedBorderColor = BrandBlue,
-                            unfocusedBorderColor = BorderSubtle
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    IconButton(
-                        onClick = {
-                            if (messageText.isNotBlank()) {
-                                onSendMessage(messageText)
-                                messageText = ""
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    if (selectedFileUri != null) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFE3F2FD))
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (selectedFileMimeType?.startsWith("image/") == true) {
+                                AsyncImage(
+                                    model = selectedFileUri,
+                                    contentDescription = "Vista previa",
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(RoundedCornerShape(4.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.InsertDriveFile,
+                                    contentDescription = null,
+                                    tint = BrandBlue,
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
-                        },
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = selectedFileName ?: "Archivo seleccionado",
+                                fontSize = 14.sp,
+                                color = BrandBlue,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1
+                            )
+                            IconButton(onClick = { 
+                                selectedFileUri = null 
+                                selectedFileName = null
+                                selectedFileMimeType = null
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Quitar archivo",
+                                    tint = AlertRed
+                                )
+                            }
+                        }
+                    }
+                    Row(
                         modifier = Modifier
-                            .size(42.dp)
-                            .clip(CircleShape)
-                            .background(BrandBlue)
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Enviar",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
+                        IconButton(onClick = { 
+                            val photoFile = File(context.cacheDir, "camera_${System.currentTimeMillis()}.jpg")
+                            currentPhotoUri = FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.fileprovider",
+                                photoFile
+                            )
+                            takePictureLauncher.launch(currentPhotoUri!!)
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.PhotoCamera,
+                                contentDescription = "Tomar foto",
+                                tint = TextSecondary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        
+                        IconButton(onClick = { filePickerLauncher.launch("*/*") }) {
+                            Icon(
+                                imageVector = Icons.Default.AttachFile,
+                                contentDescription = "Adjuntar archivo",
+                                tint = TextSecondary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        OutlinedTextField(
+                            value = messageText,
+                            onValueChange = { messageText = it },
+                            placeholder = {
+                                Text(
+                                    text = "Escribe un mensaje...",
+                                    fontSize = 14.sp,
+                                    color = TextMuted
+                                )
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp),
+                            shape = RoundedCornerShape(25.dp),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = AppBackground,
+                                unfocusedContainerColor = AppBackground,
+                                focusedBorderColor = BrandBlue,
+                                unfocusedBorderColor = BorderSubtle
+                            )
                         )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        IconButton(
+                            onClick = {
+                                if (messageText.isNotBlank() || selectedFileUri != null) {
+                                    onSendMessage(messageText, selectedFileUri, selectedFileName, selectedFileMimeType)
+                                    messageText = ""
+                                    selectedFileUri = null
+                                    selectedFileName = null
+                                    selectedFileMimeType = null
+                                }
+                            },
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(BrandBlue)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "Enviar",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -283,7 +402,7 @@ fun ChatBitacoraScreen(
                                 modifier = Modifier.size(22.dp)
                             )
                         }
-                        IconButton(onClick = { /* Llamada */ }) {
+                        IconButton(onClick = { showCallDialog = true }) {
                             Icon(
                                 imageVector = Icons.Default.Phone,
                                 contentDescription = "Llamar",
@@ -326,6 +445,143 @@ fun ChatBitacoraScreen(
                     }
                 }
             }
+        }
+    }
+    
+    if (showCallDialog) {
+        ParentCallDialog(
+            child = child,
+            onDismiss = { showCallDialog = false }
+        )
+    }
+}
+
+@Composable
+fun ParentCallDialog(
+    child: Child,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val childProfile = remember(child) { MockDataRepository.getChildFullProfile(child) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = CardBackground,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                Text(
+                    text = "Llamar a familiares",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = BrandBlue,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                // Madre
+                if (childProfile.motherName.isNotBlank() && childProfile.motherPhone.isNotBlank()) {
+                    ContactRow(
+                        name = childProfile.motherName,
+                        phone = childProfile.motherPhone,
+                        relation = "Madre",
+                        onCall = {
+                            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${childProfile.motherPhone.replace(" ", "")}"))
+                            context.startActivity(intent)
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Padre
+                if (childProfile.fatherName.isNotBlank() && childProfile.fatherPhone.isNotBlank()) {
+                    ContactRow(
+                        name = childProfile.fatherName,
+                        phone = childProfile.fatherPhone,
+                        relation = "Padre",
+                        onCall = {
+                            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${childProfile.fatherPhone.replace(" ", "")}"))
+                            context.startActivity(intent)
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Text("Cerrar", color = BrandBlue)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ContactRow(name: String, phone: String, relation: String, onCall: () -> Unit) {
+    val initials = name.split(" ")
+        .filter { it.isNotBlank() }
+        .take(2)
+        .mapNotNull { it.firstOrNull()?.uppercase() }
+        .joinToString("")
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(46.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFE3F2FD)), // Light blue
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = initials,
+                color = BrandBlue,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = name,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                color = TextPrimary,
+                maxLines = 1
+            )
+            Text(
+                text = "$relation • $phone",
+                fontSize = 13.sp,
+                color = TextSecondary,
+                maxLines = 1
+            )
+        }
+
+        IconButton(
+            onClick = onCall,
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFE8F5E9)) // Light green
+        ) {
+            Icon(
+                imageVector = Icons.Default.Phone,
+                contentDescription = "Llamar",
+                tint = Color(0xFF2E7D32)
+            )
         }
     }
 }
@@ -389,6 +645,7 @@ private fun TimelineChip(chip: TimelineItem.EventChip) {
 
 @Composable
 private fun ChatMessageBubble(msg: TimelineItem.ChatMessage) {
+    val context = LocalContext.current
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = if (msg.isOutgoing) Alignment.End else Alignment.Start
@@ -420,14 +677,67 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage) {
                     color = BorderSubtle,
                     shape = RoundedCornerShape(16.dp)
                 )
+                .clickable(enabled = msg.fileUri != null) {
+                    msg.fileUri?.let { uriString ->
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                setDataAndType(Uri.parse(uriString), msg.fileMimeType ?: "*/*")
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
                 .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
-            Text(
-                text = msg.message,
-                fontSize = 13.5.sp,
-                color = if (msg.isOutgoing) Color.White else TextPrimary,
-                lineHeight = 18.sp
-            )
+            Column {
+                if (msg.fileUri != null) {
+                    if (msg.fileMimeType?.startsWith("image/") == true) {
+                        AsyncImage(
+                            model = msg.fileUri,
+                            contentDescription = "Imagen adjunta",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.InsertDriveFile,
+                                contentDescription = "Archivo adjunto",
+                                tint = if (msg.isOutgoing) Color.White else BrandBlue,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = msg.fileName ?: "Archivo adjunto",
+                                fontSize = 12.sp,
+                                color = if (msg.isOutgoing) Color.White else BrandBlue,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+                if (msg.message.isNotBlank()) {
+                    Text(
+                        text = msg.message,
+                        fontSize = 13.5.sp,
+                        color = if (msg.isOutgoing) Color.White else TextPrimary,
+                        lineHeight = 18.sp
+                    )
+                }
+            }
         }
     }
 }
@@ -524,7 +834,7 @@ fun ChatBitacoraScreenPreview() {
             timelineItems = MockDataRepository.getInitialMateoTimeline(),
             onBack = {},
             onNewActivityClick = {},
-            onSendMessage = {}
+            onSendMessage = { _, _, _, _ -> }
         )
     }
 }

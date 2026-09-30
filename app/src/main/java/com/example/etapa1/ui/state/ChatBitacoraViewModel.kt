@@ -11,9 +11,20 @@ class ChatBitacoraViewModel(
 
     val timelineItems: StateFlow<List<TimelineItem>> = bitacoraRepository.mateoTimeline
 
-    fun sendMessage(text: String) {
-        if (text.isNotBlank()) {
-            bitacoraRepository.addChatMessage(text.trim(), isOutgoing = true)
+    fun sendMessage(
+        text: String,
+        fileUri: String? = null,
+        fileName: String? = null,
+        fileMimeType: String? = null
+    ) {
+        if (text.isNotBlank() || fileUri != null) {
+            bitacoraRepository.addChatMessage(
+                text = text.trim(),
+                isOutgoing = true,
+                fileUri = fileUri,
+                fileName = fileName,
+                fileMimeType = fileMimeType
+            )
         }
     }
 }

@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.example.etapa1.ui.components.AppBottomBar
+import com.example.etapa1.model.Announcement
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.Room
@@ -38,6 +39,7 @@ import com.example.etapa1.ui.state.RoomDashboardViewModel
 import com.example.etapa1.ui.state.RoomSelectionViewModel
 import com.example.etapa1.ui.state.SuggestionsViewModel
 import com.example.etapa1.ui.screens.AttendanceScreen
+import com.example.etapa1.ui.screens.AnnouncementsScreen
 import com.example.etapa1.ui.screens.ChatBitacoraScreen
 import com.example.etapa1.ui.screens.ChildDetailScreen
 import com.example.etapa1.ui.screens.LoginScreen
@@ -64,6 +66,7 @@ sealed interface Screen {
     data object LostObjectsCatalog : Screen
     data class PublishLostObject(val roomName: String = "Sala 1A") : Screen
     data class Attendance(val room: Room, val initialChild: Child? = null) : Screen
+    data object Announcements : Screen
 }
 
 @Composable
@@ -87,6 +90,12 @@ fun SonrisasApp() {
 
     val backStack = remember { mutableStateListOf<Screen>(Screen.Login) }
     val currentScreen = backStack.lastOrNull() ?: Screen.Login
+
+    val announcementsState = remember {
+        mutableStateListOf<Announcement>().apply {
+            addAll(MockDataRepository.getInitialAnnouncements())
+        }
+    }
 
     // Manejo de retroceso con botón físico o gesto de Android
     BackHandler(enabled = backStack.size > 1) {
@@ -185,6 +194,10 @@ fun SonrisasApp() {
                         onRoomSelected = { selectedRoom ->
                             backStack.add(Screen.RoomDashboard(selectedRoom))
                         },
+                        unreadAnnouncementsCount = announcementsState.count { it.isUnread },
+                        onNavigateToAnnouncements = {
+                            backStack.add(Screen.Announcements)
+                        },
                         onNavigateToMessages = {
                             backStack.add(Screen.Messages)
                         },
@@ -198,6 +211,7 @@ fun SonrisasApp() {
                     RoomDashboardScreen(
                         viewModel = roomDashboardViewModel,
                         room = screen.room,
+                        unreadAnnouncementsCount = announcementsState.count { it.isUnread },
                         onBack = {
                             if (backStack.size > 1) {
                                 backStack.removeAt(backStack.lastIndex)
@@ -211,6 +225,9 @@ fun SonrisasApp() {
                         },
                         onPassAttendance = { targetChild ->
                             backStack.add(Screen.Attendance(screen.room, targetChild))
+                        },
+                        onNavigateToAnnouncements = {
+                            backStack.add(Screen.Announcements)
                         },
                         onNavigateToMessages = {
                             backStack.add(Screen.Messages)
@@ -384,6 +401,17 @@ fun SonrisasApp() {
                         viewModel = attendanceViewModel,
                         room = screen.room,
                         initialChild = screen.initialChild,
+                        onBack = {
+                            if (backStack.size > 1) {
+                                backStack.removeAt(backStack.lastIndex)
+                            }
+                        }
+                    )
+                }
+
+                is Screen.Announcements -> {
+                    AnnouncementsScreen(
+                        announcements = announcementsState,
                         onBack = {
                             if (backStack.size > 1) {
                                 backStack.removeAt(backStack.lastIndex)

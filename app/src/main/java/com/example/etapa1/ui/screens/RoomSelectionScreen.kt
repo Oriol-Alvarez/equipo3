@@ -23,6 +23,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -34,12 +37,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.Room
 import com.example.etapa1.ui.theme.AppBackground
+import com.example.etapa1.ui.theme.AlertRed
 import com.example.etapa1.ui.theme.BorderSubtle
 import com.example.etapa1.ui.theme.BrandBlue
 import com.example.etapa1.ui.theme.BrandBlueContainer
@@ -55,15 +60,19 @@ import com.example.etapa1.ui.state.RoomSelectionViewModel
 fun RoomSelectionScreen(
     viewModel: RoomSelectionViewModel,
     onRoomSelected: (Room) -> Unit,
+    unreadAnnouncementsCount: Int = 0,
     onNavigateToMessages: () -> Unit = {},
+    onNavigateToAnnouncements: () -> Unit = {},
     onNavigateToMore: () -> Unit = {}
 ) {
     val rooms by viewModel.rooms.collectAsState()
 
     RoomSelectionScreen(
         rooms = rooms,
+        unreadAnnouncementsCount = unreadAnnouncementsCount,
         onRoomSelected = onRoomSelected,
         onNavigateToMessages = onNavigateToMessages,
+        onNavigateToAnnouncements = onNavigateToAnnouncements,
         onNavigateToMore = onNavigateToMore
     )
 }
@@ -72,7 +81,9 @@ fun RoomSelectionScreen(
 fun RoomSelectionScreen(
     rooms: List<Room> = MockDataRepository.rooms,
     onRoomSelected: (Room) -> Unit,
+    unreadAnnouncementsCount: Int = 0,
     onNavigateToMessages: () -> Unit = {},
+    onNavigateToAnnouncements: () -> Unit = {},
     onNavigateToMore: () -> Unit = {}
 ) {
 
@@ -94,6 +105,31 @@ fun RoomSelectionScreen(
                     .padding(horizontal = 14.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
+                IconButton(
+                    onClick = onNavigateToAnnouncements,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                ) {
+                    BadgedBox(
+                        badge = {
+                            if (unreadAnnouncementsCount > 0) {
+                                Badge(
+                                    containerColor = AlertRed,
+                                    contentColor = Color.White
+                                ) {
+                                    Text(text = unreadAnnouncementsCount.toString())
+                                }
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Anuncios",
+                            tint = BrandBlue,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+
                 Text(
                     text = "Mis Salas",
                     fontSize = 18.sp,

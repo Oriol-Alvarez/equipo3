@@ -106,7 +106,10 @@ sealed interface TimelineItem {
         override val id: String,
         override val time: String,
         val message: String,
-        val isOutgoing: Boolean
+        val isOutgoing: Boolean,
+        val fileUri: String? = null,
+        val fileName: String? = null,
+        val fileMimeType: String? = null
     ) : TimelineItem
 
     data class ActivityCard(
@@ -447,12 +450,12 @@ object MockDataRepository {
                 else -> "O+"
             },
             pediatrician = "Dra. Sofía Morales",
-            pediatricianPhone = "+34 912 334 455",
-            emergencyPhone = "+34 612 345 678",
+            pediatricianPhone = "+52 555 111 222",
+            emergencyPhone = "+52 555 333 444",
             motherName = "María López Fernández",
-            motherPhone = "+34 612 345 678",
+            motherPhone = "+52 555 123 456",
             fatherName = "Carlos García Ramos",
-            fatherPhone = "+34 611 987 654",
+            fatherPhone = "+52 555 987 654",
             authorizedPickups = listOf(
                 "Rosa Fernández (Abuela materna) - DNI ***4521",
                 "Elena García (Tía paterna) - DNI ***9812"
@@ -847,6 +850,36 @@ object MockDataRepository {
         )
     )
 
+    fun getInitialAnnouncements(): List<Announcement> = listOf(
+        Announcement(
+            id = "ann_1",
+            title = "Reunión de Padres y Madres - Inicio de Curso",
+            date = "Hoy, 10:00 AM",
+            summary = "Recordatorio sobre la reunión de este viernes en el salón principal.",
+            fullContent = "Estimadas familias,\n\nLes recordamos que este viernes 2 de Octubre a las 18:00h tendremos nuestra primera reunión general de curso en el salón de usos múltiples.\n\nRepasaremos normativas, protocolos de seguridad y presentaremos las nuevas metodologías pedagógicas. ¡Esperamos contar con su presencia!",
+            isUnread = true,
+            author = "Dirección General"
+        ),
+        Announcement(
+            id = "ann_2",
+            title = "Menú Escolar de Octubre",
+            date = "Ayer, 14:30 PM",
+            summary = "Ya está disponible el menú escolar detallado para el próximo mes.",
+            fullContent = "Queridas familias,\n\nEl equipo de nutrición ha preparado el menú escolar del mes de Octubre con ingredientes de temporada y enfoque en alimentación equilibrada. Pueden descargarlo desde la sección de Documentos o solicitar una copia física en secretaría.\n\nRecuerden que para los niños con alergias registradas, la adaptación se aplicará automáticamente.",
+            isUnread = true,
+            author = "Coordinación de Comedor"
+        ),
+        Announcement(
+            id = "ann_3",
+            title = "Campaña de Vacunación contra la Gripe",
+            date = "25 Sep, 09:15 AM",
+            summary = "Información sobre la próxima campaña de salud en el centro.",
+            fullContent = "Estimados padres,\n\nEn colaboración con el centro de salud de la zona, la próxima semana iniciaremos la campaña voluntaria de vacunación antigripal infantil.\n\nSi desean que sus hijos sean vacunados en nuestro centro, por favor, entreguen la autorización médica firmada a sus respectivas educadoras antes del martes.",
+            isUnread = false,
+            author = "Servicio Médico"
+        )
+    )
+
     fun getInitialSuggestions(): List<ParentSuggestion> = listOf(
         ParentSuggestion(
             id = "sug_1",
@@ -966,7 +999,10 @@ data class WorkerChatMessage(
     val senderName: String,
     val message: String,
     val time: String,
-    val isOutgoing: Boolean = false
+    val isOutgoing: Boolean = false,
+    val fileUri: String? = null,
+    val fileName: String? = null,
+    val fileMimeType: String? = null
 )
 
 data class WorkerChat(
@@ -990,6 +1026,16 @@ data class ParentChatSummary(
     val lastMessage: String,
     val lastMessageTime: String,
     val unreadCount: Int = 0
+)
+
+data class Announcement(
+    val id: String,
+    val title: String,
+    val date: String,
+    val summary: String,
+    val fullContent: String,
+    val isUnread: Boolean = true,
+    val author: String = "Dirección General"
 )
 
 data class DailyBitacora(
@@ -1035,12 +1081,12 @@ data class ChildFullProfile(
     val studentId: String = "AL-2025-042",
     val bloodType: String = "A+",
     val pediatrician: String = "Dra. Sofía Morales",
-    val pediatricianPhone: String = "+34 912 334 455",
-    val emergencyPhone: String = "+34 612 345 678",
+    val pediatricianPhone: String = "+34 555 111 222",
+    val emergencyPhone: String = "+34 555 333 444",
     val motherName: String = "María López Fernández",
-    val motherPhone: String = "+34 612 345 678",
+    val motherPhone: String = "+34 555 123 456",
     val fatherName: String = "Carlos García Ramos",
-    val fatherPhone: String = "+34 611 987 654",
+    val fatherPhone: String = "+34 555 987 654",
     val authorizedPickups: List<String> = listOf("Rosa Fernández (Abuela)", "Elena García (Tía)"),
     val medicalNotes: String = "Vacunación al día. No presenta intolerancias alimentarias adicionales.",
     val generalNotes: String = "Se adapta con facilidad a las rutinas de la sala. Duerme con su mantita en la siesta."

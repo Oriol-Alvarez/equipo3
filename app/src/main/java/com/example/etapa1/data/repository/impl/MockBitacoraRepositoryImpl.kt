@@ -12,12 +12,22 @@ class MockBitacoraRepositoryImpl : BitacoraRepository {
     private val _mateoTimeline = MutableStateFlow<List<TimelineItem>>(MockDataRepository.getInitialMateoTimeline())
     override val mateoTimeline: StateFlow<List<TimelineItem>> = _mateoTimeline.asStateFlow()
 
-    override fun addChatMessage(text: String, isOutgoing: Boolean) {
+    override fun addChatMessage(
+        text: String,
+        isOutgoing: Boolean,
+        fileUri: String?,
+        fileName: String?,
+        fileMimeType: String?
+    ) {
+        val currentTime = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
         val message = TimelineItem.ChatMessage(
             id = "msg_${System.currentTimeMillis()}",
-            time = "01:50 PM",
+            time = currentTime,
             message = text,
-            isOutgoing = isOutgoing
+            isOutgoing = isOutgoing,
+            fileUri = fileUri,
+            fileName = fileName,
+            fileMimeType = fileMimeType
         )
         _mateoTimeline.update { it + message }
     }
