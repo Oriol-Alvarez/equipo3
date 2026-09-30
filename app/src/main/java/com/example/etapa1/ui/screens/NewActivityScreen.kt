@@ -70,7 +70,7 @@ fun NewActivityScreen(
         onBack = onBack,
         onSubmitActivity = { cat, badge, desc ->
             val currentTime = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
-            viewModel.saveActivity(currentTime, cat.label, badge, desc)
+            viewModel.saveActivity(child.id, currentTime, cat.label, badge, desc)
             onSubmitActivity(cat, badge, desc)
         }
     )
@@ -88,8 +88,8 @@ fun NewActivityScreen(
     var desayunoOption by remember { mutableStateOf(FoodConsumptionOption.TODO) }
     var colacionOption by remember { mutableStateOf(FoodConsumptionOption.TODO) }
     var comidaOption by remember { mutableStateOf(FoodConsumptionOption.TODO) }
-    var alimentacionObservaciones by remember {
-        mutableStateOf("Mateo disfrutó mucho su comida de hoy y pidió un poco más de fruta.")
+    var alimentacionObservaciones by remember(child.id) {
+        mutableStateOf("${child.fullName} disfrutó mucho su comida de hoy y pidió un poco más de fruta.")
     }
 
     // Estado 2: Descanso

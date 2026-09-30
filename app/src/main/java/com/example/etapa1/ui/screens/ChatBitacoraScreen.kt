@@ -94,6 +94,7 @@ import com.example.etapa1.ui.theme.TextSecondary
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.theme.Etapa1Theme
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.key
 import com.example.etapa1.ui.state.ChatBitacoraViewModel
 
 @Composable
@@ -105,19 +106,24 @@ fun ChatBitacoraScreen(
     onNewActivityClick: () -> Unit,
     onAttendanceClick: () -> Unit = {}
 ) {
-    val timelineItems by viewModel.timelineItems.collectAsState()
+    // Recreate the collector, draft and attachment state when changing pupils.
+    // Passing childId on every write also avoids a shared "current child" during transitions.
+    key(child.id) {
+        val timeline = remember(viewModel, child.id) { viewModel.timelineForChild(child.id) }
+        val timelineItems by timeline.collectAsState()
 
-    ChatBitacoraScreen(
-        child = child,
-        timelineItems = timelineItems,
-        onBack = onBack,
-        onChildInfoClick = onChildInfoClick,
-        onNewActivityClick = onNewActivityClick,
-        onAttendanceClick = onAttendanceClick,
-        onSendMessage = { text, uri, name, mime ->
-            viewModel.sendMessage(text, uri?.toString(), name, mime)
-        }
-    )
+        ChatBitacoraScreen(
+            child = child,
+            timelineItems = timelineItems,
+            onBack = onBack,
+            onChildInfoClick = onChildInfoClick,
+            onNewActivityClick = onNewActivityClick,
+            onAttendanceClick = onAttendanceClick,
+            onSendMessage = { text, uri, name, mime ->
+                viewModel.sendMessage(child.id, text, uri?.toString(), name, mime)
+            }
+        )
+    }
 }
 
 @Composable
@@ -431,6 +437,26 @@ fun ChatBitacoraScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 contentPadding = PaddingValues(top = 10.dp, bottom = 20.dp)
             ) {
+                if (timelineItems.isEmpty()) {
+                    item {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Aún no hay registros para ${child.fullName}",
+                                color = TextPrimary,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Envía un mensaje o usa + para registrar una actividad.",
+                                color = TextSecondary,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                }
                 items(timelineItems, key = { it.id }) { item ->
                     when (item) {
                         is TimelineItem.EventChip -> {

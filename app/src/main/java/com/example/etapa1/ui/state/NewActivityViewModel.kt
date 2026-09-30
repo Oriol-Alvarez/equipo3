@@ -38,8 +38,8 @@ class NewActivityViewModel(
         _uiState.update { it.copy(time = time) }
     }
 
-    fun saveActivity(time: String, category: String, portionLabel: String, description: String) {
-        bitacoraRepository.addActivityCard(time, category, portionLabel, description)
+    fun saveActivity(childId: String, time: String, category: String, portionLabel: String, description: String) {
+        bitacoraRepository.addActivityCard(childId, time, category, portionLabel, description)
         _uiState.update { it.copy(isSaved = true) }
     }
 }

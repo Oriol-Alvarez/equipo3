@@ -5,7 +5,6 @@ import com.example.etapa1.data.repository.AttendanceRepository
 import com.example.etapa1.data.repository.BitacoraRepository
 import com.example.etapa1.data.repository.ChildRepository
 import com.example.etapa1.model.Child
-import com.example.etapa1.model.MockDataRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -57,10 +56,8 @@ class AttendanceViewModel(
         childRepository.updateChildAttendance(child.id, isPresent = isIngreso, time = time, statusText = statusText)
         attendanceRepository.registerAttendance(child, isIngreso, time, notes)
 
-        if (child.id == MockDataRepository.mateoGarcia.id) {
-            val actionLabel = if (isIngreso) "Ingreso: $time" else "Egreso: $time"
-            bitacoraRepository.addEventChip(time = time, text = actionLabel, iconType = "entry")
-        }
+        val actionLabel = if (isIngreso) "Ingreso: $time" else "Egreso: $time"
+        bitacoraRepository.addEventChip(childId = child.id, time = time, text = actionLabel, iconType = "entry")
 
         _uiState.update { it.copy(isSavedSuccess = true) }
     }

@@ -9,9 +9,11 @@ class ChatBitacoraViewModel(
     private val bitacoraRepository: BitacoraRepository
 ) : ViewModel() {
 
-    val timelineItems: StateFlow<List<TimelineItem>> = bitacoraRepository.mateoTimeline
+    fun timelineForChild(childId: String): StateFlow<List<TimelineItem>> =
+        bitacoraRepository.timelineForChild(childId)
 
     fun sendMessage(
+        childId: String,
         text: String,
         fileUri: String? = null,
         fileName: String? = null,
@@ -19,6 +21,7 @@ class ChatBitacoraViewModel(
     ) {
         if (text.isNotBlank() || fileUri != null) {
             bitacoraRepository.addChatMessage(
+                childId = childId,
                 text = text.trim(),
                 isOutgoing = true,
                 fileUri = fileUri,

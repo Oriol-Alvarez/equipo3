@@ -7,12 +7,28 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.util.UUID
 
 class MockBitacoraRepositoryImpl : BitacoraRepository {
-    private val _mateoTimeline = MutableStateFlow<List<TimelineItem>>(MockDataRepository.getInitialMateoTimeline())
-    override val mateoTimeline: StateFlow<List<TimelineItem>> = _mateoTimeline.asStateFlow()
+    // One stream per child; the repository keeps it alive during this demo session.
+    private val timelines = mutableMapOf<String, MutableStateFlow<List<TimelineItem>>>()
+
+    @Synchronized
+    private fun timelineState(childId: String): MutableStateFlow<List<TimelineItem>> =
+        timelines.getOrPut(childId) {
+            val initialItems = if (childId == MockDataRepository.mateoGarcia.id) {
+                MockDataRepository.getInitialMateoTimeline()
+            } else {
+                emptyList()
+            }
+            MutableStateFlow(initialItems)
+        }
+
+    override fun timelineForChild(childId: String): StateFlow<List<TimelineItem>> =
+        timelineState(childId).asStateFlow()
 
     override fun addChatMessage(
+        childId: String,
         text: String,
         isOutgoing: Boolean,
         fileUri: String?,
@@ -21,7 +37,7 @@ class MockBitacoraRepositoryImpl : BitacoraRepository {
     ) {
         val currentTime = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
         val message = TimelineItem.ChatMessage(
-            id = "msg_${System.currentTimeMillis()}",
+            id = "msg_${UUID.randomUUID()}",
             time = currentTime,
             message = text,
             isOutgoing = isOutgoing,
@@ -29,27 +45,27 @@ class MockBitacoraRepositoryImpl : BitacoraRepository {
             fileName = fileName,
             fileMimeType = fileMimeType
         )
-        _mateoTimeline.update { it + message }
+        timelineState(childId).update { it + message }
     }
 
-    override fun addEventChip(time: String, text: String, iconType: String) {
+    override fun addEventChip(childId: String, time: String, text: String, iconType: String) {
         val chip = TimelineItem.EventChip(
-            id = "chip_${System.currentTimeMillis()}",
+            id = "chip_${UUID.randomUUID()}",
             time = time,
             text = text,
             iconType = iconType
         )
-        _mateoTimeline.update { it + chip }
+        timelineState(childId).update { it + chip }
     }
 
-    override fun addActivityCard(time: String, category: String, portionLabel: String, description: String) {
+    override fun addActivityCard(childId: String, time: String, category: String, portionLabel: String, description: String) {
         val card = TimelineItem.ActivityCard(
-            id = "act_${System.currentTimeMillis()}",
+            id = "act_${UUID.randomUUID()}",
             time = time,
             category = category,
             portionLabel = portionLabel,
             description = description
         )
-        _mateoTimeline.update { it + card }
+        timelineState(childId).update { it + card }
     }
 }

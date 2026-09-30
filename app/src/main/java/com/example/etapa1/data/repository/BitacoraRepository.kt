@@ -4,14 +4,15 @@ import com.example.etapa1.model.TimelineItem
 import kotlinx.coroutines.flow.StateFlow
 
 interface BitacoraRepository {
-    val mateoTimeline: StateFlow<List<TimelineItem>>
+    fun timelineForChild(childId: String): StateFlow<List<TimelineItem>>
     fun addChatMessage(
+        childId: String,
         text: String,
         isOutgoing: Boolean = true,
         fileUri: String? = null,
         fileName: String? = null,
         fileMimeType: String? = null
     )
-    fun addEventChip(time: String, text: String, iconType: String)
-    fun addActivityCard(time: String, category: String, portionLabel: String, description: String)
+    fun addEventChip(childId: String, time: String, text: String, iconType: String)
+    fun addActivityCard(childId: String, time: String, category: String, portionLabel: String, description: String)
 }
