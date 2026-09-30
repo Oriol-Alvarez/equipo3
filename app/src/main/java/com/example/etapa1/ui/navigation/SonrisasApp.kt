@@ -263,13 +263,16 @@ fun SonrisasApp() {
                             val currentRoom = MockDataRepository.rooms.first()
                             backStack.add(Screen.Attendance(currentRoom, screen.child))
                         },
-                        onSendMessage = { text ->
+                        onSendMessage = { text, uri, name, mime ->
                             mateoTimeline.add(
                                 TimelineItem.ChatMessage(
                                     id = "msg_${System.currentTimeMillis()}",
-                                    time = "01:50 PM",
+                                    time = "Ahora",
                                     message = text,
-                                    isOutgoing = true
+                                    isOutgoing = true,
+                                    fileUri = uri?.toString(),
+                                    fileName = name,
+                                    fileMimeType = mime
                                 )
                             )
                         }

@@ -310,19 +310,22 @@ fun MessagesScreen(
         WorkerChatConversationDialog(
             chat = currentChat,
             onDismiss = { activeWorkerChat = null },
-            onSendMessage = { newText ->
+            onSendMessage = { newText, uri, name, mime ->
                 val newMsg = WorkerChatMessage(
                     id = "msg_${System.currentTimeMillis()}",
                     senderId = "me",
                     senderName = "Yo",
                     message = newText,
                     time = "Ahora",
-                    isOutgoing = true
+                    isOutgoing = true,
+                    fileUri = uri?.toString(),
+                    fileName = name,
+                    fileMimeType = mime
                 )
                 val updatedMessages = currentChat.messages + newMsg
                 val updatedChat = currentChat.copy(
                     messages = updatedMessages,
-                    lastMessage = "Tú: $newText",
+                    lastMessage = if (newText.isNotBlank()) "Tú: $newText" else "Tú: [Archivo adjunto]",
                     lastMessageTime = "Ahora",
                     unreadCount = 0
                 )

@@ -106,7 +106,10 @@ sealed interface TimelineItem {
         override val id: String,
         override val time: String,
         val message: String,
-        val isOutgoing: Boolean
+        val isOutgoing: Boolean,
+        val fileUri: String? = null,
+        val fileName: String? = null,
+        val fileMimeType: String? = null
     ) : TimelineItem
 
     data class ActivityCard(
@@ -447,12 +450,12 @@ object MockDataRepository {
                 else -> "O+"
             },
             pediatrician = "Dra. Sofía Morales",
-            pediatricianPhone = "+34 912 334 455",
-            emergencyPhone = "+34 612 345 678",
+            pediatricianPhone = "+52 555 111 222",
+            emergencyPhone = "+52 555 333 444",
             motherName = "María López Fernández",
-            motherPhone = "+34 612 345 678",
+            motherPhone = "+52 555 123 456",
             fatherName = "Carlos García Ramos",
-            fatherPhone = "+34 611 987 654",
+            fatherPhone = "+52 555 987 654",
             authorizedPickups = listOf(
                 "Rosa Fernández (Abuela materna) - DNI ***4521",
                 "Elena García (Tía paterna) - DNI ***9812"
@@ -966,7 +969,10 @@ data class WorkerChatMessage(
     val senderName: String,
     val message: String,
     val time: String,
-    val isOutgoing: Boolean = false
+    val isOutgoing: Boolean = false,
+    val fileUri: String? = null,
+    val fileName: String? = null,
+    val fileMimeType: String? = null
 )
 
 data class WorkerChat(
@@ -1035,12 +1041,12 @@ data class ChildFullProfile(
     val studentId: String = "AL-2025-042",
     val bloodType: String = "A+",
     val pediatrician: String = "Dra. Sofía Morales",
-    val pediatricianPhone: String = "+34 912 334 455",
-    val emergencyPhone: String = "+34 612 345 678",
+    val pediatricianPhone: String = "+34 555 111 222",
+    val emergencyPhone: String = "+34 555 333 444",
     val motherName: String = "María López Fernández",
-    val motherPhone: String = "+34 612 345 678",
+    val motherPhone: String = "+34 555 123 456",
     val fatherName: String = "Carlos García Ramos",
-    val fatherPhone: String = "+34 611 987 654",
+    val fatherPhone: String = "+34 555 987 654",
     val authorizedPickups: List<String> = listOf("Rosa Fernández (Abuela)", "Elena García (Tía)"),
     val medicalNotes: String = "Vacunación al día. No presenta intolerancias alimentarias adicionales.",
     val generalNotes: String = "Se adapta con facilidad a las rutinas de la sala. Duerme con su mantita en la siesta."
