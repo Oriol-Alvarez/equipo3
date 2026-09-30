@@ -36,7 +36,15 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FabPosition
@@ -79,11 +87,13 @@ import com.example.etapa1.ui.theme.Etapa1Theme
 fun RoomDashboardScreen(
     room: Room,
     children: List<Child> = MockDataRepository.childrenSala1A,
+    unreadAnnouncementsCount: Int = 0,
     onBack: () -> Unit,
     onChildSelected: (Child) -> Unit,
     onChildInfo: (Child) -> Unit = {},
     onPassAttendance: (Child?) -> Unit = {},
     onNavigateToMessages: () -> Unit = {},
+    onNavigateToAnnouncements: () -> Unit = {},
     onNavigateToMore: () -> Unit = {}
 ) {
     val presentCount = children.count { it.isPresent }
@@ -186,21 +196,52 @@ fun RoomDashboardScreen(
                     }
                 }
 
-                // Avatar de la educadora
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(BrandBlue)
-                        .align(Alignment.CenterEnd),
-                    contentAlignment = Alignment.Center
+                Row(
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Perfil Educadora",
-                        tint = Color.White,
-                        modifier = Modifier.size(22.dp)
-                    )
+                    IconButton(
+                        onClick = onNavigateToAnnouncements
+                    ) {
+                        BadgedBox(
+                            badge = {
+                                if (unreadAnnouncementsCount > 0) {
+                                    Badge(
+                                        containerColor = AlertRed,
+                                        contentColor = Color.White
+                                    ) {
+                                        Text(text = unreadAnnouncementsCount.toString())
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Anuncios",
+                                tint = BrandBlue,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    // Avatar de la educadora
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(BrandBlue)
+                            .clickable { onNavigateToMore() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Perfil Educadora",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
 

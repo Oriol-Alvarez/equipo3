@@ -850,6 +850,36 @@ object MockDataRepository {
         )
     )
 
+    fun getInitialAnnouncements(): List<Announcement> = listOf(
+        Announcement(
+            id = "ann_1",
+            title = "Reunión de Padres y Madres - Inicio de Curso",
+            date = "Hoy, 10:00 AM",
+            summary = "Recordatorio sobre la reunión de este viernes en el salón principal.",
+            fullContent = "Estimadas familias,\n\nLes recordamos que este viernes 2 de Octubre a las 18:00h tendremos nuestra primera reunión general de curso en el salón de usos múltiples.\n\nRepasaremos normativas, protocolos de seguridad y presentaremos las nuevas metodologías pedagógicas. ¡Esperamos contar con su presencia!",
+            isUnread = true,
+            author = "Dirección General"
+        ),
+        Announcement(
+            id = "ann_2",
+            title = "Menú Escolar de Octubre",
+            date = "Ayer, 14:30 PM",
+            summary = "Ya está disponible el menú escolar detallado para el próximo mes.",
+            fullContent = "Queridas familias,\n\nEl equipo de nutrición ha preparado el menú escolar del mes de Octubre con ingredientes de temporada y enfoque en alimentación equilibrada. Pueden descargarlo desde la sección de Documentos o solicitar una copia física en secretaría.\n\nRecuerden que para los niños con alergias registradas, la adaptación se aplicará automáticamente.",
+            isUnread = true,
+            author = "Coordinación de Comedor"
+        ),
+        Announcement(
+            id = "ann_3",
+            title = "Campaña de Vacunación contra la Gripe",
+            date = "25 Sep, 09:15 AM",
+            summary = "Información sobre la próxima campaña de salud en el centro.",
+            fullContent = "Estimados padres,\n\nEn colaboración con el centro de salud de la zona, la próxima semana iniciaremos la campaña voluntaria de vacunación antigripal infantil.\n\nSi desean que sus hijos sean vacunados en nuestro centro, por favor, entreguen la autorización médica firmada a sus respectivas educadoras antes del martes.",
+            isUnread = false,
+            author = "Servicio Médico"
+        )
+    )
+
     fun getInitialSuggestions(): List<ParentSuggestion> = listOf(
         ParentSuggestion(
             id = "sug_1",
@@ -996,6 +1026,16 @@ data class ParentChatSummary(
     val lastMessage: String,
     val lastMessageTime: String,
     val unreadCount: Int = 0
+)
+
+data class Announcement(
+    val id: String,
+    val title: String,
+    val date: String,
+    val summary: String,
+    val fullContent: String,
+    val isUnread: Boolean = true,
+    val author: String = "Dirección General"
 )
 
 data class DailyBitacora(

@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.etapa1.ui.components.AppBottomBar
 import com.example.etapa1.model.ActivityCategory
+import com.example.etapa1.model.Announcement
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.LostItem
 import com.example.etapa1.model.MockDataRepository
@@ -32,6 +33,7 @@ import com.example.etapa1.model.SuggestionStatus
 import com.example.etapa1.model.TimelineItem
 import com.example.etapa1.model.UserRole
 import com.example.etapa1.ui.screens.AttendanceScreen
+import com.example.etapa1.ui.screens.AnnouncementsScreen
 import com.example.etapa1.ui.screens.ChatBitacoraScreen
 import com.example.etapa1.ui.screens.ChildDetailScreen
 import com.example.etapa1.ui.screens.LoginScreen
@@ -58,6 +60,7 @@ sealed interface Screen {
     data object LostObjectsCatalog : Screen
     data class PublishLostObject(val roomName: String = "Sala 1A") : Screen
     data class Attendance(val room: Room, val initialChild: Child? = null) : Screen
+    data object Announcements : Screen
 }
 
 @Composable
@@ -91,6 +94,12 @@ fun SonrisasApp() {
     val childrenSala1AState = remember {
         mutableStateListOf<Child>().apply {
             addAll(MockDataRepository.childrenSala1A)
+        }
+    }
+
+    val announcementsState = remember {
+        mutableStateListOf<Announcement>().apply {
+            addAll(MockDataRepository.getInitialAnnouncements())
         }
     }
 
@@ -189,6 +198,10 @@ fun SonrisasApp() {
                     RoomSelectionScreen(
                         onRoomSelected = { selectedRoom ->
                             backStack.add(Screen.RoomDashboard(selectedRoom))
+                        },
+                        unreadAnnouncementsCount = announcementsState.count { it.isUnread },
+                        onNavigateToAnnouncements = {
+                            backStack.add(Screen.Announcements)
                         },
                         onNavigateToMessages = {
                             backStack.add(Screen.Messages)
@@ -450,6 +463,17 @@ fun SonrisasApp() {
                                         iconType = "entry"
                                     )
                                 )
+                            }
+                        }
+                    )
+                }
+
+                is Screen.Announcements -> {
+                    AnnouncementsScreen(
+                        announcements = announcementsState,
+                        onBack = {
+                            if (backStack.size > 1) {
+                                backStack.removeAt(backStack.lastIndex)
                             }
                         }
                     )
