@@ -170,7 +170,7 @@ fun RoomDashboardScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Header Top Bar - Centrado y consistente
+            // Header Top Bar
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

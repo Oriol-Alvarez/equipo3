@@ -31,6 +31,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,7 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.etapa1.model.Announcement
-import com.example.etapa1.model.MockDataRepository
+import com.example.etapa1.ui.state.AnnouncementsViewModel
 import com.example.etapa1.ui.theme.AppBackground
 import com.example.etapa1.ui.theme.BorderSubtle
 import com.example.etapa1.ui.theme.BrandBlue
@@ -52,7 +54,21 @@ import com.example.etapa1.ui.theme.TextSecondary
 
 @Composable
 fun AnnouncementsScreen(
+    viewModel: AnnouncementsViewModel,
+    onBack: () -> Unit
+) {
+    val announcements by viewModel.announcements.collectAsState()
+    AnnouncementsScreen(
+        announcements = announcements,
+        onAnnouncementClick = { viewModel.markAsRead(it.id) },
+        onBack = onBack
+    )
+}
+
+@Composable
+fun AnnouncementsScreen(
     announcements: List<Announcement>,
+    onAnnouncementClick: (Announcement) -> Unit = {},
     onBack: () -> Unit
 ) {
     Scaffold(
@@ -101,7 +117,10 @@ fun AnnouncementsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(announcements, key = { it.id }) { announcement ->
-                    AnnouncementCardDetail(announcement)
+                    AnnouncementCardDetail(
+                        announcement = announcement,
+                        onClick = { onAnnouncementClick(announcement) }
+                    )
                 }
             }
         }
@@ -109,8 +128,12 @@ fun AnnouncementsScreen(
 }
 
 @Composable
-private fun AnnouncementCardDetail(announcement: Announcement) {
+private fun AnnouncementCardDetail(
+    announcement: Announcement,
+    onClick: () -> Unit = {}
+) {
     Card(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))

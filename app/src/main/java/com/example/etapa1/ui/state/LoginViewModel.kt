@@ -51,4 +51,8 @@ class LoginViewModel(
         _uiState.update { it.copy(isSuccess = true) }
         return state.selectedRole
     }
+
+    fun toggleError() {
+        _uiState.update { it.copy(hasError = !it.hasError) }
+    }
 }

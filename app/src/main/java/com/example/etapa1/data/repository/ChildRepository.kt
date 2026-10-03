@@ -2,6 +2,7 @@ package com.example.etapa1.data.repository
 
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.ChildFullProfile
+import com.example.etapa1.model.DailyBitacora
 import com.example.etapa1.model.WeeklySummary
 import kotlinx.coroutines.flow.StateFlow
 
@@ -14,4 +15,5 @@ interface ChildRepository {
     fun updateChildFullProfile(childId: String, profile: ChildFullProfile)
     fun getWeeklySummaryForChild(child: Child): WeeklySummary
     fun getWeeklySummariesForChild(child: Child): List<WeeklySummary>
+    fun getDailyBitacorasForChild(child: Child): List<DailyBitacora>
 }

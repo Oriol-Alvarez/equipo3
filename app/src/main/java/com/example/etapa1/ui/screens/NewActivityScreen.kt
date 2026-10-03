@@ -201,7 +201,7 @@ fun NewActivityScreen(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Selector de Categoría (Grid 2x3 de la bitácora oficial)
+                // Selector de Categoría
                 ActivityCategoryGrid(
                     selectedCategory = selectedCategory,
                     onCategorySelected = { selectedCategory = it }

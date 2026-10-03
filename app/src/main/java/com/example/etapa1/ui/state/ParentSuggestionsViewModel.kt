@@ -75,8 +75,4 @@ class ParentSuggestionsViewModel(
         _isSendingSuccess.value = true
         return true
     }
-
-    fun resetSuccess() {
-        _isSendingSuccess.value = false
-    }
 }

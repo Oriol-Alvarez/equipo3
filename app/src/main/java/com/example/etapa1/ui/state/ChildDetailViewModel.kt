@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.example.etapa1.data.repository.ChildRepository
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.ChildFullProfile
+import com.example.etapa1.model.DailyBitacora
 import com.example.etapa1.model.WeeklySummary
 
 class ChildDetailViewModel(
@@ -13,11 +14,11 @@ class ChildDetailViewModel(
         return childRepository.getChildFullProfile(child)
     }
 
-    fun getWeeklySummary(child: Child): WeeklySummary {
-        return childRepository.getWeeklySummaryForChild(child)
-    }
-
     fun getWeeklySummaries(child: Child): List<WeeklySummary> {
         return childRepository.getWeeklySummariesForChild(child)
+    }
+
+    fun getDailyBitacoras(child: Child): List<DailyBitacora> {
+        return childRepository.getDailyBitacorasForChild(child)
     }
 }

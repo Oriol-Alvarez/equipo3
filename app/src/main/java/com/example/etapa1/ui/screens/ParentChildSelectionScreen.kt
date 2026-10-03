@@ -97,7 +97,7 @@ fun ParentChildSelectionScreen(
                 .padding(paddingValues),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header Top Bar - Centrado con estética de Sonrisas de Cristal
+            // Header Top Bar
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

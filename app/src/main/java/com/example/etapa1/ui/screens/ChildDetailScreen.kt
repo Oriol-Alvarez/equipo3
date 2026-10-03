@@ -58,8 +58,15 @@ fun ChildDetailScreen(
     onNavigateToChat: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {}
 ) {
-    ChildDetailScreen(
+    val fullProfile = remember(child.id) { viewModel.getFullProfile(child) }
+    val weeklySummaries = remember(child.id) { viewModel.getWeeklySummaries(child) }
+    val bitacoras = remember(child.id) { viewModel.getDailyBitacoras(child) }
+
+    ChildDetailContent(
         child = child,
+        fullProfile = fullProfile,
+        weeklySummaries = weeklySummaries,
+        bitacoras = bitacoras,
         onBack = onBack,
         onNavigateToChat = onNavigateToChat,
         onNavigateToAttendance = onNavigateToAttendance
@@ -73,12 +80,34 @@ fun ChildDetailScreen(
     onNavigateToChat: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {}
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) } // 0 = Datos del Niño (Default), 1 = Bitácora Diaria, 2 = Resumen Semanal
-    val bitacoras = remember(child.id) { MockDataRepository.getDailyBitacorasForChild(child) }
-    var selectedDayIndex by remember { mutableIntStateOf(0) }
-    var selectedWeekIndex by remember { mutableIntStateOf(0) }
     val fullProfile = remember(child.id) { MockDataRepository.getChildFullProfile(child) }
     val weeklySummaries = remember(child.id) { MockDataRepository.getWeeklySummariesForChild(child) }
+    val bitacoras = remember(child.id) { MockDataRepository.getDailyBitacorasForChild(child) }
+
+    ChildDetailContent(
+        child = child,
+        fullProfile = fullProfile,
+        weeklySummaries = weeklySummaries,
+        bitacoras = bitacoras,
+        onBack = onBack,
+        onNavigateToChat = onNavigateToChat,
+        onNavigateToAttendance = onNavigateToAttendance
+    )
+}
+
+@Composable
+fun ChildDetailContent(
+    child: Child,
+    fullProfile: com.example.etapa1.model.ChildFullProfile,
+    weeklySummaries: List<com.example.etapa1.model.WeeklySummary>,
+    bitacoras: List<com.example.etapa1.model.DailyBitacora>,
+    onBack: () -> Unit,
+    onNavigateToChat: () -> Unit = {},
+    onNavigateToAttendance: () -> Unit = {}
+) {
+    var selectedTab by remember { mutableIntStateOf(0) } // 0 = Datos del Niño (Default), 1 = Bitácora Diaria, 2 = Resumen Semanal
+    var selectedDayIndex by remember { mutableIntStateOf(0) }
+    var selectedWeekIndex by remember { mutableIntStateOf(0) }
 
     Scaffold(
         containerColor = AppBackground,

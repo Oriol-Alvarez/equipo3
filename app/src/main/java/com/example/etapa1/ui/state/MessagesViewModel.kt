@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 
 data class MessagesUiState(
     val selectedTab: Int = 1,
@@ -22,29 +23,48 @@ data class MessagesUiState(
     val isSearchOpen: Boolean = false
 )
 
+private data class MessagesFilterState(
+    val selectedTab: Int = 1,
+    val searchQuery: String = "",
+    val isSearchOpen: Boolean = false
+)
+
 class MessagesViewModel(
     private val messagesRepository: MessagesRepository
 ) : ViewModel() {
 
-    private val _selectedTab = MutableStateFlow(1)
-    private val _searchQuery = MutableStateFlow("")
-    private val _isSearchOpen = MutableStateFlow(false)
+    private val _filterState = MutableStateFlow(MessagesFilterState())
 
     val uiState: StateFlow<MessagesUiState> = combine(
         messagesRepository.workerChats,
         messagesRepository.parentChats,
         messagesRepository.staffMembers,
         messagesRepository.globalChat,
-        _selectedTab
-    ) { workerChats, parentChats, staff, global, tab ->
+        _filterState
+    ) { workerChats, parentChats, staff, global, filters ->
+        val query = filters.searchQuery.trim()
+        val filteredWorkers = if (query.isBlank()) workerChats else workerChats.filter {
+            it.title.contains(query, ignoreCase = true) ||
+            it.subtitle.contains(query, ignoreCase = true) ||
+            it.lastMessage.contains(query, ignoreCase = true)
+        }
+        val filteredParents = if (query.isBlank()) parentChats else parentChats.filter {
+            it.child.fullName.contains(query, ignoreCase = true) ||
+            it.parentName.contains(query, ignoreCase = true) ||
+            it.lastMessage.contains(query, ignoreCase = true)
+        }
+        val showGlobal = query.isBlank() ||
+            global.title.contains(query, ignoreCase = true) ||
+            global.lastMessage.contains(query, ignoreCase = true)
+
         MessagesUiState(
-            selectedTab = tab,
-            workerChats = workerChats,
-            parentChats = parentChats,
+            selectedTab = filters.selectedTab,
+            workerChats = filteredWorkers,
+            parentChats = filteredParents,
             staffMembers = staff,
-            globalChat = global,
-            searchQuery = _searchQuery.value,
-            isSearchOpen = _isSearchOpen.value
+            globalChat = if (showGlobal) global else null,
+            searchQuery = filters.searchQuery,
+            isSearchOpen = filters.isSearchOpen
         )
     }.stateIn(
         scope = viewModelScope,
@@ -53,17 +73,18 @@ class MessagesViewModel(
     )
 
     fun onTabSelected(tab: Int) {
-        _selectedTab.value = tab
+        _filterState.update { it.copy(selectedTab = tab) }
     }
 
     fun onSearchQueryChanged(query: String) {
-        _searchQuery.value = query
+        _filterState.update { it.copy(searchQuery = query) }
     }
 
     fun toggleSearch() {
-        val next = !_isSearchOpen.value
-        _isSearchOpen.value = next
-        if (!next) _searchQuery.value = ""
+        _filterState.update {
+            val next = !it.isSearchOpen
+            it.copy(isSearchOpen = next, searchQuery = if (!next) "" else it.searchQuery)
+        }
     }
 
     fun sendMessage(chatId: String, text: String) {

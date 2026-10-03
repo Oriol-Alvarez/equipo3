@@ -61,16 +61,27 @@ import com.example.etapa1.ui.theme.Etapa1Theme
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.state.LoginViewModel
 
+import androidx.compose.runtime.collectAsState
+
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel,
     onLoginSuccess: (UserRole) -> Unit = {}
 ) {
-    LoginScreen(
-        onLoginSuccess = { role ->
-            viewModel.onRoleSelected(role)
-            viewModel.submitLogin()
-            onLoginSuccess(role)
+    val uiState by viewModel.uiState.collectAsState()
+
+    LoginContent(
+        uiState = uiState,
+        onRoleSelected = viewModel::onRoleSelected,
+        onEmailChange = viewModel::onEmailChanged,
+        onPasswordChange = viewModel::onPasswordChanged,
+        onTogglePasswordVisibility = viewModel::onTogglePasswordVisibility,
+        onErrorToggle = viewModel::toggleError,
+        onSubmitLogin = {
+            val role = viewModel.submitLogin()
+            if (role != null) {
+                onLoginSuccess(role)
+            }
         }
     )
 }
@@ -85,6 +96,41 @@ fun LoginScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var hasError by remember { mutableStateOf(false) }
 
+    val state = com.example.etapa1.ui.state.LoginUiState(
+        selectedRole = selectedRole,
+        email = email,
+        password = password,
+        passwordVisible = passwordVisible,
+        hasError = hasError
+    )
+
+    LoginContent(
+        uiState = state,
+        onRoleSelected = { selectedRole = it },
+        onEmailChange = { email = it; hasError = false },
+        onPasswordChange = { password = it; hasError = false },
+        onTogglePasswordVisibility = { passwordVisible = !passwordVisible },
+        onErrorToggle = { hasError = !hasError },
+        onSubmitLogin = {
+            if (email.isBlank() || password.isBlank()) {
+                hasError = true
+            } else {
+                onLoginSuccess(selectedRole)
+            }
+        }
+    )
+}
+
+@Composable
+fun LoginContent(
+    uiState: com.example.etapa1.ui.state.LoginUiState,
+    onRoleSelected: (UserRole) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onTogglePasswordVisibility: () -> Unit,
+    onErrorToggle: () -> Unit,
+    onSubmitLogin: () -> Unit
+) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = AppBackground
@@ -124,8 +170,8 @@ fun LoginScreen(
 
             // Selector Educadora / Familiar
             RoleToggle(
-                selectedRole = selectedRole,
-                onRoleSelected = { selectedRole = it }
+                selectedRole = uiState.selectedRole,
+                onRoleSelected = onRoleSelected
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -140,20 +186,17 @@ fun LoginScreen(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 OutlinedTextField(
-                    value = email,
-                    onValueChange = {
-                        email = it
-                        hasError = false
-                    },
+                    value = uiState.email,
+                    onValueChange = onEmailChange,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(22.dp),
                     singleLine = true,
-                    isError = hasError,
+                    isError = uiState.hasError,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = CardBackground,
                         unfocusedContainerColor = CardBackground,
-                        focusedBorderColor = if (hasError) AlertRed else BrandBlue,
-                        unfocusedBorderColor = if (hasError) AlertRed else BorderSubtle,
+                        focusedBorderColor = if (uiState.hasError) AlertRed else BrandBlue,
+                        unfocusedBorderColor = if (uiState.hasError) AlertRed else BorderSubtle,
                         errorBorderColor = AlertRed
                     ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
@@ -172,21 +215,18 @@ fun LoginScreen(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 OutlinedTextField(
-                    value = password,
-                    onValueChange = {
-                        password = it
-                        hasError = false
-                    },
+                    value = uiState.password,
+                    onValueChange = onPasswordChange,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(22.dp),
                     singleLine = true,
-                    isError = hasError,
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    isError = uiState.hasError,
+                    visualTransformation = if (uiState.passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        IconButton(onClick = onTogglePasswordVisibility) {
                             Icon(
-                                imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña",
+                                imageVector = if (uiState.passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (uiState.passwordVisible) "Ocultar contraseña" else "Mostrar contraseña",
                                 tint = TextMuted,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -195,8 +235,8 @@ fun LoginScreen(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = CardBackground,
                         unfocusedContainerColor = CardBackground,
-                        focusedBorderColor = if (hasError) AlertRed else BrandBlue,
-                        unfocusedBorderColor = if (hasError) AlertRed else BorderSubtle,
+                        focusedBorderColor = if (uiState.hasError) AlertRed else BrandBlue,
+                        unfocusedBorderColor = if (uiState.hasError) AlertRed else BorderSubtle,
                         errorBorderColor = AlertRed
                     ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
@@ -204,7 +244,7 @@ fun LoginScreen(
             }
 
             // Banner de error (si está activo)
-            if (hasError) {
+            if (uiState.hasError) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Box(
                     modifier = Modifier
@@ -228,13 +268,7 @@ fun LoginScreen(
 
             // Botón Iniciar Sesión
             Button(
-                onClick = {
-                    if (email.isBlank() || password.isBlank()) {
-                        hasError = true
-                    } else {
-                        onLoginSuccess(selectedRole)
-                    }
-                },
+                onClick = onSubmitLogin,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
@@ -272,11 +306,11 @@ fun LoginScreen(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = if (hasError) "Quitar error" else "Simular error de login",
+                    text = if (uiState.hasError) "Quitar error" else "Simular error de login",
                     fontSize = 11.sp,
                     color = TextMuted,
                     modifier = Modifier
-                        .clickable { hasError = !hasError }
+                        .clickable { onErrorToggle() }
                         .padding(6.dp)
                 )
             }

@@ -5,7 +5,6 @@ import com.example.etapa1.data.repository.ChildRepository
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.ChildFullProfile
 import com.example.etapa1.model.DailyBitacora
-import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.WeeklySummary
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,15 +25,15 @@ class ParentHomeViewModel(
     initialChild: Child? = null
 ) : ViewModel() {
 
-    private val defaultChild = initialChild ?: MockDataRepository.mateoGarcia
+    private val defaultChild = initialChild ?: childRepository.parentChildren.value.first()
     private val defaultWeeklySummaries = childRepository.getWeeklySummariesForChild(defaultChild)
 
     private val _uiState = MutableStateFlow(
         ParentHomeUiState(
             selectedChild = defaultChild,
-            allChildren = MockDataRepository.parentChildren,
+            allChildren = childRepository.parentChildren.value,
             fullProfile = childRepository.getChildFullProfile(defaultChild),
-            dailyBitacoras = MockDataRepository.getDailyBitacorasForChild(defaultChild),
+            dailyBitacoras = childRepository.getDailyBitacorasForChild(defaultChild),
             weeklySummaries = defaultWeeklySummaries,
             weeklySummary = defaultWeeklySummaries.firstOrNull() ?: childRepository.getWeeklySummaryForChild(defaultChild)
         )
@@ -47,7 +46,7 @@ class ParentHomeViewModel(
             it.copy(
                 selectedChild = child,
                 fullProfile = childRepository.getChildFullProfile(child),
-                dailyBitacoras = MockDataRepository.getDailyBitacorasForChild(child),
+                dailyBitacoras = childRepository.getDailyBitacorasForChild(child),
                 weeklySummaries = summaries,
                 weeklySummary = summaries.firstOrNull() ?: childRepository.getWeeklySummaryForChild(child)
             )

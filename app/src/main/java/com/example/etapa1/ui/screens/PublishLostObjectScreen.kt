@@ -97,7 +97,6 @@ fun PublishLostObjectScreen(
     var location by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("Ropa") }
 
-    // Estados de validación de errores visuales (como en el mockup)
     var photoError by remember { mutableStateOf(false) }
     var descriptionError by remember { mutableStateOf(false) }
     var categoryError by remember { mutableStateOf(false) }
@@ -124,7 +123,7 @@ fun PublishLostObjectScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Header Top Bar - Centrado y consistente
+            // Header Top Bar
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -158,7 +157,7 @@ fun PublishLostObjectScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 20.dp, vertical = 8.dp)
             ) {
-                // Títulos de la pantalla - Centrados y consistentes
+                // Títulos de la pantalla
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -183,7 +182,7 @@ fun PublishLostObjectScreen(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // Recuadro de Fotografía (Abre Galería Nativa)
+                // Recuadro de Fotografía
                 val photoBorderColor = if (photoError) AlertRed else Color(0xFFCBD5E1)
                 val photoShape = RoundedCornerShape(16.dp)
 

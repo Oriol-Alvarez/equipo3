@@ -261,7 +261,7 @@ fun ParentHomeScreen(
                 }
             }
 
-            // 2. Tarjeta Principal del Niño Seleccionado (Estilo Dashboard)
+            // 2. Tarjeta Principal del Niño Seleccionado
             item {
                 Card(
                     modifier = Modifier

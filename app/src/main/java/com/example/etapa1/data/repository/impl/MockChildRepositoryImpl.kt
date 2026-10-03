@@ -3,6 +3,7 @@ package com.example.etapa1.data.repository.impl
 import com.example.etapa1.data.repository.ChildRepository
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.ChildFullProfile
+import com.example.etapa1.model.DailyBitacora
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.WeeklySummary
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,5 +56,9 @@ class MockChildRepositoryImpl : ChildRepository {
 
     override fun getWeeklySummariesForChild(child: Child): List<WeeklySummary> {
         return MockDataRepository.getWeeklySummariesForChild(child)
+    }
+
+    override fun getDailyBitacorasForChild(child: Child): List<DailyBitacora> {
+        return MockDataRepository.getDailyBitacorasForChild(child)
     }
 }

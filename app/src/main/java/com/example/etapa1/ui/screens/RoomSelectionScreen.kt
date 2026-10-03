@@ -98,7 +98,7 @@ fun RoomSelectionScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // Header Top Bar - Centrado y consistente
+            // Header Top Bar
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -231,7 +231,6 @@ private fun RoomCard(
                 }
             }
 
-            // Circular Action Button
             Box(
                 modifier = Modifier
                     .size(38.dp)

@@ -83,17 +83,18 @@ fun SuggestionsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    SuggestionsScreen(
-        suggestions = uiState.suggestions,
+    SuggestionsContent(
+        uiState = uiState,
+        onSearchQueryChange = viewModel::onSearchQueryChanged,
+        onToggleSearch = viewModel::toggleSearch,
+        onStatusFilterSelect = viewModel::onStatusFilterSelected,
+        onCategoryFilterSelect = viewModel::onCategoryFilterSelected,
         onRespondSuggestion = viewModel::respondSuggestion,
         onNavigateToHome = onNavigateToHome
     )
 }
 
-/**
- * Pantalla de Buzón de Sugerencias donde el personal del centro puede consultar,
- * filtrar y responder las sugerencias publicadas por los padres de familia.
- */
+
 @Composable
 fun SuggestionsScreen(
     suggestions: List<ParentSuggestion>,
@@ -104,15 +105,7 @@ fun SuggestionsScreen(
     var selectedStatusFilter by remember { mutableStateOf<SuggestionStatus?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var isSearchOpen by remember { mutableStateOf(false) }
-    var respondingSuggestion by remember { mutableStateOf<ParentSuggestion?>(null) }
 
-    // Métricas rápidas
-    val totalCount = suggestions.size
-    val pendingCount = suggestions.count { it.status == SuggestionStatus.PENDIENTE }
-    val inReviewCount = suggestions.count { it.status == SuggestionStatus.EN_REVISION }
-    val resolvedCount = suggestions.count { it.status == SuggestionStatus.ATENDIDA }
-
-    // Filtrado
     val filteredSuggestions = remember(suggestions, selectedCategory, selectedStatusFilter, searchQuery) {
         suggestions.filter { item ->
             val matchCategory = selectedCategory == SuggestionCategory.TODAS || item.category == selectedCategory
@@ -125,6 +118,42 @@ fun SuggestionsScreen(
             matchCategory && matchStatus && matchQuery
         }
     }
+
+    val state = com.example.etapa1.ui.state.SuggestionsUiState(
+        suggestions = suggestions,
+        selectedStatusFilter = selectedStatusFilter,
+        selectedCategoryFilter = selectedCategory,
+        searchQuery = searchQuery,
+        isSearchOpen = isSearchOpen,
+        totalCount = suggestions.size,
+        pendingCount = suggestions.count { it.status == SuggestionStatus.PENDIENTE },
+        inReviewCount = suggestions.count { it.status == SuggestionStatus.EN_REVISION },
+        attendedCount = suggestions.count { it.status == SuggestionStatus.ATENDIDA },
+        filteredSuggestions = filteredSuggestions
+    )
+
+    SuggestionsContent(
+        uiState = state,
+        onSearchQueryChange = { searchQuery = it },
+        onToggleSearch = { isSearchOpen = !isSearchOpen },
+        onStatusFilterSelect = { selectedStatusFilter = if (selectedStatusFilter == it) null else it },
+        onCategoryFilterSelect = { selectedCategory = it },
+        onRespondSuggestion = onRespondSuggestion,
+        onNavigateToHome = onNavigateToHome
+    )
+}
+
+@Composable
+fun SuggestionsContent(
+    uiState: com.example.etapa1.ui.state.SuggestionsUiState,
+    onSearchQueryChange: (String) -> Unit,
+    onToggleSearch: () -> Unit,
+    onStatusFilterSelect: (SuggestionStatus?) -> Unit,
+    onCategoryFilterSelect: (SuggestionCategory) -> Unit,
+    onRespondSuggestion: (suggestionId: String, responseText: String, newStatus: SuggestionStatus) -> Unit,
+    onNavigateToHome: () -> Unit
+) {
+    var respondingSuggestion by remember { mutableStateOf<ParentSuggestion?>(null) }
 
     Scaffold(
         containerColor = AppBackground,
@@ -151,11 +180,11 @@ fun SuggestionsScreen(
                 )
 
                 IconButton(
-                    onClick = { isSearchOpen = !isSearchOpen },
+                    onClick = onToggleSearch,
                     modifier = Modifier.align(Alignment.CenterEnd)
                 ) {
                     Icon(
-                        imageVector = if (isSearchOpen) Icons.Default.Close else Icons.Default.Search,
+                        imageVector = if (uiState.isSearchOpen) Icons.Default.Close else Icons.Default.Search,
                         contentDescription = "Buscar sugerencia",
                         tint = BrandBlue,
                         modifier = Modifier.size(24.dp)
@@ -164,10 +193,10 @@ fun SuggestionsScreen(
             }
 
             // Barra de búsqueda desplegable
-            AnimatedVisibility(visible = isSearchOpen) {
+            AnimatedVisibility(visible = uiState.isSearchOpen) {
                 OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
+                    value = uiState.searchQuery,
+                    onValueChange = onSearchQueryChange,
                     placeholder = { Text("Buscar por familia, alumno o tema...", fontSize = 13.sp, color = TextMuted) },
                     singleLine = true,
                     shape = RoundedCornerShape(24.dp),
@@ -193,40 +222,34 @@ fun SuggestionsScreen(
             ) {
                 MetricChip(
                     label = "Total",
-                    count = totalCount,
+                    count = uiState.totalCount,
                     color = BrandBlue,
-                    isSelected = selectedStatusFilter == null,
-                    onClick = { selectedStatusFilter = null },
+                    isSelected = uiState.selectedStatusFilter == null,
+                    onClick = { onStatusFilterSelect(null) },
                     modifier = Modifier.weight(1f)
                 )
                 MetricChip(
                     label = "Pendientes",
-                    count = pendingCount,
+                    count = uiState.pendingCount,
                     color = Color(0xFFE65100),
-                    isSelected = selectedStatusFilter == SuggestionStatus.PENDIENTE,
-                    onClick = {
-                        selectedStatusFilter = if (selectedStatusFilter == SuggestionStatus.PENDIENTE) null else SuggestionStatus.PENDIENTE
-                    },
+                    isSelected = uiState.selectedStatusFilter == SuggestionStatus.PENDIENTE,
+                    onClick = { onStatusFilterSelect(SuggestionStatus.PENDIENTE) },
                     modifier = Modifier.weight(1f)
                 )
                 MetricChip(
                     label = "En revisión",
-                    count = inReviewCount,
+                    count = uiState.inReviewCount,
                     color = Color(0xFF0288D1),
-                    isSelected = selectedStatusFilter == SuggestionStatus.EN_REVISION,
-                    onClick = {
-                        selectedStatusFilter = if (selectedStatusFilter == SuggestionStatus.EN_REVISION) null else SuggestionStatus.EN_REVISION
-                    },
+                    isSelected = uiState.selectedStatusFilter == SuggestionStatus.EN_REVISION,
+                    onClick = { onStatusFilterSelect(SuggestionStatus.EN_REVISION) },
                     modifier = Modifier.weight(1f)
                 )
                 MetricChip(
                     label = "Atendidas",
-                    count = resolvedCount,
+                    count = uiState.attendedCount,
                     color = Color(0xFF2E7D32),
-                    isSelected = selectedStatusFilter == SuggestionStatus.ATENDIDA,
-                    onClick = {
-                        selectedStatusFilter = if (selectedStatusFilter == SuggestionStatus.ATENDIDA) null else SuggestionStatus.ATENDIDA
-                    },
+                    isSelected = uiState.selectedStatusFilter == SuggestionStatus.ATENDIDA,
+                    onClick = { onStatusFilterSelect(SuggestionStatus.ATENDIDA) },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -240,7 +263,7 @@ fun SuggestionsScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 SuggestionCategory.values().forEach { category ->
-                    val isSelected = selectedCategory == category
+                    val isSelected = uiState.selectedCategoryFilter == category
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
@@ -250,7 +273,7 @@ fun SuggestionsScreen(
                                 color = if (isSelected) BrandBlue else BorderSubtle,
                                 shape = RoundedCornerShape(20.dp)
                             )
-                            .clickable { selectedCategory = category }
+                            .clickable { onCategoryFilterSelect(category) }
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
@@ -266,7 +289,7 @@ fun SuggestionsScreen(
             Spacer(modifier = Modifier.height(4.dp))
 
             // Lista de sugerencias
-            if (filteredSuggestions.isEmpty()) {
+            if (uiState.filteredSuggestions.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -305,7 +328,7 @@ fun SuggestionsScreen(
                 ) {
                     item {
                         Text(
-                            text = "SUGERENCIAS DE FAMILIAS (${filteredSuggestions.size})",
+                            text = "SUGERENCIAS DE FAMILIAS (${uiState.filteredSuggestions.size})",
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextMuted,
@@ -314,7 +337,7 @@ fun SuggestionsScreen(
                         )
                     }
 
-                    items(filteredSuggestions, key = { it.id }) { suggestion ->
+                    items(uiState.filteredSuggestions, key = { it.id }) { suggestion ->
                         SuggestionItemCard(
                             suggestion = suggestion,
                             onRespondClick = { respondingSuggestion = suggestion }

@@ -53,6 +53,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.theme.Etapa1Theme
 import com.example.etapa1.ui.state.MessagesViewModel
 
+import androidx.compose.runtime.collectAsState
+
 @Composable
 fun MessagesScreen(
     viewModel: MessagesViewModel,
@@ -60,7 +62,16 @@ fun MessagesScreen(
     onNavigateToChildChat: (Child) -> Unit,
     onNavigateToMore: () -> Unit
 ) {
-    MessagesScreen(
+    val uiState by viewModel.uiState.collectAsState()
+
+    MessagesContent(
+        uiState = uiState,
+        onModeSelect = { mode ->
+            viewModel.onTabSelected(if (mode == MessagesMode.TRABAJADORES) 0 else 1)
+        },
+        onSearchQueryChange = viewModel::onSearchQueryChanged,
+        onToggleSearch = viewModel::toggleSearch,
+        onSendMessage = viewModel::sendMessage,
         onNavigateToHome = onNavigateToHome,
         onNavigateToChildChat = onNavigateToChildChat,
         onNavigateToMore = onNavigateToMore
@@ -74,52 +85,42 @@ fun MessagesScreen(
     onNavigateToChildChat: (Child) -> Unit,
     onNavigateToMore: () -> Unit
 ) {
-    var selectedMode by remember { mutableStateOf(MessagesMode.TRABAJADORES) }
-    var searchQuery by remember { mutableStateOf("") }
-    var isSearchOpen by remember { mutableStateOf(false) }
+    val state = com.example.etapa1.ui.state.MessagesUiState(
+        workerChats = MockDataRepository.getInitialWorkerChats(),
+        parentChats = MockDataRepository.getInitialParentChats(),
+        staffMembers = MockDataRepository.staffMembers,
+        globalChat = MockDataRepository.initialGlobalWorkerChat
+    )
+
+    MessagesContent(
+        uiState = state,
+        onModeSelect = {},
+        onSearchQueryChange = {},
+        onToggleSearch = {},
+        onSendMessage = { _, _ -> },
+        onNavigateToHome = onNavigateToHome,
+        onNavigateToChildChat = onNavigateToChildChat,
+        onNavigateToMore = onNavigateToMore
+    )
+}
+
+@Composable
+fun MessagesContent(
+    uiState: com.example.etapa1.ui.state.MessagesUiState,
+    onModeSelect: (MessagesMode) -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    onToggleSearch: () -> Unit,
+    onSendMessage: (chatId: String, text: String) -> Unit,
+    onNavigateToHome: () -> Unit,
+    onNavigateToChildChat: (Child) -> Unit,
+    onNavigateToMore: () -> Unit
+) {
+    val selectedMode = if (uiState.selectedTab == 0) MessagesMode.TRABAJADORES else MessagesMode.FAMILIAS
     var showCreateGroupDialog by remember { mutableStateOf(false) }
     var activeWorkerChat by remember { mutableStateOf<WorkerChat?>(null) }
-
-    // Estados de chats de trabajadores
-    var globalChat by remember { mutableStateOf(MockDataRepository.initialGlobalWorkerChat) }
-    val workerChats = remember {
-        mutableStateListOf<WorkerChat>().apply {
-            addAll(MockDataRepository.getInitialWorkerChats())
-        }
-    }
-
-    // Estados de chats de familias
-    val parentChats = remember {
-        mutableStateListOf<ParentChatSummary>().apply {
-            addAll(MockDataRepository.getInitialParentChats())
-        }
-    }
-
-    // Filtrado de trabajadores
-    val filteredWorkerChats = remember(searchQuery, workerChats.size) {
-        if (searchQuery.isBlank()) workerChats
-        else workerChats.filter {
-            it.title.contains(searchQuery, ignoreCase = true) ||
-                    it.subtitle.contains(searchQuery, ignoreCase = true) ||
-                    it.lastMessage.contains(searchQuery, ignoreCase = true)
-        }
-    }
-
-    val showGlobalChat = remember(searchQuery) {
-        searchQuery.isBlank() ||
-                globalChat.title.contains(searchQuery, ignoreCase = true) ||
-                globalChat.lastMessage.contains(searchQuery, ignoreCase = true)
-    }
-
-    // Filtrado de familias
-    val filteredParentChats = remember(searchQuery, parentChats.size) {
-        if (searchQuery.isBlank()) parentChats
-        else parentChats.filter {
-            it.child.fullName.contains(searchQuery, ignoreCase = true) ||
-                    it.parentName.contains(searchQuery, ignoreCase = true) ||
-                    it.lastMessage.contains(searchQuery, ignoreCase = true)
-        }
-    }
+    val workerChats = remember(uiState.workerChats) { mutableStateListOf<WorkerChat>().apply { addAll(uiState.workerChats) } }
+    var globalChat by remember(uiState.globalChat) { mutableStateOf(uiState.globalChat ?: MockDataRepository.initialGlobalWorkerChat) }
+    val parentChats = uiState.parentChats
 
     Scaffold(
         containerColor = AppBackground,
@@ -130,7 +131,7 @@ fun MessagesScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Header Top Bar - Centrado 
+            // Header Top Bar
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -162,7 +163,7 @@ fun MessagesScreen(
 
                 // Botón Lupa / Búsqueda (arriba derecha)
                 IconButton(
-                    onClick = { isSearchOpen = !isSearchOpen },
+                    onClick = onToggleSearch,
                     modifier = Modifier.align(Alignment.CenterEnd)
                 ) {
                     Icon(
@@ -181,14 +182,11 @@ fun MessagesScreen(
                     .padding(horizontal = 14.dp)
             ) {
                 // Campo de búsqueda desplegable
-                AnimatedVisibility(visible = isSearchOpen) {
+                AnimatedVisibility(visible = uiState.isSearchOpen) {
                     MessagesSearchBar(
-                        query = searchQuery,
-                        onQueryChange = { searchQuery = it },
-                        onClose = {
-                            searchQuery = ""
-                            isSearchOpen = false
-                        },
+                        query = uiState.searchQuery,
+                        onQueryChange = onSearchQueryChange,
+                        onClose = onToggleSearch,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                 }
@@ -196,8 +194,8 @@ fun MessagesScreen(
                 // Switch / Segmented Control
                 MessagesModeSwitch(
                     selectedMode = selectedMode,
-                    onModeChange = { selectedMode = it },
-                    workersUnreadCount = globalChat.unreadCount + workerChats.sumOf { it.unreadCount },
+                    onModeChange = onModeSelect,
+                    workersUnreadCount = (uiState.globalChat?.unreadCount ?: 0) + workerChats.sumOf { it.unreadCount },
                     parentsUnreadCount = parentChats.sumOf { it.unreadCount }
                 )
             }
@@ -213,12 +211,12 @@ fun MessagesScreen(
             ) {
                 when (selectedMode) {
                     MessagesMode.TRABAJADORES -> {
-                        // 1. Chat Global de Trabajadores (Anclado y diferenciado estéticamente)
-                        if (showGlobalChat) {
+                        // 1. Chat Global de Trabajadores
+                        uiState.globalChat?.let { gChat ->
                             item(key = "pinned_global_chat") {
                                 PinnedGlobalWorkerChatCard(
-                                    chat = globalChat,
-                                    onClick = { activeWorkerChat = globalChat }
+                                    chat = gChat,
+                                    onClick = { activeWorkerChat = gChat }
                                 )
                             }
                         }
@@ -226,7 +224,7 @@ fun MessagesScreen(
                         // Subtítulo de sección
                         item(key = "workers_section_header") {
                             Text(
-                                text = "CHATS DIRECTOS Y GRUPOS TRABAJADORES (${filteredWorkerChats.size})",
+                                text = "CHATS DIRECTOS Y GRUPOS TRABAJADORES (${workerChats.size})",
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TextMuted,
@@ -236,7 +234,7 @@ fun MessagesScreen(
                         }
 
                         // 2. Lista de chats individuales y de grupos
-                        items(filteredWorkerChats, key = { it.id }) { chat ->
+                        items(workerChats, key = { it.id }) { chat ->
                             WorkerChatItem(
                                 chat = chat,
                                 onClick = { activeWorkerChat = chat }
@@ -255,7 +253,7 @@ fun MessagesScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "CHATS DIRECTOS Y GRUPOS FAMILIARES (${filteredParentChats.size})",
+                                    text = "CHATS DIRECTOS Y GRUPOS FAMILIARES (${parentChats.size})",
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextMuted,
@@ -265,8 +263,8 @@ fun MessagesScreen(
                             }
                         }
 
-                        // 3. Lista de chats con los padres (redirigen a la bitácora)
-                        items(filteredParentChats, key = { it.child.id }) { chatSummary ->
+                        // 3. Lista de chats con los padres
+                        items(parentChats, key = { it.child.id }) { chatSummary ->
                             ParentChatItem(
                                 chatSummary = chatSummary,
                                 onClick = { onNavigateToChildChat(chatSummary.child) }
@@ -346,6 +344,9 @@ fun MessagesScreen(
                     }
                 }
                 activeWorkerChat = updatedChat
+                if (newText.isNotBlank()) {
+                    onSendMessage(currentChat.id, newText)
+                }
             }
         )
     }
