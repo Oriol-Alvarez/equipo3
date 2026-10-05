@@ -37,6 +37,13 @@ object AppViewModelProvider {
         initializer { ParentHomeViewModel(sonrisasApplication().container.childRepository) }
         initializer { ParentSuggestionsViewModel(sonrisasApplication().container.suggestionsRepository) }
         initializer { AnnouncementsViewModel(sonrisasApplication().container.announcementRepository) }
+        initializer {
+            FamilyGroupsViewModel(
+                sonrisasApplication().container.familyGroupsRepository,
+                sonrisasApplication().container.messagesRepository,
+                sonrisasApplication().container.childRepository
+            )
+        }
     }
 }
 

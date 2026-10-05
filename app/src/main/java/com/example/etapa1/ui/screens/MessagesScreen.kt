@@ -26,7 +26,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -34,10 +36,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.etapa1.model.Child
+import com.example.etapa1.model.FamilyGroupCandidate
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.ParentChatSummary
 import com.example.etapa1.model.WorkerChat
 import com.example.etapa1.model.WorkerChatMessage
+import com.example.etapa1.ui.components.CreateFamilyGroupDialog
 import com.example.etapa1.ui.components.CreateWorkerGroupDialog
 import com.example.etapa1.ui.components.MessagesMode
 import com.example.etapa1.ui.components.MessagesModeSwitch
@@ -51,6 +55,8 @@ import com.example.etapa1.ui.theme.BrandBlue
 import com.example.etapa1.ui.theme.TextMuted
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.theme.Etapa1Theme
+import com.example.etapa1.ui.state.FamilyGroupsPresenter
+import com.example.etapa1.ui.state.FamilyGroupsViewModel
 import com.example.etapa1.ui.state.MessagesViewModel
 
 import androidx.compose.runtime.collectAsState
@@ -58,11 +64,17 @@ import androidx.compose.runtime.collectAsState
 @Composable
 fun MessagesScreen(
     viewModel: MessagesViewModel,
+    familyGroupsViewModel: FamilyGroupsViewModel,
     onNavigateToHome: () -> Unit,
     onNavigateToChildChat: (Child) -> Unit,
     onNavigateToMore: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val familyGroupsState by familyGroupsViewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        familyGroupsViewModel.useEducatorViewer()
+    }
 
     MessagesContent(
         uiState = uiState,
@@ -74,7 +86,13 @@ fun MessagesScreen(
         onSendMessage = viewModel::sendMessage,
         onNavigateToHome = onNavigateToHome,
         onNavigateToChildChat = onNavigateToChildChat,
-        onNavigateToMore = onNavigateToMore
+        onNavigateToMore = onNavigateToMore,
+        familyGroups = familyGroupsState.groups,
+        familyGroupCandidates = familyGroupsState.candidates,
+        familyGroupError = familyGroupsState.errorMessage,
+        onCreateFamilyGroup = familyGroupsViewModel::createGroup,
+        onSendFamilyGroupMessage = familyGroupsViewModel::sendMessage,
+        onDismissFamilyGroupError = familyGroupsViewModel::clearError
     )
 }
 
@@ -113,7 +131,19 @@ fun MessagesContent(
     onSendMessage: (chatId: String, text: String) -> Unit,
     onNavigateToHome: () -> Unit,
     onNavigateToChildChat: (Child) -> Unit,
-    onNavigateToMore: () -> Unit
+    onNavigateToMore: () -> Unit,
+    familyGroups: List<WorkerChat> = emptyList(),
+    familyGroupCandidates: List<FamilyGroupCandidate> = emptyList(),
+    familyGroupError: String? = null,
+    onCreateFamilyGroup: (title: String, childIds: List<String>) -> Boolean = { _, _ -> false },
+    onSendFamilyGroupMessage: (
+        groupId: String,
+        text: String,
+        fileUri: String?,
+        fileName: String?,
+        fileMimeType: String?
+    ) -> Unit = { _, _, _, _, _ -> },
+    onDismissFamilyGroupError: () -> Unit = {}
 ) {
     val selectedMode = if (uiState.selectedTab == 0) MessagesMode.TRABAJADORES else MessagesMode.FAMILIAS
     var showCreateGroupDialog by remember { mutableStateOf(false) }
@@ -121,6 +151,9 @@ fun MessagesContent(
     val workerChats = remember(uiState.workerChats) { mutableStateListOf<WorkerChat>().apply { addAll(uiState.workerChats) } }
     var globalChat by remember(uiState.globalChat) { mutableStateOf(uiState.globalChat ?: MockDataRepository.initialGlobalWorkerChat) }
     val parentChats = uiState.parentChats
+    var showCreateFamilyGroupDialog by rememberSaveable { mutableStateOf(false) }
+    var activeFamilyGroupId by rememberSaveable { mutableStateOf<String?>(null) }
+    val visibleFamilyGroups = FamilyGroupsPresenter.filterByQuery(familyGroups, uiState.searchQuery)
 
     Scaffold(
         containerColor = AppBackground,
@@ -146,19 +179,28 @@ fun MessagesContent(
                     textAlign = TextAlign.Center
                 )
 
-                // Botón Crear Grupo de Trabajadores (arriba izquierda)
-                if (selectedMode == MessagesMode.TRABAJADORES) {
-                    IconButton(
-                        onClick = { showCreateGroupDialog = true },
-                        modifier = Modifier.align(Alignment.CenterStart)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.GroupAdd,
-                            contentDescription = "Crear Grupo",
-                            tint = BrandBlue,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                // Botón Crear Grupo (arriba izquierda): de trabajadores o de familias según el modo
+                IconButton(
+                    onClick = {
+                        if (selectedMode == MessagesMode.TRABAJADORES) {
+                            showCreateGroupDialog = true
+                        } else {
+                            onDismissFamilyGroupError()
+                            showCreateFamilyGroupDialog = true
+                        }
+                    },
+                    modifier = Modifier.align(Alignment.CenterStart)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.GroupAdd,
+                        contentDescription = if (selectedMode == MessagesMode.TRABAJADORES) {
+                            "Crear grupo de trabajadores"
+                        } else {
+                            "Crear grupo con familias"
+                        },
+                        tint = BrandBlue,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
 
                 // Botón Lupa / Búsqueda (arriba derecha)
@@ -243,6 +285,36 @@ fun MessagesContent(
                     }
 
                     MessagesMode.FAMILIAS -> {
+                        // Grupos con familias creados por la educadora
+                        item(key = "family_groups_section_header") {
+                            Text(
+                                text = "GRUPOS CON FAMILIAS (${visibleFamilyGroups.size})",
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextMuted,
+                                letterSpacing = 0.5.sp,
+                                modifier = Modifier.padding(top = 4.dp, bottom = 2.dp, start = 4.dp)
+                            )
+                        }
+
+                        if (visibleFamilyGroups.isEmpty()) {
+                            item(key = "family_groups_empty") {
+                                Text(
+                                    text = "Toca el botón de grupo arriba a la izquierda para crear uno.",
+                                    fontSize = 12.5.sp,
+                                    color = TextMuted,
+                                    modifier = Modifier.padding(horizontal = 4.dp)
+                                )
+                            }
+                        }
+
+                        items(visibleFamilyGroups, key = { "family_group_${it.id}" }) { group ->
+                            WorkerChatItem(
+                                chat = group,
+                                onClick = { activeFamilyGroupId = group.id }
+                            )
+                        }
+
                         // Subtítulo de sección con indicador de sala
                         item(key = "parents_section_header") {
                             Row(
@@ -253,7 +325,7 @@ fun MessagesContent(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "CHATS DIRECTOS Y GRUPOS FAMILIARES (${parentChats.size})",
+                                    text = "CHATS DIRECTOS CON FAMILIAS (${parentChats.size})",
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextMuted,
@@ -347,6 +419,32 @@ fun MessagesContent(
                 if (newText.isNotBlank()) {
                     onSendMessage(currentChat.id, newText)
                 }
+            }
+        )
+    }
+
+    // Modal de creación de grupo con familias
+    if (showCreateFamilyGroupDialog) {
+        CreateFamilyGroupDialog(
+            candidates = familyGroupCandidates,
+            errorMessage = familyGroupError,
+            onDismiss = { showCreateFamilyGroupDialog = false },
+            onCreateGroup = { title, childIds ->
+                if (onCreateFamilyGroup(title, childIds)) {
+                    showCreateFamilyGroupDialog = false
+                }
+            }
+        )
+    }
+
+    // Conversación del grupo con familias (se busca por id para mostrar siempre la versión más reciente)
+    val activeFamilyGroup = familyGroups.find { it.id == activeFamilyGroupId }
+    if (activeFamilyGroup != null) {
+        WorkerChatConversationDialog(
+            chat = activeFamilyGroup,
+            onDismiss = { activeFamilyGroupId = null },
+            onSendMessage = { text, uri, name, mime ->
+                onSendFamilyGroupMessage(activeFamilyGroup.id, text, uri?.toString(), name, mime)
             }
         )
     }

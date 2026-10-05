@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.NightlightRound
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -97,6 +98,7 @@ fun ParentHomeScreen(
     onNavigateToChat: (Child) -> Unit,
     onNavigateToChildDetail: (Child) -> Unit,
     onNavigateToAnnouncements: () -> Unit,
+    onNavigateToGroups: () -> Unit = {},
     onSwitchChild: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -112,6 +114,7 @@ fun ParentHomeScreen(
         onNavigateToChat = { onNavigateToChat(uiState.selectedChild) },
         onNavigateToChildDetail = { onNavigateToChildDetail(uiState.selectedChild) },
         onNavigateToAnnouncements = onNavigateToAnnouncements,
+        onNavigateToGroups = onNavigateToGroups,
         onSwitchChild = onSwitchChild,
         onSelectChild = { child -> viewModel.selectChild(child) },
         onUpdateProfile = { ped, pedPhone, medNotes, habits, emergPhone, pickups, uri, certName, certDate ->
@@ -142,6 +145,7 @@ fun ParentHomeScreen(
     onNavigateToChat: () -> Unit = {},
     onNavigateToChildDetail: () -> Unit = {},
     onNavigateToAnnouncements: () -> Unit = {},
+    onNavigateToGroups: () -> Unit = {},
     onSwitchChild: () -> Unit = {},
     onSelectChild: (Child) -> Unit = {},
     onUpdateProfile: (
@@ -350,6 +354,13 @@ fun ParentHomeScreen(
                                 label = "Chat",
                                 modifier = Modifier.weight(1f),
                                 onClick = onNavigateToChat
+                            )
+
+                            QuickActionButton(
+                                icon = Icons.Default.Groups,
+                                label = "Grupos",
+                                modifier = Modifier.weight(1f),
+                                onClick = onNavigateToGroups
                             )
 
                             QuickActionButton(
