@@ -179,8 +179,10 @@ fun SonrisasNavHost(
 
             composable(Route.MESSAGES) {
                 val vm: MessagesViewModel = viewModel(factory = AppViewModelProvider.Factory)
+                val familyGroupsVm: FamilyGroupsViewModel = viewModel(factory = AppViewModelProvider.Factory)
                 MessagesScreen(
                     viewModel = vm,
+                    familyGroupsViewModel = familyGroupsVm,
                     onNavigateToHome = navigateToHome,
                     onNavigateToChildChat = { child ->
                         selectedChild = child
@@ -290,7 +292,16 @@ fun SonrisasNavHost(
                         nav.navigate(Route.CHILD_DETAIL)
                     },
                     onNavigateToAnnouncements = { nav.navigate(Route.ANNOUNCEMENTS) },
+                    onNavigateToGroups = { nav.navigate(Route.PARENT_GROUPS) },
                     onSwitchChild = { nav.navigate(Route.PARENT_CHILD_SELECTION) }
+                )
+            }
+
+            composable(Route.PARENT_GROUPS) {
+                val vm: FamilyGroupsViewModel = viewModel(factory = AppViewModelProvider.Factory)
+                ParentGroupsScreen(
+                    viewModel = vm,
+                    onBack = { nav.popBackStack() }
                 )
             }
 

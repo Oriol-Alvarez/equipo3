@@ -7,6 +7,7 @@ import com.example.etapa1.data.repository.AttendanceRepository
 import com.example.etapa1.data.repository.AuthRepository
 import com.example.etapa1.data.repository.BitacoraRepository
 import com.example.etapa1.data.repository.ChildRepository
+import com.example.etapa1.data.repository.FamilyGroupsRepository
 import com.example.etapa1.data.repository.LostObjectsRepository
 import com.example.etapa1.data.repository.MessagesRepository
 import com.example.etapa1.data.repository.RoomRepository
@@ -16,6 +17,7 @@ import com.example.etapa1.data.repository.impl.MockAttendanceRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockAuthRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockBitacoraRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockChildRepositoryImpl
+import com.example.etapa1.data.repository.impl.MockFamilyGroupsRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockLostObjectsRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockMessagesRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockRoomRepositoryImpl
@@ -32,6 +34,7 @@ open class AppContainer(val context: Context) {
     val suggestionsRepository: SuggestionsRepository by lazy { MockSuggestionsRepositoryImpl() }
     val messagesRepository: MessagesRepository by lazy { MockMessagesRepositoryImpl() }
     val announcementRepository: AnnouncementRepository by lazy { MockAnnouncementRepositoryImpl() }
+    val familyGroupsRepository: FamilyGroupsRepository by lazy { MockFamilyGroupsRepositoryImpl() }
 }
 
 class SonrisasApplication : Application() {
