@@ -124,8 +124,8 @@ fun AttendanceScreen(
         }
     }
 
-    var attendanceDate by remember { mutableStateOf(currentDateStr) }
-    var selectedDayIndex by remember { mutableIntStateOf(defaultDayIndex) }
+    val attendanceDate = currentDateStr
+    val selectedDayIndex = defaultDayIndex
 
     val ingresoState = remember(currentTimeStr) { IngresoFormState(entryTime = currentTimeStr) }
     val egresoState = remember(currentTimeStr) { EgresoFormState(exitTime = currentTimeStr) }
@@ -268,9 +268,7 @@ fun AttendanceScreen(
                 if (activeTab == 0) {
                     IngresoFormSection(
                         attendanceDate = attendanceDate,
-                        onDateChange = { attendanceDate = it },
                         selectedDayIndex = selectedDayIndex,
-                        onDaySelected = { selectedDayIndex = it },
                         state = ingresoState
                     )
                 } else {

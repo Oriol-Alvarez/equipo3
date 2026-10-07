@@ -110,10 +110,10 @@ class EgresoFormState(
 @Composable
 fun IngresoFormSection(
     attendanceDate: String,
-    onDateChange: (String) -> Unit,
     selectedDayIndex: Int,
-    onDaySelected: (Int) -> Unit,
-    state: IngresoFormState
+    state: IngresoFormState,
+    onDateChange: (String) -> Unit = {},
+    onDaySelected: (Int) -> Unit = {}
 ) {
     val daysOfWeek = listOf("L", "M", "M", "J", "V")
     SectionCard {
@@ -122,24 +122,25 @@ fun IngresoFormSection(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                OutlinedTextField(
-                    value = attendanceDate,
-                    onValueChange = onDateChange,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Default.CalendarToday, contentDescription = null, tint = BrandBlue, modifier = Modifier.size(18.dp))
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        focusedBorderColor = BrandBlue,
-                        unfocusedBorderColor = BorderSubtle
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarToday,
+                        contentDescription = null,
+                        tint = BrandBlue,
+                        modifier = Modifier.size(18.dp)
                     )
-                )
+                    Text(
+                        text = attendanceDate,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     daysOfWeek.forEachIndexed { index, dayLetter ->
                         val isSelected = selectedDayIndex == index
@@ -147,11 +148,15 @@ fun IngresoFormSection(
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(CircleShape)
-                                .background(if (isSelected) BrandBlue else BrandBlueContainer)
-                                .clickable { onDaySelected(index) },
+                                .background(if (isSelected) BrandBlue else BrandBlueContainer),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(text = dayLetter, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (isSelected) Color.White else BrandBlue)
+                            Text(
+                                text = dayLetter,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isSelected) Color.White else BrandBlue
+                            )
                         }
                     }
                 }
@@ -164,31 +169,31 @@ fun IngresoFormSection(
             onValueChange = { state.assistantName = it }
         )
 
-        AttendanceTextField(
-            label = "Hora de entrada:",
-            value = state.entryTime,
-            onValueChange = { state.entryTime = it },
-            leadingIcon = { Icon(Icons.Default.AccessTime, null, tint = BrandBlue, modifier = Modifier.size(18.dp)) },
-            trailingText = "hrs."
-        )
-
-        SignatureFieldGroup(
-            title = "Nombre y firma de quien entrega a la niña o el niño:",
-            name = state.delivererName,
-            onNameChange = { state.delivererName = it },
-            namePlaceholder = "Nombre de quien entrega",
-            signatureLabel = "Firma de quien entrega:",
-            onSignedChanged = { state.hasDelivererSignature = it }
-        )
-
-        SignatureFieldGroup(
-            title = "Nombre y firma del personal de la E.I., quien recibe a la niña o el niño en la E.I.:",
-            name = state.receiverStaffName,
-            onNameChange = { state.receiverStaffName = it },
-            namePlaceholder = "Nombre del personal de la E.I.",
-            signatureLabel = "Firma del personal receptor de la E.I.:",
-            onSignedChanged = { state.hasReceiverStaffSignature = it }
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = "Hora de entrada:",
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = TextPrimary
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AccessTime,
+                    contentDescription = null,
+                    tint = BrandBlue,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = "${state.entryTime} hrs.",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = TextPrimary
+                )
+            }
+        }
 
         HorizontalDivider(color = BorderSubtle)
 
@@ -277,6 +282,26 @@ fun IngresoFormSection(
             singleLine = false,
             maxLines = 3
         )
+
+        HorizontalDivider(color = BorderSubtle)
+
+        SignatureFieldGroup(
+            title = "Nombre y firma de quien entrega a la niña o el niño:",
+            name = state.delivererName,
+            onNameChange = { state.delivererName = it },
+            namePlaceholder = "Nombre de quien entrega",
+            signatureLabel = "Firma de quien entrega:",
+            onSignedChanged = { state.hasDelivererSignature = it }
+        )
+
+        SignatureFieldGroup(
+            title = "Nombre y firma del personal de la E.I., quien recibe a la niña o el niño en la E.I.:",
+            name = state.receiverStaffName,
+            onNameChange = { state.receiverStaffName = it },
+            namePlaceholder = "Nombre del personal de la E.I.",
+            signatureLabel = "Firma del personal receptor de la E.I.:",
+            onSignedChanged = { state.hasReceiverStaffSignature = it }
+        )
     }
 }
 
@@ -304,22 +329,31 @@ fun EgresoFormSection(
             )
         }
 
-        AttendanceTextField(
-            label = "Hora de salida:",
-            value = state.exitTime,
-            onValueChange = { state.exitTime = it },
-            leadingIcon = { Icon(Icons.Default.Schedule, null, tint = BrandBlue, modifier = Modifier.size(18.dp)) },
-            trailingText = "hrs."
-        )
-
-        SignatureFieldGroup(
-            title = "Nombre y firma de quien recibe a la niña o niño:",
-            name = state.receiverTutorName,
-            onNameChange = { state.receiverTutorName = it },
-            namePlaceholder = "Nombre de quien recoge a la niña/niño",
-            signatureLabel = "Firma de quien recibe:",
-            onSignedChanged = { state.hasReceiverTutorSignature = it }
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = "Hora de salida:",
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = TextPrimary
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Schedule,
+                    contentDescription = null,
+                    tint = BrandBlue,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = "${state.exitTime} hrs.",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = TextPrimary
+                )
+            }
+        }
 
         HorizontalDivider(color = BorderSubtle)
 
@@ -342,6 +376,17 @@ fun EgresoFormSection(
             placeholder = "Observaciones sobre el día o la salida del niño/a (opcional)...",
             singleLine = false,
             maxLines = 3
+        )
+
+        HorizontalDivider(color = BorderSubtle)
+
+        SignatureFieldGroup(
+            title = "Nombre y firma de quien recibe a la niña o niño:",
+            name = state.receiverTutorName,
+            onNameChange = { state.receiverTutorName = it },
+            namePlaceholder = "Nombre de quien recoge a la niña/niño",
+            signatureLabel = "Firma de quien recibe:",
+            onSignedChanged = { state.hasReceiverTutorSignature = it }
         )
 
         SignatureFieldGroup(
