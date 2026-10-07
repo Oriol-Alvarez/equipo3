@@ -81,6 +81,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.theme.Etapa1Theme
 import androidx.compose.runtime.collectAsState
 import com.example.etapa1.ui.state.RoomDashboardViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.etapa1.domain.UpcomingBirthday
+import com.example.etapa1.ui.components.RoomBirthdaysCard
+import com.example.etapa1.ui.state.AppViewModelProvider
+import com.example.etapa1.ui.state.BirthdaysViewModel
 
 @Composable
 fun RoomDashboardScreen(
@@ -93,9 +98,11 @@ fun RoomDashboardScreen(
     onPassAttendance: (Child?) -> Unit,
     onNavigateToMessages: () -> Unit,
     onNavigateToAnnouncements: () -> Unit = {},
-    onNavigateToMore: () -> Unit
+    onNavigateToMore: () -> Unit,
+    birthdaysViewModel: BirthdaysViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val children by viewModel.children.collectAsState()
+    val birthdays by birthdaysViewModel.roomBirthdays.collectAsState()
 
     RoomDashboardScreen(
         room = room,
@@ -107,7 +114,8 @@ fun RoomDashboardScreen(
         onPassAttendance = onPassAttendance,
         onNavigateToMessages = onNavigateToMessages,
         onNavigateToAnnouncements = onNavigateToAnnouncements,
-        onNavigateToMore = onNavigateToMore
+        onNavigateToMore = onNavigateToMore,
+        birthdays = birthdays
     )
 }
 
@@ -122,7 +130,9 @@ fun RoomDashboardScreen(
     onPassAttendance: (Child?) -> Unit = {},
     onNavigateToMessages: () -> Unit = {},
     onNavigateToAnnouncements: () -> Unit = {},
-    onNavigateToMore: () -> Unit = {}
+    onNavigateToMore: () -> Unit = {},
+    /** Cumpleaños de la sala de hoy y de los próximos días. */
+    birthdays: List<UpcomingBirthday> = emptyList()
 ) {
     val presentCount = children.count { it.isPresent }
     val absentCount = children.size - presentCount
@@ -353,6 +363,17 @@ fun RoomDashboardScreen(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                if (birthdays.isNotEmpty() && !isSelectionMode) {
+                    item(key = "room_birthdays") {
+                        RoomBirthdaysCard(
+                            birthdays = birthdays,
+                            onChildClick = { childId ->
+                                children.find { it.id == childId }?.let(onChildSelected)
+                            }
+                        )
+                    }
+                }
+
                 items(children, key = { it.id }) { child ->
                     val isSelected = child.id in selectedChildIds
                     ChildRowCard(
