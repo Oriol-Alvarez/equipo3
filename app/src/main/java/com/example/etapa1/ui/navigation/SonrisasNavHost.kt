@@ -147,7 +147,8 @@ fun SonrisasNavHost(
                     onNavigateToAttendance = {
                         attendanceChild = selectedChild
                         nav.navigate(Route.ATTENDANCE)
-                    }
+                    },
+                    isFamilyViewer = isFamiliar
                 )
             }
 
