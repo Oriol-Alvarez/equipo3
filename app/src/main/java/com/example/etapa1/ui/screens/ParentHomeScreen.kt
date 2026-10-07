@@ -77,7 +77,13 @@ import com.example.etapa1.ui.components.DailyBitacoraContent
 import com.example.etapa1.ui.components.EditChildProfileDialog
 import com.example.etapa1.ui.components.MedicalAlertBanner
 import com.example.etapa1.ui.components.WeeklySummaryContent
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.etapa1.model.ObservationAuthorRole
+import com.example.etapa1.model.WeeklyObservationsSampleData
+import com.example.etapa1.ui.components.WeeklyObservationsPanel
+import com.example.etapa1.ui.state.AppViewModelProvider
 import com.example.etapa1.ui.state.ParentHomeViewModel
+import com.example.etapa1.ui.state.WeeklyObservationsViewModel
 import com.example.etapa1.ui.theme.AlertRed
 import com.example.etapa1.ui.theme.AppBackground
 import com.example.etapa1.ui.theme.BorderSubtle
@@ -99,7 +105,8 @@ fun ParentHomeScreen(
     onNavigateToChildDetail: (Child) -> Unit,
     onNavigateToAnnouncements: () -> Unit,
     onNavigateToGroups: () -> Unit = {},
-    onSwitchChild: () -> Unit
+    onSwitchChild: () -> Unit,
+    weeklyObservationsViewModel: WeeklyObservationsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -117,6 +124,16 @@ fun ParentHomeScreen(
         onNavigateToGroups = onNavigateToGroups,
         onSwitchChild = onSwitchChild,
         onSelectChild = { child -> viewModel.selectChild(child) },
+        weeklyObservations = { summary, isCurrentWeek ->
+            WeeklyObservationsPanel(
+                viewModel = weeklyObservationsViewModel,
+                childId = uiState.selectedChild.id,
+                summary = summary,
+                isCurrentWeek = isCurrentWeek,
+                viewerRole = ObservationAuthorRole.FAMILIA,
+                viewerName = WeeklyObservationsSampleData.FAMILIA_GARCIA_NAME
+            )
+        },
         onUpdateProfile = { ped, pedPhone, medNotes, habits, emergPhone, pickups, uri, certName, certDate ->
             viewModel.updateChildProfile(
                 pediatrician = ped,
@@ -148,6 +165,8 @@ fun ParentHomeScreen(
     onNavigateToGroups: () -> Unit = {},
     onSwitchChild: () -> Unit = {},
     onSelectChild: (Child) -> Unit = {},
+    /** Observaciones de la familia debajo del resumen semanal (semana mostrada, ¿es la actual?). */
+    weeklyObservations: @Composable (WeeklySummary, Boolean) -> Unit = { _, _ -> },
     onUpdateProfile: (
         pediatrician: String,
         pediatricianPhone: String,
@@ -469,6 +488,15 @@ fun ParentHomeScreen(
                             onSelectWeek = { index -> selectedWeekIndex = index },
                             child = child
                         )
+                    }
+                }
+            }
+
+            // 5. Observaciones de la familia en el resumen semanal
+            if (selectedTab == 2) {
+                weeklySummaries.getOrNull(selectedWeekIndex)?.let { summary ->
+                    item(key = "weekly_observations") {
+                        weeklyObservations(summary, selectedWeekIndex == 0)
                     }
                 }
             }

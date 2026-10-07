@@ -44,6 +44,7 @@ object AppViewModelProvider {
                 sonrisasApplication().container.childRepository
             )
         }
+        initializer { WeeklyObservationsViewModel(sonrisasApplication().container.weeklyObservationsRepository) }
     }
 }
 

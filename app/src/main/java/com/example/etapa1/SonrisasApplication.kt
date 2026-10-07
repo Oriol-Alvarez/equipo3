@@ -12,6 +12,7 @@ import com.example.etapa1.data.repository.LostObjectsRepository
 import com.example.etapa1.data.repository.MessagesRepository
 import com.example.etapa1.data.repository.RoomRepository
 import com.example.etapa1.data.repository.SuggestionsRepository
+import com.example.etapa1.data.repository.WeeklyObservationsRepository
 import com.example.etapa1.data.repository.impl.MockAnnouncementRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockAttendanceRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockAuthRepositoryImpl
@@ -22,6 +23,7 @@ import com.example.etapa1.data.repository.impl.MockLostObjectsRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockMessagesRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockRoomRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockSuggestionsRepositoryImpl
+import com.example.etapa1.data.repository.impl.MockWeeklyObservationsRepositoryImpl
 
 
 open class AppContainer(val context: Context) {
@@ -35,6 +37,7 @@ open class AppContainer(val context: Context) {
     val messagesRepository: MessagesRepository by lazy { MockMessagesRepositoryImpl() }
     val announcementRepository: AnnouncementRepository by lazy { MockAnnouncementRepositoryImpl() }
     val familyGroupsRepository: FamilyGroupsRepository by lazy { MockFamilyGroupsRepositoryImpl() }
+    val weeklyObservationsRepository: WeeklyObservationsRepository by lazy { MockWeeklyObservationsRepositoryImpl() }
 }
 
 class SonrisasApplication : Application() {

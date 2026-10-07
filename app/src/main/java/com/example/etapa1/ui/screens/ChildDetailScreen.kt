@@ -48,7 +48,14 @@ import com.example.etapa1.ui.theme.CardBackground
 import com.example.etapa1.ui.theme.Etapa1Theme
 import com.example.etapa1.ui.theme.TextSecondary
 
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.etapa1.model.FamilyGroupsSampleData
+import com.example.etapa1.model.ObservationAuthorRole
+import com.example.etapa1.model.WeeklyObservationsSampleData
+import com.example.etapa1.ui.components.WeeklyObservationsPanel
+import com.example.etapa1.ui.state.AppViewModelProvider
 import com.example.etapa1.ui.state.ChildDetailViewModel
+import com.example.etapa1.ui.state.WeeklyObservationsViewModel
 
 @Composable
 fun ChildDetailScreen(
@@ -56,7 +63,9 @@ fun ChildDetailScreen(
     child: Child,
     onBack: () -> Unit,
     onNavigateToChat: () -> Unit = {},
-    onNavigateToAttendance: () -> Unit = {}
+    onNavigateToAttendance: () -> Unit = {},
+    isFamilyViewer: Boolean = false,
+    weeklyObservationsViewModel: WeeklyObservationsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val fullProfile = remember(child.id) { viewModel.getFullProfile(child) }
     val weeklySummaries = remember(child.id) { viewModel.getWeeklySummaries(child) }
@@ -69,7 +78,21 @@ fun ChildDetailScreen(
         bitacoras = bitacoras,
         onBack = onBack,
         onNavigateToChat = onNavigateToChat,
-        onNavigateToAttendance = onNavigateToAttendance
+        onNavigateToAttendance = onNavigateToAttendance,
+        weeklyObservations = { summary, isCurrentWeek ->
+            WeeklyObservationsPanel(
+                viewModel = weeklyObservationsViewModel,
+                childId = child.id,
+                summary = summary,
+                isCurrentWeek = isCurrentWeek,
+                viewerRole = if (isFamilyViewer) ObservationAuthorRole.FAMILIA else ObservationAuthorRole.EDUCADORA,
+                viewerName = if (isFamilyViewer) {
+                    WeeklyObservationsSampleData.FAMILIA_GARCIA_NAME
+                } else {
+                    FamilyGroupsSampleData.EDUCADORA.displayName
+                }
+            )
+        }
     )
 }
 
@@ -103,7 +126,9 @@ fun ChildDetailContent(
     bitacoras: List<com.example.etapa1.model.DailyBitacora>,
     onBack: () -> Unit,
     onNavigateToChat: () -> Unit = {},
-    onNavigateToAttendance: () -> Unit = {}
+    onNavigateToAttendance: () -> Unit = {},
+    /** Observaciones de la familia debajo del resumen semanal (semana mostrada, ¿es la actual?). */
+    weeklyObservations: @Composable (com.example.etapa1.model.WeeklySummary, Boolean) -> Unit = { _, _ -> }
 ) {
     var selectedTab by remember { mutableIntStateOf(0) } // 0 = Datos del Niño (Default), 1 = Bitácora Diaria, 2 = Resumen Semanal
     var selectedDayIndex by remember { mutableIntStateOf(0) }
@@ -266,6 +291,11 @@ fun ChildDetailContent(
                             onSelectWeek = { selectedWeekIndex = it },
                             child = child
                         )
+                    }
+                    weeklySummaries.getOrNull(selectedWeekIndex)?.let { summary ->
+                        item(key = "weekly_observations") {
+                            weeklyObservations(summary, selectedWeekIndex == 0)
+                        }
                     }
                 }
             }
