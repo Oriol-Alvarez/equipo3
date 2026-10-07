@@ -457,6 +457,19 @@ object MockDataRepository {
                 "sofia_lopez" -> "18/06/2024"
                 "lucas_martinez" -> "02/02/2024"
                 "valentina_ruiz" -> "25/03/2024"
+                // Fechas aproximadas a la edad de cada ficha; se usan para los avisos de cumpleaños.
+                "lucia_garcia" -> "22/07/2025"
+                "santiago_gomez" -> "20/08/2024"
+                "camila_hernandez" -> "12/12/2024"
+                "diego_fernandez" -> "28/09/2024"
+                "isabella_torres" -> "05/11/2024"
+                "thiago_diaz" -> "15/07/2024"
+                "emma_morales" -> "14/02/2025"
+                "leo_navarro" -> "02/09/2024"
+                "mia_ramirez" -> "09/10/2024"
+                "gael_castro" -> "03/08/2024"
+                "lucia_vargas" -> "21/11/2024"
+                "bruno_benitez" -> "11/10/2024"
                 else -> "10/05/2024"
             },
             studentId = "EST-${child.id.take(4).uppercase()}-2026",
