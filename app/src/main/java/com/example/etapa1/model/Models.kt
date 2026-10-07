@@ -863,6 +863,55 @@ object MockDataRepository {
         )
     )
 
+    fun getInitialFamilyChats(): List<WorkerChat> = listOf(
+        WorkerChat(
+            id = "fchat_1",
+            title = "Laura Gómez",
+            subtitle = "Educadora Principal • Sala 1A",
+            lastMessage = "Laura Gómez: Mateo comió muy bien hoy y descansó toda su siesta.",
+            lastMessageTime = "02:15 PM",
+            unreadCount = 1,
+            isGlobal = false,
+            isGroup = false,
+            avatarInitials = "LG",
+            avatarBgColor = 0xFF8E24AA,
+            messages = listOf(
+                WorkerChatMessage("fm_1", "staff_educadora", "Laura Gómez", "¡Hola! Les comparto que Mateo tuvo un excelente día hoy.", "02:10 PM"),
+                WorkerChatMessage("fm_2", "staff_educadora", "Laura Gómez", "Mateo comió muy bien hoy y descansó toda su siesta.", "02:15 PM")
+            )
+        ),
+        WorkerChat(
+            id = "fchat_2",
+            title = "Dirección General",
+            subtitle = "Laura Méndez • En línea",
+            lastMessage = "Laura Méndez: Confirmada la recepción del documento de autorización.",
+            lastMessageTime = "11:00 AM",
+            unreadCount = 0,
+            isGlobal = false,
+            isGroup = false,
+            avatarInitials = "DG",
+            avatarBgColor = 0xFF1565C0,
+            messages = listOf(
+                WorkerChatMessage("fm_3", "staff_1", "Laura Méndez", "Confirmada la recepción del documento de autorización.", "11:00 AM")
+            )
+        ),
+        WorkerChat(
+            id = "fchat_3",
+            title = "Servicio Médico",
+            subtitle = "Dra. Elena Vega • Desconectada",
+            lastMessage = "Dra. Elena Vega: Todo en orden con la ficha médica de Mateo.",
+            lastMessageTime = "Ayer",
+            unreadCount = 0,
+            isGlobal = false,
+            isGroup = false,
+            avatarInitials = "SM",
+            avatarBgColor = 0xFFD81B60,
+            messages = listOf(
+                WorkerChatMessage("fm_4", "staff_3", "Dra. Elena Vega", "Todo en orden con la ficha médica de Mateo.", "Ayer")
+            )
+        )
+    )
+
     fun getInitialParentChats(): List<ParentChatSummary> = listOf(
         ParentChatSummary(
             child = mateoGarcia,
