@@ -133,7 +133,8 @@ fun SonrisasNavHost(
                     },
                     onNavigateToAnnouncements = { nav.navigate(Route.ANNOUNCEMENTS) },
                     onNavigateToMessages = { nav.navigate(Route.MESSAGES) },
-                    onNavigateToMore = { nav.navigate(Route.MORE_MENU) }
+                    onNavigateToMore = { nav.navigate(Route.MORE_MENU) },
+                    onOpenDailyPlan = { nav.navigate(Route.DAILY_PLAN) }
                 )
             }
 
@@ -294,7 +295,17 @@ fun SonrisasNavHost(
                     },
                     onNavigateToAnnouncements = { nav.navigate(Route.ANNOUNCEMENTS) },
                     onNavigateToGroups = { nav.navigate(Route.PARENT_GROUPS) },
+                    onOpenDailyPlan = { nav.navigate(Route.DAILY_PLAN) },
                     onSwitchChild = { nav.navigate(Route.PARENT_CHILD_SELECTION) }
+                )
+            }
+
+            composable(Route.DAILY_PLAN) {
+                val vm: DailyPlanViewModel = viewModel(factory = AppViewModelProvider.Factory)
+                DailyPlanScreen(
+                    viewModel = vm,
+                    canEdit = isEducadora,
+                    onBack = { nav.popBackStack() }
                 )
             }
 

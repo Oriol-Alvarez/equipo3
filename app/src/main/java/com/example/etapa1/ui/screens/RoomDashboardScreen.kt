@@ -86,6 +86,9 @@ import com.example.etapa1.domain.UpcomingBirthday
 import com.example.etapa1.ui.components.RoomBirthdaysCard
 import com.example.etapa1.ui.state.AppViewModelProvider
 import com.example.etapa1.ui.state.BirthdaysViewModel
+import com.example.etapa1.ui.components.TodayPlanCard
+import com.example.etapa1.ui.state.DailyPlanViewModel
+import com.example.etapa1.ui.state.TodayPlanSummary
 
 @Composable
 fun RoomDashboardScreen(
@@ -99,10 +102,13 @@ fun RoomDashboardScreen(
     onNavigateToMessages: () -> Unit,
     onNavigateToAnnouncements: () -> Unit = {},
     onNavigateToMore: () -> Unit,
-    birthdaysViewModel: BirthdaysViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    birthdaysViewModel: BirthdaysViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    onOpenDailyPlan: () -> Unit = {},
+    dailyPlanViewModel: DailyPlanViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val children by viewModel.children.collectAsState()
     val birthdays by birthdaysViewModel.roomBirthdays.collectAsState()
+    val todayPlan by dailyPlanViewModel.todaySummary.collectAsState()
 
     RoomDashboardScreen(
         room = room,
@@ -115,7 +121,9 @@ fun RoomDashboardScreen(
         onNavigateToMessages = onNavigateToMessages,
         onNavigateToAnnouncements = onNavigateToAnnouncements,
         onNavigateToMore = onNavigateToMore,
-        birthdays = birthdays
+        birthdays = birthdays,
+        todayPlan = todayPlan,
+        onOpenDailyPlan = onOpenDailyPlan
     )
 }
 
@@ -132,7 +140,10 @@ fun RoomDashboardScreen(
     onNavigateToAnnouncements: () -> Unit = {},
     onNavigateToMore: () -> Unit = {},
     /** Cumpleaños de la sala de hoy y de los próximos días. */
-    birthdays: List<UpcomingBirthday> = emptyList()
+    birthdays: List<UpcomingBirthday> = emptyList(),
+    /** Menú y primera actividad de hoy; abre la planeación de la semana. */
+    todayPlan: TodayPlanSummary? = null,
+    onOpenDailyPlan: () -> Unit = {}
 ) {
     val presentCount = children.count { it.isPresent }
     val absentCount = children.size - presentCount
@@ -371,6 +382,12 @@ fun RoomDashboardScreen(
                                 children.find { it.id == childId }?.let(onChildSelected)
                             }
                         )
+                    }
+                }
+
+                if (todayPlan != null && !isSelectionMode) {
+                    item(key = "today_plan") {
+                        TodayPlanCard(summary = todayPlan, onClick = onOpenDailyPlan)
                     }
                 }
 

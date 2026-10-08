@@ -7,6 +7,7 @@ import com.example.etapa1.data.repository.AttendanceRepository
 import com.example.etapa1.data.repository.AuthRepository
 import com.example.etapa1.data.repository.BitacoraRepository
 import com.example.etapa1.data.repository.ChildRepository
+import com.example.etapa1.data.repository.DailyPlanRepository
 import com.example.etapa1.data.repository.FamilyGroupsRepository
 import com.example.etapa1.data.repository.LostObjectsRepository
 import com.example.etapa1.data.repository.MessagesRepository
@@ -18,6 +19,7 @@ import com.example.etapa1.data.repository.impl.MockAttendanceRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockAuthRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockBitacoraRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockChildRepositoryImpl
+import com.example.etapa1.data.repository.impl.MockDailyPlanRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockFamilyGroupsRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockLostObjectsRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockMessagesRepositoryImpl
@@ -38,6 +40,7 @@ open class AppContainer(val context: Context) {
     val announcementRepository: AnnouncementRepository by lazy { MockAnnouncementRepositoryImpl() }
     val familyGroupsRepository: FamilyGroupsRepository by lazy { MockFamilyGroupsRepositoryImpl() }
     val weeklyObservationsRepository: WeeklyObservationsRepository by lazy { MockWeeklyObservationsRepositoryImpl() }
+    val dailyPlanRepository: DailyPlanRepository by lazy { MockDailyPlanRepositoryImpl() }
 }
 
 class SonrisasApplication : Application() {
