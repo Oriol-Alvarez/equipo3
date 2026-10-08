@@ -46,6 +46,7 @@ object AppViewModelProvider {
         }
         initializer { WeeklyObservationsViewModel(sonrisasApplication().container.weeklyObservationsRepository) }
         initializer { BirthdaysViewModel(sonrisasApplication().container.childRepository) }
+        initializer { DailyPlanViewModel(sonrisasApplication().container.dailyPlanRepository) }
     }
 }
 

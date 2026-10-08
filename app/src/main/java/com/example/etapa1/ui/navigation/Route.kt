@@ -19,4 +19,5 @@ object Route {
     const val PARENT_HOME = "parent_home"
     const val PARENT_SUGGESTIONS = "parent_suggestions"
     const val PARENT_GROUPS = "parent_groups"
+    const val DAILY_PLAN = "daily_plan"
 }

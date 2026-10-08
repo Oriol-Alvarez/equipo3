@@ -86,6 +86,9 @@ import com.example.etapa1.ui.state.ParentHomeViewModel
 import com.example.etapa1.domain.UpcomingBirthday
 import com.example.etapa1.ui.components.FamilyBirthdayBanner
 import com.example.etapa1.ui.state.BirthdaysViewModel
+import com.example.etapa1.ui.components.TodayPlanCard
+import com.example.etapa1.ui.state.DailyPlanViewModel
+import com.example.etapa1.ui.state.TodayPlanSummary
 import com.example.etapa1.ui.state.WeeklyObservationsViewModel
 import com.example.etapa1.ui.theme.AlertRed
 import com.example.etapa1.ui.theme.AppBackground
@@ -110,10 +113,13 @@ fun ParentHomeScreen(
     onNavigateToGroups: () -> Unit = {},
     onSwitchChild: () -> Unit,
     weeklyObservationsViewModel: WeeklyObservationsViewModel = viewModel(factory = AppViewModelProvider.Factory),
-    birthdaysViewModel: BirthdaysViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    birthdaysViewModel: BirthdaysViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    onOpenDailyPlan: () -> Unit = {},
+    dailyPlanViewModel: DailyPlanViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val birthdayNotice by birthdaysViewModel.familyNotice.collectAsState()
+    val todayPlan by dailyPlanViewModel.todaySummary.collectAsState()
 
     LaunchedEffect(uiState.selectedChild.id) {
         birthdaysViewModel.selectFamilyChild(uiState.selectedChild)
@@ -134,6 +140,8 @@ fun ParentHomeScreen(
         onSwitchChild = onSwitchChild,
         onSelectChild = { child -> viewModel.selectChild(child) },
         birthdayNotice = birthdayNotice,
+        todayPlan = todayPlan,
+        onOpenDailyPlan = onOpenDailyPlan,
         weeklyObservations = { summary, isCurrentWeek ->
             WeeklyObservationsPanel(
                 viewModel = weeklyObservationsViewModel,
@@ -177,6 +185,9 @@ fun ParentHomeScreen(
     onSelectChild: (Child) -> Unit = {},
     /** Felicitación cuando se acerca o llega el cumpleaños del niño. */
     birthdayNotice: UpcomingBirthday? = null,
+    /** Menú y primera actividad de hoy; abre la planeación de la semana. */
+    todayPlan: TodayPlanSummary? = null,
+    onOpenDailyPlan: () -> Unit = {},
     /** Observaciones de la familia debajo del resumen semanal (semana mostrada, ¿es la actual?). */
     weeklyObservations: @Composable (WeeklySummary, Boolean) -> Unit = { _, _ -> },
     onUpdateProfile: (
@@ -413,6 +424,15 @@ fun ParentHomeScreen(
                 item(key = "birthday_notice") {
                     Box(modifier = Modifier.padding(horizontal = 16.dp)) {
                         FamilyBirthdayBanner(notice)
+                    }
+                }
+            }
+
+            // Planeación y menú de hoy
+            todayPlan?.let { summary ->
+                item(key = "today_plan") {
+                    Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        TodayPlanCard(summary = summary, onClick = onOpenDailyPlan)
                     }
                 }
             }
