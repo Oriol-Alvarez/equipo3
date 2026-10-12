@@ -19,7 +19,8 @@ object AppViewModelProvider {
             AttendanceViewModel(
                 sonrisasApplication().container.attendanceRepository,
                 sonrisasApplication().container.childRepository,
-                sonrisasApplication().container.bitacoraRepository
+                sonrisasApplication().container.bitacoraRepository,
+                sonrisasApplication().container.dailyLogRepository
             )
         }
         initializer { ChatBitacoraViewModel(sonrisasApplication().container.bitacoraRepository) }
@@ -47,6 +48,13 @@ object AppViewModelProvider {
         initializer { WeeklyObservationsViewModel(sonrisasApplication().container.weeklyObservationsRepository) }
         initializer { BirthdaysViewModel(sonrisasApplication().container.childRepository) }
         initializer { DailyPlanViewModel(sonrisasApplication().container.dailyPlanRepository) }
+        initializer {
+            ExportLogViewModel(
+                sonrisasApplication().container.dailyLogRepository,
+                sonrisasApplication().container.roomRepository,
+                sonrisasApplication().container.logSheetExporter
+            )
+        }
     }
 }
 

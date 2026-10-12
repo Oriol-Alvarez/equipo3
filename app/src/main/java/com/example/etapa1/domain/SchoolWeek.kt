@@ -1,6 +1,7 @@
 package com.example.etapa1.domain
 
 import java.util.Calendar
+import java.util.Locale
 
 /** Días de clase (lunes a viernes) y textos de fecha para la planeación semanal. */
 object SchoolWeek {
@@ -35,6 +36,24 @@ object SchoolWeek {
         val monday = plusDays(reference, -(dayOfWeek(reference) - Calendar.MONDAY))
         return (0..4).map { plusDays(monday, it) }
     }
+
+    /**
+     * Lunes a viernes de la semana que contiene [date]. A diferencia de [schoolWeek],
+     * en sábado o domingo devuelve la semana que acaba de terminar (útil para reportes).
+     */
+    fun weekOf(date: SimpleDate): List<SimpleDate> {
+        val day = dayOfWeek(date)
+        val daysSinceMonday = if (day == Calendar.SUNDAY) 6 else day - Calendar.MONDAY
+        val monday = plusDays(date, -daysSinceMonday)
+        return (0..4).map { plusDays(monday, it) }
+    }
+
+    fun isAfter(a: SimpleDate, b: SimpleDate): Boolean =
+        compareValuesBy(a, b, { it.year }, { it.month }, { it.day }) > 0
+
+    /** Ej. "05/10/2026". */
+    fun numericLabel(date: SimpleDate): String =
+        String.format(Locale.US, "%02d/%02d/%04d", date.day, date.month, date.year)
 
     /** Ej. "Lun 5". */
     fun shortLabel(date: SimpleDate): String = "${SHORT_DAYS[dayOfWeek(date) - 1]} ${date.day}"

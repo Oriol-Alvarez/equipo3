@@ -2,11 +2,14 @@ package com.example.etapa1
 
 import android.app.Application
 import android.content.Context
+import com.example.etapa1.data.export.AndroidLogSheetExporter
+import com.example.etapa1.data.export.LogSheetExporter
 import com.example.etapa1.data.repository.AnnouncementRepository
 import com.example.etapa1.data.repository.AttendanceRepository
 import com.example.etapa1.data.repository.AuthRepository
 import com.example.etapa1.data.repository.BitacoraRepository
 import com.example.etapa1.data.repository.ChildRepository
+import com.example.etapa1.data.repository.DailyLogRepository
 import com.example.etapa1.data.repository.DailyPlanRepository
 import com.example.etapa1.data.repository.FamilyGroupsRepository
 import com.example.etapa1.data.repository.LostObjectsRepository
@@ -19,6 +22,7 @@ import com.example.etapa1.data.repository.impl.MockAttendanceRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockAuthRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockBitacoraRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockChildRepositoryImpl
+import com.example.etapa1.data.repository.impl.MockDailyLogRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockDailyPlanRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockFamilyGroupsRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockLostObjectsRepositoryImpl
@@ -41,6 +45,8 @@ open class AppContainer(val context: Context) {
     val familyGroupsRepository: FamilyGroupsRepository by lazy { MockFamilyGroupsRepositoryImpl() }
     val weeklyObservationsRepository: WeeklyObservationsRepository by lazy { MockWeeklyObservationsRepositoryImpl() }
     val dailyPlanRepository: DailyPlanRepository by lazy { MockDailyPlanRepositoryImpl() }
+    val dailyLogRepository: DailyLogRepository by lazy { MockDailyLogRepositoryImpl() }
+    val logSheetExporter: LogSheetExporter by lazy { AndroidLogSheetExporter(context) }
 }
 
 class SonrisasApplication : Application() {
