@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.PrimaryTabRow
@@ -65,6 +66,8 @@ fun ChildDetailScreen(
     onNavigateToChat: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
     isFamilyViewer: Boolean = false,
+    /** Solo la educadora: abre la exportación de la bitácora oficial en PDF. */
+    onExportLog: (() -> Unit)? = null,
     weeklyObservationsViewModel: WeeklyObservationsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val fullProfile = remember(child.id) { viewModel.getFullProfile(child) }
@@ -79,6 +82,7 @@ fun ChildDetailScreen(
         onBack = onBack,
         onNavigateToChat = onNavigateToChat,
         onNavigateToAttendance = onNavigateToAttendance,
+        onExportLog = onExportLog,
         weeklyObservations = { summary, isCurrentWeek ->
             WeeklyObservationsPanel(
                 viewModel = weeklyObservationsViewModel,
@@ -127,6 +131,7 @@ fun ChildDetailContent(
     onBack: () -> Unit,
     onNavigateToChat: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
+    onExportLog: (() -> Unit)? = null,
     /** Observaciones de la familia debajo del resumen semanal (semana mostrada, ¿es la actual?). */
     weeklyObservations: @Composable (com.example.etapa1.model.WeeklySummary, Boolean) -> Unit = { _, _ -> }
 ) {
@@ -172,16 +177,28 @@ fun ChildDetailContent(
                     )
                 }
 
-                IconButton(
-                    onClick = onNavigateToChat,
-                    modifier = Modifier.align(Alignment.CenterEnd)
+                Row(
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Chat,
-                        contentDescription = "Abrir chat",
-                        tint = BrandBlue,
-                        modifier = Modifier.size(22.dp)
-                    )
+                    if (onExportLog != null) {
+                        IconButton(onClick = onExportLog) {
+                            Icon(
+                                imageVector = Icons.Default.PictureAsPdf,
+                                contentDescription = "Exportar bitácora oficial en PDF",
+                                tint = BrandBlue,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                    IconButton(onClick = onNavigateToChat) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Chat,
+                            contentDescription = "Abrir chat",
+                            tint = BrandBlue,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 }
             }
         }

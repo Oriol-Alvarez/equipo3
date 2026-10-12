@@ -149,7 +149,21 @@ fun SonrisasNavHost(
                         attendanceChild = selectedChild
                         nav.navigate(Route.ATTENDANCE)
                     },
-                    isFamilyViewer = isFamiliar
+                    isFamilyViewer = isFamiliar,
+                    onExportLog = if (isEducadora) {
+                        { nav.navigate(Route.EXPORT_LOG) }
+                    } else {
+                        null
+                    }
+                )
+            }
+
+            composable(Route.EXPORT_LOG) {
+                val vm: ExportLogViewModel = viewModel(factory = AppViewModelProvider.Factory)
+                ExportLogScreen(
+                    viewModel = vm,
+                    child = selectedChild,
+                    onBack = { nav.popBackStack() }
                 )
             }
 
