@@ -25,8 +25,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -40,7 +43,9 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +63,9 @@ import com.example.etapa1.model.LostItem
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.UserRole
 import com.example.etapa1.ui.components.ImagePlaceholderBox
+import com.example.etapa1.ui.theme.AlertRed
+import com.example.etapa1.ui.theme.AlertRedBg
+import com.example.etapa1.ui.theme.AlertRedBorder
 import com.example.etapa1.ui.theme.AppBackground
 import com.example.etapa1.ui.theme.BorderSubtle
 import com.example.etapa1.ui.theme.BrandBlue
@@ -90,6 +98,7 @@ fun LostObjectsCatalogScreen(
         onSearchQueryChange = viewModel::onSearchQueryChange,
         onToggleSearch = viewModel::toggleSearch,
         onClaimItem = viewModel::claimItem,
+        onDeleteItem = viewModel::deleteItem,
         onBack = onBack,
         onNavigateToPublish = onNavigateToPublish,
         onNavigateToHome = onNavigateToHome,
@@ -105,17 +114,19 @@ fun LostObjectsCatalogScreen(
     onBack: () -> Unit,
     onNavigateToPublish: () -> Unit,
     onNavigateToHome: () -> Unit,
-    onNavigateToMessages: () -> Unit = {}
+    onNavigateToMessages: () -> Unit = {},
+    onDeleteItem: (String) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var isSearchOpen by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf("Todos") }
     val claimedItems = remember { mutableStateMapOf<String, Boolean>() }
+    var currentItems by remember(items) { mutableStateOf(items) }
 
     val baseCategories = listOf("Todos", "Ropa", "Juguetes", "Útiles", "Otros")
-    val categories = remember(items) { (baseCategories + items.map { it.category }).distinct() }
+    val categories = remember(currentItems) { (baseCategories + currentItems.map { it.category }).distinct() }
 
-    val filtered = items.filter { item ->
+    val filtered = currentItems.filter { item ->
         val matchesCategory = selectedCategory == "Todos" || item.category.equals(selectedCategory, ignoreCase = true)
         val query = searchQuery.trim()
         val matchesSearch = query.isBlank() ||
@@ -127,7 +138,7 @@ fun LostObjectsCatalogScreen(
     }
 
     val uiState = LostObjectsUiState(
-        items = items,
+        items = currentItems,
         categories = categories,
         selectedCategory = selectedCategory,
         searchQuery = searchQuery,
@@ -146,6 +157,10 @@ fun LostObjectsCatalogScreen(
             if (!isSearchOpen) searchQuery = ""
         },
         onClaimItem = { claimedItems[it] = true },
+        onDeleteItem = { id ->
+            currentItems = currentItems.filterNot { it.id == id }
+            onDeleteItem(id)
+        },
         onBack = onBack,
         onNavigateToPublish = onNavigateToPublish,
         onNavigateToHome = onNavigateToHome,
@@ -160,11 +175,13 @@ fun LostObjectsCatalogContent(
     onSearchQueryChange: (String) -> Unit,
     onToggleSearch: () -> Unit,
     onClaimItem: (String) -> Unit,
+    onDeleteItem: (String) -> Unit = {},
     onBack: () -> Unit,
     onNavigateToPublish: () -> Unit,
     onNavigateToHome: () -> Unit,
     onNavigateToMessages: () -> Unit = {}
 ) {
+    var itemToDelete by remember { mutableStateOf<LostItem?>(null) }
 
     Scaffold(
         containerColor = AppBackground,
@@ -370,6 +387,9 @@ fun LostObjectsCatalogContent(
                             isWorkerRole = uiState.isWorkerRole,
                             onClaimClick = {
                                 onClaimItem(item.id)
+                            },
+                            onDeleteClick = {
+                                itemToDelete = item
                             }
                         )
                     }
@@ -381,6 +401,79 @@ fun LostObjectsCatalogContent(
             }
         }
     }
+
+    // Diálogo de confirmación para eliminar objeto cuando es reclamado o retirado
+    if (itemToDelete != null) {
+        val targetItem = itemToDelete!!
+        val isTargetClaimed = uiState.claimedItemsMap[targetItem.id] ?: targetItem.isClaimed
+
+        AlertDialog(
+            onDismissRequest = { itemToDelete = null },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = AlertRed,
+                    modifier = Modifier.size(36.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "¿Eliminar objeto perdido?",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Text(
+                    text = if (isTargetClaimed) {
+                        "¿Deseas retirar \"${targetItem.title}\" del catálogo?\n\nUsa esta opción una vez que el objeto haya sido reclamado y entregado en persona en la estancia."
+                    } else {
+                        "¿Deseas eliminar \"${targetItem.title}\" del catálogo?\n\nEsta opción permite retirar el objeto si fue reclamado y entregado en persona en la estancia."
+                    },
+                    fontSize = 13.5.sp,
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 19.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDeleteItem(targetItem.id)
+                        itemToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AlertRed,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Text(
+                        text = "Eliminar",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.5.sp
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { itemToDelete = null }
+                ) {
+                    Text(
+                        text = "Cancelar",
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextSecondary,
+                        fontSize = 13.5.sp
+                    )
+                }
+            },
+            containerColor = CardBackground,
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
 }
 
 @Composable
@@ -388,7 +481,8 @@ private fun LostItemCard(
     item: LostItem,
     isClaimed: Boolean,
     isWorkerRole: Boolean,
-    onClaimClick: () -> Unit
+    onClaimClick: () -> Unit,
+    onDeleteClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -411,7 +505,7 @@ private fun LostItemCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Título y Tipo de Objeto a la derecha
+            // Título, Tipo de Objeto y Botón de eliminación en cabecera para el trabajador
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -427,18 +521,21 @@ private fun LostItemCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = BrandBlueContainer,
-                    border = BorderStroke(1.dp, BrandBlue.copy(alpha = 0.25f))
-                ) {
-                    Text(
-                        text = item.category,
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = BrandBlue,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = BrandBlueContainer,
+                        border = BorderStroke(1.dp, BrandBlue.copy(alpha = 0.25f))
+                    ) {
+                        Text(
+                            text = item.category,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = BrandBlue,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+
                 }
             }
 
@@ -471,8 +568,9 @@ private fun LostItemCard(
                 }
             }
 
-            // Botón de acción: "Este objeto es de mi hijo" (solo para familias / no visible para rol trabajador)
+            // Sección de acciones inferiores según el rol
             if (!isWorkerRole) {
+                // Rol Familiar: "Este objeto es de mi hijo" o "Reportado como mío"
                 Spacer(modifier = Modifier.height(12.dp))
                 if (isClaimed) {
                     Button(
@@ -518,30 +616,90 @@ private fun LostItemCard(
                         )
                     }
                 }
-            } else if (isClaimed) {
-                // Estado informativo para el trabajador cuando una familia ya lo ha reclamado
+            } else {
+                // Rol Trabajador / Educadora
                 Spacer(modifier = Modifier.height(12.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(StatusPresentGreenBg)
-                        .padding(vertical = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isClaimed) {
+                    // Estado cuando una familia ya lo ha reclamado en la app
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(StatusPresentGreenBg)
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = StatusPresentGreen,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Reclamado por familiar",
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = StatusPresentGreen
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = onDeleteClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(40.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AlertRedBg,
+                            contentColor = AlertRed
+                        ),
+                        border = BorderStroke(1.dp, AlertRedBorder)
+                    ) {
                         Icon(
-                            imageVector = Icons.Default.Check,
+                            imageVector = Icons.Default.DeleteOutline,
                             contentDescription = null,
-                            tint = StatusPresentGreen,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(16.dp),
+                            tint = AlertRed
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Reclamado por familiar",
-                            fontSize = 12.5.sp,
+                            text = "Eliminar (Entregado en estancia)",
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = StatusPresentGreen
+                            color = AlertRed
+                        )
+                    }
+                } else {
+                    // Botón para eliminar cuando se reclama directamente en persona en la estancia
+                    Button(
+                        onClick = onDeleteClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(40.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AlertRedBg,
+                            contentColor = AlertRed
+                        ),
+                        border = BorderStroke(1.dp, AlertRedBorder)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DeleteOutline,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = AlertRed
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Eliminar objeto (Reclamado en persona)",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = AlertRed
                         )
                     }
                 }
