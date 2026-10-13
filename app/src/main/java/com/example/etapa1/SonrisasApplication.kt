@@ -2,6 +2,8 @@ package com.example.etapa1
 
 import android.app.Application
 import android.content.Context
+import com.example.etapa1.data.remote.NetworkClient
+import com.example.etapa1.data.remote.TokenManager
 import com.example.etapa1.data.repository.AnnouncementRepository
 import com.example.etapa1.data.repository.AttendanceRepository
 import com.example.etapa1.data.repository.AuthRepository
@@ -22,19 +24,81 @@ import com.example.etapa1.data.repository.impl.MockLostObjectsRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockMessagesRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockRoomRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockSuggestionsRepositoryImpl
-
+import com.example.etapa1.data.repository.impl.NetworkAnnouncementRepositoryImpl
+import com.example.etapa1.data.repository.impl.NetworkAttendanceRepositoryImpl
+import com.example.etapa1.data.repository.impl.NetworkAuthRepositoryImpl
+import com.example.etapa1.data.repository.impl.NetworkChildRepositoryImpl
+import com.example.etapa1.data.repository.impl.NetworkLostObjectsRepositoryImpl
+import com.example.etapa1.data.repository.impl.NetworkRoomRepositoryImpl
+import com.example.etapa1.data.repository.impl.NetworkSuggestionsRepositoryImpl
 
 open class AppContainer(val context: Context) {
-    val authRepository: AuthRepository by lazy { MockAuthRepositoryImpl() }
-    val roomRepository: RoomRepository by lazy { MockRoomRepositoryImpl() }
-    val childRepository: ChildRepository by lazy { MockChildRepositoryImpl() }
-    val attendanceRepository: AttendanceRepository by lazy { MockAttendanceRepositoryImpl() }
-    val bitacoraRepository: BitacoraRepository by lazy { MockBitacoraRepositoryImpl() }
-    val lostObjectsRepository: LostObjectsRepository by lazy { MockLostObjectsRepositoryImpl() }
-    val suggestionsRepository: SuggestionsRepository by lazy { MockSuggestionsRepositoryImpl() }
-    val messagesRepository: MessagesRepository by lazy { MockMessagesRepositoryImpl() }
-    val announcementRepository: AnnouncementRepository by lazy { MockAnnouncementRepositoryImpl() }
-    val familyGroupsRepository: FamilyGroupsRepository by lazy { MockFamilyGroupsRepositoryImpl() }
+
+    companion object {
+        /**
+         * INTERRUPTOR DE FUENTE DE DATOS:
+         * - false: Conecta a la API REST del backend FastAPI (por defecto http://10.0.2.2:8000/api/v1/)
+         * - true : Utiliza 100% datos mock en memoria sin depender de red ni servidor
+         */
+        var USE_MOCKS: Boolean = false
+    }
+
+    var useMocks: Boolean = USE_MOCKS
+
+    val tokenManager by lazy { TokenManager(context) }
+    val api by lazy { NetworkClient.createApi(tokenManager) }
+
+    // Repositorios Mock originales (preservados sin modificaciones)
+    private val mockAuthRepository by lazy { MockAuthRepositoryImpl() }
+    private val mockRoomRepository by lazy { MockRoomRepositoryImpl() }
+    private val mockChildRepository by lazy { MockChildRepositoryImpl() }
+    private val mockAttendanceRepository by lazy { MockAttendanceRepositoryImpl() }
+    private val mockBitacoraRepository by lazy { MockBitacoraRepositoryImpl() }
+    private val mockLostObjectsRepository by lazy { MockLostObjectsRepositoryImpl() }
+    private val mockSuggestionsRepository by lazy { MockSuggestionsRepositoryImpl() }
+    private val mockMessagesRepository by lazy { MockMessagesRepositoryImpl() }
+    private val mockAnnouncementRepository by lazy { MockAnnouncementRepositoryImpl() }
+    private val mockFamilyGroupsRepository by lazy { MockFamilyGroupsRepositoryImpl() }
+
+    // Repositorios de Red conectados a FastAPI
+    private val networkAuthRepository by lazy { NetworkAuthRepositoryImpl(api, tokenManager) }
+    private val networkRoomRepository by lazy { NetworkRoomRepositoryImpl(api) }
+    private val networkChildRepository by lazy { NetworkChildRepositoryImpl(api) }
+    private val networkAttendanceRepository by lazy { NetworkAttendanceRepositoryImpl(api) }
+    private val networkAnnouncementRepository by lazy { NetworkAnnouncementRepositoryImpl(api) }
+    private val networkSuggestionsRepository by lazy { NetworkSuggestionsRepositoryImpl(api) }
+    private val networkLostObjectsRepository by lazy { NetworkLostObjectsRepositoryImpl(api) }
+
+    // Repositorios expuestos a la aplicación (conmutación transparente según `useMocks`)
+    open val authRepository: AuthRepository
+        get() = if (useMocks) mockAuthRepository else networkAuthRepository
+
+    open val roomRepository: RoomRepository
+        get() = if (useMocks) mockRoomRepository else networkRoomRepository
+
+    open val childRepository: ChildRepository
+        get() = if (useMocks) mockChildRepository else networkChildRepository
+
+    open val attendanceRepository: AttendanceRepository
+        get() = if (useMocks) mockAttendanceRepository else networkAttendanceRepository
+
+    open val announcementRepository: AnnouncementRepository
+        get() = if (useMocks) mockAnnouncementRepository else networkAnnouncementRepository
+
+    open val suggestionsRepository: SuggestionsRepository
+        get() = if (useMocks) mockSuggestionsRepository else networkSuggestionsRepository
+
+    open val lostObjectsRepository: LostObjectsRepository
+        get() = if (useMocks) mockLostObjectsRepository else networkLostObjectsRepository
+
+    open val bitacoraRepository: BitacoraRepository
+        get() = mockBitacoraRepository
+
+    open val messagesRepository: MessagesRepository
+        get() = mockMessagesRepository
+
+    open val familyGroupsRepository: FamilyGroupsRepository
+        get() = mockFamilyGroupsRepository
 }
 
 class SonrisasApplication : Application() {
