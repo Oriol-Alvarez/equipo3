@@ -54,6 +54,11 @@ class ExportLogViewModel(
     private val progress = MutableStateFlow(ExportProgress())
     private val weeks = ExportLogPresenter.weekOptions(today())
 
+    init {
+        // Con backend trae los datos más recientes del servidor; en modo demo no hace nada.
+        dailyLogRepository.refresh()
+    }
+
     val uiState: StateFlow<ExportLogUiState> = combine(
         dailyLogRepository.logs,
         child,

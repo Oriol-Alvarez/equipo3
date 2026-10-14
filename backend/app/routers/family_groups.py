@@ -91,6 +91,18 @@ def listar_grupos_familiares(
         grupos_ids = db.scalars(select(FamilyGroupMember.group_id).where(FamilyGroupMember.child_id.in_(hijos_ids))).all()
         grupos = db.scalars(select(FamilyGroup).where(FamilyGroup.id.in_(grupos_ids))).all() if grupos_ids else []
 
+    # Del grupo con actividad más reciente al más antiguo (igual que en la app)
+    def ultima_actividad(g: FamilyGroup):
+        ultimo = db.scalar(
+            select(FamilyGroupMessage.created_at)
+            .where(FamilyGroupMessage.group_id == g.id)
+            .order_by(FamilyGroupMessage.created_at.desc())
+            .limit(1)
+        )
+        return ultimo or g.created_at
+
+    grupos = sorted(grupos, key=ultima_actividad, reverse=True)
+
     resultado = []
     for g in grupos:
         miembros = db.scalars(select(FamilyGroupMember.child_id).where(FamilyGroupMember.group_id == g.id)).all()

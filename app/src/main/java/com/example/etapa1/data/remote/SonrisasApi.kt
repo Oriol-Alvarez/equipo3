@@ -1,10 +1,15 @@
 package com.example.etapa1.data.remote
 
 import retrofit2.Response
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -76,4 +81,81 @@ interface SonrisasApi {
 
     @PATCH("lost-objects/{id}/claim")
     suspend fun claimLostObject(@Path("id") id: String): Response<Unit>
+
+    // ---------------------------------------------------------------- grupos con familias
+    @GET("family-groups")
+    suspend fun getFamilyGroups(): Response<List<FamilyGroupDto>>
+
+    @GET("family-groups/candidates")
+    suspend fun getFamilyGroupCandidates(): Response<List<FamilyGroupCandidateDto>>
+
+    @POST("family-groups")
+    suspend fun createFamilyGroup(@Body request: CreateFamilyGroupDto): Response<FamilyGroupDto>
+
+    @GET("family-groups/{groupId}/messages")
+    suspend fun getFamilyGroupMessages(@Path("groupId") groupId: String): Response<List<FamilyGroupMessageDto>>
+
+    @POST("family-groups/{groupId}/messages")
+    suspend fun sendFamilyGroupMessage(
+        @Path("groupId") groupId: String,
+        @Body request: SendFamilyGroupMessageDto
+    ): Response<FamilyGroupMessageDto>
+
+    @Multipart
+    @POST("media/upload")
+    suspend fun uploadMedia(
+        @Part file: MultipartBody.Part,
+        @Part("folder") folder: RequestBody
+    ): Response<MediaUploadDto>
+
+    // ---------------------------------------------------------------- observaciones semanales
+    @GET("weekly-observations")
+    suspend fun getWeeklyObservations(): Response<List<WeeklyObservationDto>>
+
+    @POST("children/{childId}/weekly-observations")
+    suspend fun addWeeklyObservation(
+        @Path("childId") childId: String,
+        @Body request: CreateWeeklyObservationDto
+    ): Response<WeeklyObservationDto>
+
+    // ---------------------------------------------------------------- planeación y menú
+    @GET("daily-plans")
+    suspend fun getDailyPlans(
+        @Query("from") from: String? = null,
+        @Query("to") to: String? = null
+    ): Response<List<DailyPlanDto>>
+
+    @PUT("daily-plans/{date}")
+    suspend fun saveDailyPlan(
+        @Path("date") date: String,
+        @Body request: SaveDailyPlanDto
+    ): Response<DailyPlanDto>
+
+    // ---------------------------------------------------------------- registro diario
+    @GET("daily-logs")
+    suspend fun getDailyLogs(
+        @Query("from") from: String? = null,
+        @Query("to") to: String? = null
+    ): Response<List<DailyLogDto>>
+
+    @PUT("children/{childId}/daily-logs/{date}/ingreso")
+    suspend fun saveIngresoLog(
+        @Path("childId") childId: String,
+        @Path("date") date: String,
+        @Body request: IngresoLogDto
+    ): Response<DailyLogDto>
+
+    @PUT("children/{childId}/daily-logs/{date}/estadia")
+    suspend fun saveEstadiaLog(
+        @Path("childId") childId: String,
+        @Path("date") date: String,
+        @Body request: EstadiaLogDto
+    ): Response<DailyLogDto>
+
+    @PUT("children/{childId}/daily-logs/{date}/egreso")
+    suspend fun saveEgresoLog(
+        @Path("childId") childId: String,
+        @Path("date") date: String,
+        @Body request: EgresoLogDto
+    ): Response<DailyLogDto>
 }

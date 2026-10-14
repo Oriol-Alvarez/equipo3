@@ -36,9 +36,13 @@ import com.example.etapa1.data.repository.impl.NetworkAnnouncementRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkAttendanceRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkAuthRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkChildRepositoryImpl
+import com.example.etapa1.data.repository.impl.NetworkDailyLogRepositoryImpl
+import com.example.etapa1.data.repository.impl.NetworkDailyPlanRepositoryImpl
+import com.example.etapa1.data.repository.impl.NetworkFamilyGroupsRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkLostObjectsRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkRoomRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkSuggestionsRepositoryImpl
+import com.example.etapa1.data.repository.impl.NetworkWeeklyObservationsRepositoryImpl
 
 open class AppContainer(val context: Context) {
 
@@ -79,6 +83,10 @@ open class AppContainer(val context: Context) {
     private val networkAnnouncementRepository by lazy { NetworkAnnouncementRepositoryImpl(api) }
     private val networkSuggestionsRepository by lazy { NetworkSuggestionsRepositoryImpl(api) }
     private val networkLostObjectsRepository by lazy { NetworkLostObjectsRepositoryImpl(api) }
+    private val networkFamilyGroupsRepository by lazy { NetworkFamilyGroupsRepositoryImpl(api, tokenManager, context) }
+    private val networkWeeklyObservationsRepository by lazy { NetworkWeeklyObservationsRepositoryImpl(api) }
+    private val networkDailyPlanRepository by lazy { NetworkDailyPlanRepositoryImpl(api) }
+    private val networkDailyLogRepository by lazy { NetworkDailyLogRepositoryImpl(api) }
 
     // Repositorios expuestos a la aplicación (conmutación transparente según `useMocks`)
     open val authRepository: AuthRepository
@@ -109,16 +117,16 @@ open class AppContainer(val context: Context) {
         get() = mockMessagesRepository
 
     open val familyGroupsRepository: FamilyGroupsRepository
-        get() = mockFamilyGroupsRepository
+        get() = if (useMocks) mockFamilyGroupsRepository else networkFamilyGroupsRepository
 
     open val weeklyObservationsRepository: WeeklyObservationsRepository
-        get() = mockWeeklyObservationsRepository
+        get() = if (useMocks) mockWeeklyObservationsRepository else networkWeeklyObservationsRepository
 
     open val dailyPlanRepository: DailyPlanRepository
-        get() = mockDailyPlanRepository
+        get() = if (useMocks) mockDailyPlanRepository else networkDailyPlanRepository
 
     open val dailyLogRepository: DailyLogRepository
-        get() = mockDailyLogRepository
+        get() = if (useMocks) mockDailyLogRepository else networkDailyLogRepository
 
     val logSheetExporter: LogSheetExporter by lazy { AndroidLogSheetExporter(context) }
 }

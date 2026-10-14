@@ -14,6 +14,10 @@ class TokenManager(context: Context) {
         get() = prefs.getString("refresh_token", null)
         set(value) = prefs.edit().putString("refresh_token", value).apply()
 
+    var userId: String?
+        get() = prefs.getString("user_id", null)
+        set(value) = prefs.edit().putString("user_id", value).apply()
+
     var userRole: String?
         get() = prefs.getString("user_role", null)
         set(value) = prefs.edit().putString("user_role", value).apply()

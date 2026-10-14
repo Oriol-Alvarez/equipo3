@@ -37,6 +37,7 @@ class NetworkAuthRepositoryImpl(
                 val loginData = response.body()!!
                 tokenManager.token = loginData.token
                 tokenManager.refreshToken = loginData.refreshToken
+                tokenManager.userId = loginData.user.id
                 tokenManager.userRole = loginData.user.role
                 tokenManager.userEmail = loginData.user.email
                 tokenManager.userDisplayName = loginData.user.displayName

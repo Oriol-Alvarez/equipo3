@@ -12,4 +12,7 @@ interface DailyPlanRepository {
 
     /** Publica o reemplaza la planeación de ese día. Debe venir ya validada. */
     fun savePlan(plan: DailyPlan)
+
+    /** Vuelve a cargar los datos del servidor. En la versión en memoria no hace nada. */
+    fun refresh() {}
 }
