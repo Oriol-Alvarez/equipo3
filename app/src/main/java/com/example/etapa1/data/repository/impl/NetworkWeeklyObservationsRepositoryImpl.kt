@@ -37,7 +37,11 @@ class NetworkWeeklyObservationsRepositoryImpl(
     override fun refresh() {
         RemoteSync.launch("Cargar observaciones") {
             api.getWeeklyObservations().bodyOrLog("GET /weekly-observations")?.let { list ->
-                _observations.value = list.map { it.toDomain() }
+                val loaded = list.map { it.toDomain() }
+                // Conserva las que se están guardando en este momento
+                _observations.update { current ->
+                    loaded + current.filter { it.id.startsWith(LOCAL_PREFIX) }
+                }
             }
         }
     }
@@ -61,7 +65,7 @@ class NetworkWeeklyObservationsRepositoryImpl(
 
         localCounter += 1
         val pending = WeeklyObservation(
-            id = "wobs_local_${System.currentTimeMillis()}_$localCounter",
+            id = "$LOCAL_PREFIX${System.currentTimeMillis()}_$localCounter",
             childId = childId,
             weekKey = weekKey,
             authorRole = authorRole,
@@ -75,8 +79,8 @@ class NetworkWeeklyObservationsRepositoryImpl(
             val saved = api.addWeeklyObservation(childId, CreateWeeklyObservationDto(weekKey, cleanText))
                 .bodyOrLog("POST observación")
             _observations.update { list ->
-                if (saved == null) list.filter { it.id != pending.id }
-                else list.map { if (it.id == pending.id) saved.toDomain() else it }
+                val others = list.filter { it.id != pending.id && it.id != saved?.id }
+                if (saved == null) others else others + saved.toDomain()
             }
         }
         return Result.success(pending)
@@ -91,4 +95,8 @@ class NetworkWeeklyObservationsRepositoryImpl(
         text = text,
         time = time
     )
+
+    private companion object {
+        const val LOCAL_PREFIX = "wobs_local_"
+    }
 }

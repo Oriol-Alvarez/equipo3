@@ -143,18 +143,20 @@ class BackendIntegrationTest {
         assumeTrue(serverUp)
         val repo = NetworkDailyLogRepositoryImpl(educadora)
         val date = SimpleDate.today()
-        assertTrue(
-            repo.saveIngreso(
-                "lucia_garcia", date,
-                IngresoLog(time = "08:05", deliveredBy = "Mamá", medicationWithPrescription = MedicationPrescriptionOption.NO_APLICA)
-            ).isSuccess
+        val ingreso = IngresoLog(
+            time = "08:05", assistantName = "Laura Gómez", deliveredBy = "Mamá", receivedBy = "Laura Gómez",
+            isSick = true, medicationWithPrescription = MedicationPrescriptionOption.SI,
+            hasSymptoms = false, arrivedClean = true, backpackComplete = true, goodPhysicalCondition = true
         )
-        assertTrue(
-            repo.updateEstadia("lucia_garcia", date) {
-                it.copy(breakfast = FoodConsumptionOption.PIDIO_MAS, mood = MoodState.FELIZ, napMinutes = 50)
-            }.isSuccess
+        val egreso = EgresoLog(
+            time = "15:30", goodPhysicalCondition = true, collectedBy = "Papá",
+            deliveredClean = true, belongingsComplete = true, deliveredByStaff = "Laura Gómez"
         )
-        assertTrue(repo.saveEgreso("lucia_garcia", date, EgresoLog(time = "15:30", collectedBy = "Papá")).isSuccess)
+        repo.saveIngreso("lucia_garcia", date, ingreso).getOrThrow()
+        repo.updateEstadia("lucia_garcia", date) {
+            it.copy(breakfast = FoodConsumptionOption.PIDIO_MAS, mood = MoodState.FELIZ, slept = true, napMinutes = 50)
+        }.getOrThrow()
+        repo.saveEgreso("lucia_garcia", date, egreso).getOrThrow()
 
         eventually("los tres apartados quedan en el servidor") {
             val server = runBlocking { familia.getDailyLogs(date.toIso(), date.toIso()).body()!! }
@@ -169,7 +171,8 @@ class BackendIntegrationTest {
         eventually("se carga el registro") { other.logFor("lucia_garcia", date) != null }
         val log = other.logFor("lucia_garcia", date)!!
         assertEquals(FoodConsumptionOption.PIDIO_MAS, log.estadia?.breakfast)
-        assertEquals(MedicationPrescriptionOption.NO_APLICA, log.ingreso?.medicationWithPrescription)
+        assertEquals(MedicationPrescriptionOption.SI, log.ingreso?.medicationWithPrescription)
+        assertEquals(50, log.estadia?.napMinutes)
         assertEquals("15:30", log.egreso?.time)
     }
 }

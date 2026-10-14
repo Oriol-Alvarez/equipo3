@@ -40,16 +40,27 @@ class NetworkDailyLogRepositoryImpl(
     private val _logs = MutableStateFlow<List<DailyLog>>(emptyList())
     override val logs: StateFlow<List<DailyLog>> = _logs.asStateFlow()
 
+    /** Días guardados desde la app mientras corre una recarga; no se pisan con datos viejos. */
+    private val dirtyKeys = mutableSetOf<Pair<String, SimpleDate>>()
+
     init {
         refresh()
     }
 
     override fun refresh() {
         val today = SimpleDate.today()
+        synchronized(dirtyKeys) { dirtyKeys.clear() }
         RemoteSync.launch("Cargar registro diario") {
             api.getDailyLogs(from = today.plusDays(-35).toIso(), to = today.toIso())
                 .bodyOrLog("GET /daily-logs")
-                ?.let { list -> _logs.value = list.mapNotNull { it.toDomain() } }
+                ?.let { list ->
+                    val loaded = list.mapNotNull { it.toDomain() }
+                    _logs.update { current ->
+                        val dirty = synchronized(dirtyKeys) { dirtyKeys.toSet() }
+                        loaded.filter { (it.childId to it.date) !in dirty } +
+                            current.filter { (it.childId to it.date) in dirty }
+                    }
+                }
         }
     }
 
@@ -132,6 +143,7 @@ class NetworkDailyLogRepositoryImpl(
     }
 
     private fun upsert(childId: String, date: SimpleDate, change: (DailyLog) -> DailyLog): DailyLog {
+        synchronized(dirtyKeys) { dirtyKeys.add(childId to date) }
         val updated = change(logFor(childId, date) ?: DailyLog(childId = childId, date = date))
         _logs.update { list -> list.filterNot { it.childId == childId && it.date == date } + updated }
         return updated

@@ -27,16 +27,26 @@ class NetworkDailyPlanRepositoryImpl(
     private val _plans = MutableStateFlow<List<DailyPlan>>(emptyList())
     override val plans: StateFlow<List<DailyPlan>> = _plans.asStateFlow()
 
+    /** Días guardados desde la app mientras corre una recarga; no se pisan con datos viejos. */
+    private val dirtyDates = mutableSetOf<SimpleDate>()
+
     init {
         refresh()
     }
 
     override fun refresh() {
         val today = SimpleDate.today()
+        synchronized(dirtyDates) { dirtyDates.clear() }
         RemoteSync.launch("Cargar planeación") {
             api.getDailyPlans(from = today.plusDays(-14).toIso(), to = today.plusDays(30).toIso())
                 .bodyOrLog("GET /daily-plans")
-                ?.let { list -> _plans.value = list.mapNotNull { it.toDomain() } }
+                ?.let { list ->
+                    val loaded = list.mapNotNull { it.toDomain() }
+                    _plans.update { current ->
+                        val dirty = synchronized(dirtyDates) { dirtyDates.toSet() }
+                        loaded.filter { it.date !in dirty } + current.filter { it.date in dirty }
+                    }
+                }
         }
     }
 
@@ -44,6 +54,7 @@ class NetworkDailyPlanRepositoryImpl(
 
     override fun savePlan(plan: DailyPlan) {
         val previous = planFor(plan.date)
+        synchronized(dirtyDates) { dirtyDates.add(plan.date) }
         _plans.update { list -> list.filter { it.date != plan.date } + plan }
 
         RemoteSync.launch("Guardar planeación") {

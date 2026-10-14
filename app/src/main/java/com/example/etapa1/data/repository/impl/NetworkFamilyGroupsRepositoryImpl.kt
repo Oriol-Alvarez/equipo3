@@ -65,7 +65,9 @@ class NetworkFamilyGroupsRepositoryImpl(
                 val messages = api.getFamilyGroupMessages(dto.id).bodyOrLog("GET mensajes ${dto.id}").orEmpty()
                 dto.toDomain(messages.map { it.toDomain() })
             }
-            _groups.value = loaded // el servidor ya los manda del más reciente al más antiguo
+            // El servidor ya los manda del más reciente al más antiguo. Se conservan los grupos y
+            // mensajes que se están enviando en este momento para que no desaparezcan de la pantalla.
+            _groups.update { current -> mergePending(loaded, current) }
         }
         if (tokenManager.userRole?.uppercase() != "FAMILIAR") {
             RemoteSync.launch("Cargar candidatos") {
@@ -101,12 +103,12 @@ class NetworkFamilyGroupsRepositoryImpl(
 
         // Grupo provisional mientras responde el servidor
         val temp = FamilyGroupChat(
-            id = nextLocalId("fgroup_local"),
+            id = nextLocalId(LOCAL_GROUP),
             title = cleanTitle,
             memberChildIds = members,
             createdById = creator.id,
             messages = listOf(
-                FamilyGroupMessage(nextLocalId("fgm_local"), creator.id, creator.displayName, "Grupo «$cleanTitle» creado.", now())
+                FamilyGroupMessage(nextLocalId(LOCAL_MESSAGE), creator.id, creator.displayName, "Grupo «$cleanTitle» creado.", now())
             )
         )
         _groups.update { listOf(temp) + it }
@@ -119,7 +121,7 @@ class NetworkFamilyGroupsRepositoryImpl(
             }
             val messages = api.getFamilyGroupMessages(created.id).bodyOrLog("GET mensajes").orEmpty()
             val real = created.toDomain(messages.map { it.toDomain() })
-            _groups.update { list -> list.map { if (it.id == temp.id) real else it } }
+            _groups.update { list -> listOf(real) + list.filter { it.id != temp.id && it.id != real.id } }
         }
         return Result.success(temp)
     }
@@ -135,7 +137,7 @@ class NetworkFamilyGroupsRepositoryImpl(
         val group = _groups.value.find { it.id == groupId } ?: return false
 
         val pending = FamilyGroupMessage(
-            id = nextLocalId("fgm_local"),
+            id = nextLocalId(LOCAL_MESSAGE),
             senderId = sender.id,
             senderName = sender.displayName,
             text = cleanText,
@@ -179,8 +181,21 @@ class NetworkFamilyGroupsRepositoryImpl(
     private fun replaceMessage(groupId: String, localId: String, message: FamilyGroupMessage) {
         _groups.update { list ->
             list.map { g ->
-                if (g.id == groupId) g.copy(messages = g.messages.map { if (it.id == localId) message else it }) else g
+                if (g.id == groupId) {
+                    g.copy(messages = g.messages.filter { it.id != localId && it.id != message.id } + message)
+                } else {
+                    g
+                }
             }
+        }
+    }
+
+    private fun mergePending(loaded: List<FamilyGroupChat>, current: List<FamilyGroupChat>): List<FamilyGroupChat> {
+        val pendingGroups = current.filter { it.id.startsWith(LOCAL_GROUP) }
+        val pendingMessages = current.associate { g -> g.id to g.messages.filter { it.id.startsWith(LOCAL_MESSAGE) } }
+        return pendingGroups + loaded.map { g ->
+            val pending = pendingMessages[g.id].orEmpty()
+            if (pending.isEmpty()) g else g.copy(messages = g.messages + pending)
         }
     }
 
@@ -192,7 +207,7 @@ class NetworkFamilyGroupsRepositoryImpl(
 
     private fun nextLocalId(prefix: String): String {
         localCounter += 1
-        return "${prefix}_${System.currentTimeMillis()}_$localCounter"
+        return "$prefix${System.currentTimeMillis()}_$localCounter"
     }
 
     private fun now(): String = SimpleDateFormat("hh:mm a", Locale.US).format(Date())
@@ -216,4 +231,9 @@ class NetworkFamilyGroupsRepositoryImpl(
             MessageAttachment(uri = RemoteSync.absoluteUrl(it.uri), name = it.name, mimeType = it.mimeType)
         }
     )
+
+    private companion object {
+        const val LOCAL_GROUP = "fgroup_local_"
+        const val LOCAL_MESSAGE = "fgm_local_"
+    }
 }
