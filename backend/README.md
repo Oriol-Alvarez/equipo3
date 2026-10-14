@@ -35,6 +35,9 @@ backend/
 │       ├── attendance.py        # /attendance (ingreso secuencial, egreso y registros)
 │       ├── bitacora.py          # /children/{id}/timeline, bitacoras y actividades
 │       ├── weekly_summaries.py  # /children/{id}/weekly-summaries (resúmenes pedagógicos)
+│       ├── weekly_observations.py # /weekly-observations (comentarios de familia y educadora)
+│       ├── daily_plans.py       # /daily-plans (planeación y menú diario)
+│       ├── daily_logs.py        # /daily-logs (registro diario / hoja oficial en PDF)
 │       ├── staff_chats.py       # /staff y /chats/workers (mensajería interna del personal)
 │       ├── parent_chats.py      # /chats/bitacora (comunicación directa familia-docente)
 │       ├── family_groups.py     # /family-groups (grupos de mensajería con familias)
@@ -48,7 +51,8 @@ backend/
     ├── test_auth.py             # Pruebas de autenticación, credenciales y refresh
     ├── test_permisos.py         # Pruebas de control de acceso por roles (RBAC)
     ├── test_seguridad.py        # Pruebas de tokens expirados, firmas y hashes Argon2
-    └── test_contrato.py         # Pruebas de cumplimiento de contrato de API_ENTRYPOINTS.md
+    ├── test_contrato.py         # Pruebas de cumplimiento de contrato de API_ENTRYPOINTS.md
+    └── test_modulos_heber.py    # Grupos con familias, observaciones, planeación y registro diario
 ```
 
 ---
