@@ -8,8 +8,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-class MockLostObjectsRepositoryImpl : LostObjectsRepository {
-    private val _lostItems = MutableStateFlow<List<LostItem>>(MockDataRepository.getInitialLostItems())
+class MockLostObjectsRepositoryImpl(
+    initialItems: List<LostItem> = MockDataRepository.getInitialLostItems()
+) : LostObjectsRepository {
+    private val _lostItems = MutableStateFlow<List<LostItem>>(initialItems)
     override val lostItems: StateFlow<List<LostItem>> = _lostItems.asStateFlow()
 
     private val _claimedItems = MutableStateFlow<Map<String, Boolean>>(emptyMap())
@@ -22,6 +24,15 @@ class MockLostObjectsRepositoryImpl : LostObjectsRepository {
     override fun claimLostItem(itemId: String) {
         _claimedItems.update { currentMap ->
             currentMap + (itemId to true)
+        }
+    }
+
+    override fun deleteLostItem(itemId: String) {
+        _lostItems.update { currentList ->
+            currentList.filterNot { it.id == itemId }
+        }
+        _claimedItems.update { currentMap ->
+            currentMap - itemId
         }
     }
 }

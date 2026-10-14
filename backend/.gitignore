@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.env
+*.db
+sonrisas.db
+data/
+uploads/
+.DS_Store

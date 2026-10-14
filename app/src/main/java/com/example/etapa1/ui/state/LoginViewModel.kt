@@ -47,9 +47,14 @@ class LoginViewModel(
             _uiState.update { it.copy(hasError = true) }
             return null
         }
-        authRepository.login(state.email, state.password, state.selectedRole)
-        _uiState.update { it.copy(isSuccess = true) }
-        return state.selectedRole
+        val result = authRepository.login(state.email, state.password, state.selectedRole)
+        return if (result.isSuccess) {
+            _uiState.update { it.copy(isSuccess = true) }
+            result.getOrNull() ?: state.selectedRole
+        } else {
+            _uiState.update { it.copy(hasError = true) }
+            null
+        }
     }
 
     fun toggleError() {

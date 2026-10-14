@@ -8,4 +8,5 @@ interface LostObjectsRepository {
     val claimedItems: StateFlow<Map<String, Boolean>>
     fun publishLostItem(newItem: LostItem)
     fun claimLostItem(itemId: String)
+    fun deleteLostItem(itemId: String)
 }
