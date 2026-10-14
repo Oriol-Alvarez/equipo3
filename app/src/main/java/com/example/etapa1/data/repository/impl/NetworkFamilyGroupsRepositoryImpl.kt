@@ -41,6 +41,9 @@ class NetworkFamilyGroupsRepositoryImpl(
     private val context: Context
 ) : FamilyGroupsRepository {
 
+    /** Los cambios se mandan al servidor en orden, uno por uno. */
+    private val writes = RemoteSync.SerialQueue()
+
     private val _groups = MutableStateFlow<List<FamilyGroupChat>>(emptyList())
     override val groups: StateFlow<List<FamilyGroupChat>> = _groups.asStateFlow()
 
@@ -113,11 +116,11 @@ class NetworkFamilyGroupsRepositoryImpl(
         )
         _groups.update { listOf(temp) + it }
 
-        RemoteSync.launch("Crear grupo") {
+        writes.enqueue("Crear grupo") {
             val created = api.createFamilyGroup(CreateFamilyGroupDto(cleanTitle, members)).bodyOrLog("POST /family-groups")
             if (created == null) {
                 _groups.update { list -> list.filter { it.id != temp.id } }
-                return@launch
+                return@enqueue
             }
             val messages = api.getFamilyGroupMessages(created.id).bodyOrLog("GET mensajes").orEmpty()
             val real = created.toDomain(messages.map { it.toDomain() })
@@ -146,17 +149,17 @@ class NetworkFamilyGroupsRepositoryImpl(
         )
         _groups.update { list -> listOf(group.copy(messages = group.messages + pending)) + list.filter { it.id != groupId } }
 
-        RemoteSync.launch("Enviar mensaje") {
+        writes.enqueue("Enviar mensaje") {
             val uploaded = attachment?.let { uploadAttachment(it) }
             if (attachment != null && uploaded == null) {
                 removeMessage(groupId, pending.id)
-                return@launch
+                return@enqueue
             }
             val sent = api.sendFamilyGroupMessage(groupId, SendFamilyGroupMessageDto(cleanText, uploaded))
                 .bodyOrLog("POST mensaje")
             if (sent == null) {
                 removeMessage(groupId, pending.id)
-                return@launch
+                return@enqueue
             }
             replaceMessage(groupId, pending.id, sent.toDomain())
         }

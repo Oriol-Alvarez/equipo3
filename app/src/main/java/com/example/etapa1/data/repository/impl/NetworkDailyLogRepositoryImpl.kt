@@ -37,6 +37,9 @@ class NetworkDailyLogRepositoryImpl(
     private val api: SonrisasApi
 ) : DailyLogRepository {
 
+    /** Los cambios se mandan al servidor en orden, uno por uno. */
+    private val writes = RemoteSync.SerialQueue()
+
     private val _logs = MutableStateFlow<List<DailyLog>>(emptyList())
     override val logs: StateFlow<List<DailyLog>> = _logs.asStateFlow()
 
@@ -123,17 +126,17 @@ class NetworkDailyLogRepositoryImpl(
     // ------------------------------------------------------------------ envío al servidor
 
     private fun pushIngreso(childId: String, date: SimpleDate, ingreso: IngresoLog) =
-        RemoteSync.launch("Guardar ingreso") {
+        writes.enqueue("Guardar ingreso") {
             api.saveIngresoLog(childId, date.toIso(), ingreso.toDto()).bodyOrLog("PUT ingreso")?.let(::applyServer)
         }
 
     private fun pushEstadia(childId: String, date: SimpleDate, estadia: EstadiaLog) =
-        RemoteSync.launch("Guardar estadía") {
+        writes.enqueue("Guardar estadía") {
             api.saveEstadiaLog(childId, date.toIso(), estadia.toDto()).bodyOrLog("PUT estadía")?.let(::applyServer)
         }
 
     private fun pushEgreso(childId: String, date: SimpleDate, egreso: EgresoLog) =
-        RemoteSync.launch("Guardar egreso") {
+        writes.enqueue("Guardar egreso") {
             api.saveEgresoLog(childId, date.toIso(), egreso.toDto()).bodyOrLog("PUT egreso")?.let(::applyServer)
         }
 

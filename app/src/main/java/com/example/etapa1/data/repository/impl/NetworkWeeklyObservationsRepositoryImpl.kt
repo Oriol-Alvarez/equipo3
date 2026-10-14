@@ -25,6 +25,9 @@ class NetworkWeeklyObservationsRepositoryImpl(
     private val api: SonrisasApi
 ) : WeeklyObservationsRepository {
 
+    /** Los cambios se mandan al servidor en orden, uno por uno. */
+    private val writes = RemoteSync.SerialQueue()
+
     private val _observations = MutableStateFlow<List<WeeklyObservation>>(emptyList())
     override val observations: StateFlow<List<WeeklyObservation>> = _observations.asStateFlow()
 
@@ -75,7 +78,7 @@ class NetworkWeeklyObservationsRepositoryImpl(
         )
         _observations.update { it + pending }
 
-        RemoteSync.launch("Guardar observación") {
+        writes.enqueue("Guardar observación") {
             val saved = api.addWeeklyObservation(childId, CreateWeeklyObservationDto(weekKey, cleanText))
                 .bodyOrLog("POST observación")
             _observations.update { list ->

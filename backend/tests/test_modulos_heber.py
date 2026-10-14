@@ -203,6 +203,8 @@ def test_familia_no_escribe_registro_ni_ve_otros(cliente: TestClient, familiar: 
     assert {d["childId"] for d in todos} <= {"mateo_garcia", "lucia_garcia"}
 
 
-def test_registro_sembrado_es_anterior_a_hoy(cliente: TestClient, educadora: Persona):
+def test_registro_sembrado_trae_dias_anteriores_completos(cliente: TestClient, educadora: Persona):
     todos = cliente.get(f"{API}/daily-logs", headers=educadora.headers).json()
-    assert all(d["date"] < hoy().isoformat() or d["date"] >= "2030-01-01" for d in todos)
+    pasados = [d for d in todos if d["date"] < hoy().isoformat()]
+    assert pasados
+    assert all(d["ingreso"] and d["estadia"] and d["egreso"] for d in pasados)

@@ -44,6 +44,9 @@
 12. [Catálogo de Objetos Perdidos](#módulo-12-catálogo-de-objetos-perdidos-lost-objects)
 13. [Almacenamiento Multimedia](#módulo-13-almacenamiento-y-subida-multimedia-media)
 14. [Notificaciones Push y WebSockets](#módulo-14-notificaciones-push-y-tiempo-real-ws-notifications)
+15. [Observaciones Semanales](#módulo-15-observaciones-semanales-weekly-observations)
+16. [Planeación y Menú Diario](#módulo-16-planeación-y-menú-diario-daily-plans)
+17. [Registro Diario / Bitácora de Filtro Diario](#módulo-17-registro-diario--bitácora-de-filtro-diario-daily-logs)
 
 ---
 
@@ -861,6 +864,11 @@
   }
   ```
 * **Response (201 Created):** Objeto `FamilyGroupMessage`.
+* **Errores:** `403 sin_acceso_grupo` si una familia escribe o lee un grupo donde no está ninguno de sus hijos;
+  `422 mensaje_vacio` si no hay texto ni adjunto. Para adjuntar una foto o archivo, primero se sube con
+  `POST /media/upload` y se manda la `url` que regresa (`/api/v1/media/{fileId}`).
+* **Orden:** `GET /family-groups` regresa los grupos del más reciente al más antiguo según su último mensaje;
+  `GET /family-groups/{groupId}/messages` regresa los mensajes del más viejo al más nuevo.
 
 ---
 
@@ -1122,3 +1130,124 @@
     }
   }
   ```
+
+---
+
+## Módulo 15: Observaciones Semanales (`/weekly-observations`)
+
+Comentarios manuales de la familia o de la educadora en el resumen semanal de un niño.
+El rol del autor (`FAMILIA` o `EDUCADORA`) lo decide el servidor según el token.
+Una familia solo puede leer y escribir observaciones de sus propios hijos (`403 sin_acceso_alumno`).
+
+### 15.1 Listar Observaciones Visibles
+* **Método:** `GET`
+* **Ruta:** `/weekly-observations?weekKey={opcional}`
+* **Rol requerido:** Autenticado (personal: todas; familia: las de sus hijos)
+* **Response (200 OK):**
+  ```json
+  [
+    {
+      "id": "wobs_1",
+      "childId": "mateo_garcia",
+      "weekKey": "Semana del 15 al 19 de Septiembre, 2026",
+      "authorRole": "FAMILIA",
+      "authorName": "Familia García",
+      "text": "En casa también lo notamos más tranquilo para dormir.",
+      "time": "19/09 07:40 PM"
+    }
+  ]
+  ```
+
+### 15.2 Listar Observaciones de un Alumno
+* **Método:** `GET`
+* **Ruta:** `/children/{childId}/weekly-observations?weekKey={opcional}`
+
+### 15.3 Agregar Observación
+* **Método:** `POST`
+* **Ruta:** `/children/{childId}/weekly-observations`
+* **Request Body:** `{ "weekKey": "Semana del 15 al 19 de Septiembre, 2026", "text": "..." }`
+* **Response (201 Created):** Objeto `WeeklyObservation`.
+* **Errores:** `422 observacion_vacia`, `422 observacion_larga` (máximo 500 caracteres).
+
+---
+
+## Módulo 16: Planeación y Menú Diario (`/daily-plans`)
+
+La educadora publica el menú y las actividades del día; las familias lo consultan. Fechas en formato `YYYY-MM-DD`.
+
+### 16.1 Listar Planeaciones
+* **Método:** `GET`
+* **Ruta:** `/daily-plans?from=2026-10-12&to=2026-10-16&roomId=sala_1a`
+* **Rol requerido:** Autenticado
+* **Response (200 OK):**
+  ```json
+  [
+    {
+      "date": "2026-10-12",
+      "roomId": "sala_1a",
+      "menu": {
+        "breakfast": "Avena con plátano y leche",
+        "snack": "Gajos de mandarina",
+        "lunch": "Crema de calabaza, arroz con pollo y agua de jamaica",
+        "notes": "Mateo García: menú sin nuez."
+      },
+      "activities": [{ "time": "09:00", "title": "Asamblea de bienvenida y canciones" }],
+      "updatedBy": "Educadora Sala 1A"
+    }
+  ]
+  ```
+
+### 16.2 Obtener Planeación de un Día
+* **Método:** `GET`
+* **Ruta:** `/daily-plans/{fecha}` — `404 sin_planeacion` si no se ha publicado.
+
+### 16.3 Publicar o Reemplazar Planeación
+* **Método:** `PUT`
+* **Ruta:** `/daily-plans/{fecha}`
+* **Rol requerido:** `EDUCADORA` / `DIRECCION`
+* **Request Body:** `{ "menu": {...}, "activities": [{ "time": "09:00", "title": "..." }], "roomId": "sala_1a" }`
+* **Validación:** desayuno, colación y comida obligatorios; de 1 a 20 actividades con hora `HH:mm` (24 h).
+  Las actividades se guardan ordenadas por hora.
+
+---
+
+## Módulo 17: Registro Diario / Bitácora de Filtro Diario (`/daily-logs`)
+
+Fuente de la hoja oficial que se exporta en PDF. Cada día de cada niño tiene tres apartados que se guardan
+por separado: **II. Ingreso**, **III. Estadía** y **IV. Egreso**. Los nombres de los campos son los mismos
+que en la app (`model/DailyLog.kt`) y las opciones van con el nombre del enum:
+`FoodConsumptionOption` (`NADA`, `POCO`, `TODO`, `PIDIO_MAS`), `MoodState` (`FELIZ`, `TRISTE`, `ENOJADO`),
+`SphincterControl` (`NO_APLICA`, `AVISO_SI`, `AVISO_NO`), `MedicationPrescriptionOption` (`SI`, `NO`, `NO_APLICA`).
+
+### 17.1 Listar Registros Visibles
+* **Método:** `GET`
+* **Ruta:** `/daily-logs?from=YYYY-MM-DD&to=YYYY-MM-DD` (por defecto, los últimos 28 días)
+* **Rol requerido:** Autenticado (personal: todos; familia: sus hijos)
+* **Response (200 OK):**
+  ```json
+  [
+    {
+      "childId": "mateo_garcia",
+      "date": "2026-10-12",
+      "ingreso": { "time": "08:10", "assistantName": "Laura Gómez", "deliveredBy": "Mamá", "isSick": false },
+      "estadia": { "breakfast": "TODO", "slept": true, "napMinutes": 60, "mood": "FELIZ" },
+      "egreso": { "time": "15:00", "collectedBy": "Mamá", "deliveredByStaff": "Laura Gómez" }
+    }
+  ]
+  ```
+
+### 17.2 Listar Registros de un Alumno
+* **Método:** `GET`
+* **Ruta:** `/children/{childId}/daily-logs?from=&to=`
+
+### 17.3 Guardar un Apartado del Día
+* **Métodos:** `PUT`
+* **Rutas:**
+  - `/children/{childId}/daily-logs/{fecha}/ingreso`
+  - `/children/{childId}/daily-logs/{fecha}/estadia`
+  - `/children/{childId}/daily-logs/{fecha}/egreso`
+* **Rol requerido:** `EDUCADORA` / `DIRECCION`
+* **Request Body:** el objeto `IngresoLog`, `EstadiaLog` o `EgresoLog` completo (reemplaza al anterior de ese día).
+* **Response (200 OK):** el registro completo del día.
+* **Errores:** `422 opcion_invalida`, `422 salida_antes_de_entrada`, `422` si la hora no es `HH:mm` o si viene un campo desconocido.
+

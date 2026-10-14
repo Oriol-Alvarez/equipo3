@@ -9,6 +9,7 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..db import get_db
@@ -81,8 +82,13 @@ def guardar_planeacion(
     actividades = sorted(body.activities, key=lambda a: a.time)
     plan = db.get(DailyPlan, (body.roomId, dia))
     if plan is None:
-        plan = DailyPlan(room_id=body.roomId, date=dia)
-        db.add(plan)
+        try:
+            with db.begin_nested():
+                plan = DailyPlan(room_id=body.roomId, date=dia, breakfast="", snack="", lunch="", updated_by="")
+                db.add(plan)
+                db.flush()
+        except IntegrityError:
+            plan = db.get(DailyPlan, (body.roomId, dia), populate_existing=True)
     plan.breakfast = body.menu.breakfast.strip()
     plan.snack = body.menu.snack.strip()
     plan.lunch = body.menu.lunch.strip()

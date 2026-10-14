@@ -5,6 +5,7 @@ import com.example.etapa1.domain.SimpleDate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import retrofit2.Response
 import java.util.Calendar
@@ -30,6 +31,30 @@ object RemoteSync {
             } catch (e: Exception) {
                 Log.w(TAG, "$what: ${e.message}")
             }
+        }
+    }
+
+    /**
+     * Cola que manda los cambios al servidor uno por uno y en el orden en que se hicieron
+     * (por ejemplo: ingreso, luego estadía, luego egreso del mismo día).
+     */
+    class SerialQueue {
+        private val tasks = Channel<Pair<String, suspend () -> Unit>>(Channel.UNLIMITED)
+
+        init {
+            scope.launch {
+                for ((what, block) in tasks) {
+                    try {
+                        block()
+                    } catch (e: Exception) {
+                        Log.w(TAG, "$what: ${e.message}")
+                    }
+                }
+            }
+        }
+
+        fun enqueue(what: String, block: suspend () -> Unit) {
+            tasks.trySend(what to block)
         }
     }
 

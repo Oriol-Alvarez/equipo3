@@ -24,6 +24,9 @@ class NetworkDailyPlanRepositoryImpl(
     private val api: SonrisasApi
 ) : DailyPlanRepository {
 
+    /** Los cambios se mandan al servidor en orden, uno por uno. */
+    private val writes = RemoteSync.SerialQueue()
+
     private val _plans = MutableStateFlow<List<DailyPlan>>(emptyList())
     override val plans: StateFlow<List<DailyPlan>> = _plans.asStateFlow()
 
@@ -57,7 +60,7 @@ class NetworkDailyPlanRepositoryImpl(
         synchronized(dirtyDates) { dirtyDates.add(plan.date) }
         _plans.update { list -> list.filter { it.date != plan.date } + plan }
 
-        RemoteSync.launch("Guardar planeación") {
+        writes.enqueue("Guardar planeación") {
             val body = SaveDailyPlanDto(
                 menu = DailyMenuDto(plan.menu.breakfast, plan.menu.snack, plan.menu.lunch, plan.menu.notes),
                 activities = plan.activities.map { PlannedActivityDto(it.time, it.title) }

@@ -9,6 +9,7 @@ from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..acceso import exigir_alumno_visible, ids_visibles
@@ -49,11 +50,21 @@ def _opcion(valor: str | None, validas: set[str], campo: str) -> None:
 
 
 def _registro(child_id: str, dia: str, db: Session) -> DailyLog:
+    """Obtiene el registro del día o lo crea. Si dos peticiones lo crean al mismo tiempo, usa el que ganó."""
     r = db.get(DailyLog, (child_id, dia))
-    if r is None:
-        r = DailyLog(child_id=child_id, date=dia)
-        db.add(r)
-    return r
+    if r is not None:
+        return r
+    try:
+        with db.begin_nested():
+            r = DailyLog(child_id=child_id, date=dia)
+            db.add(r)
+            db.flush()
+        return r
+    except IntegrityError:
+        existente = db.get(DailyLog, (child_id, dia), populate_existing=True)
+        if existente is None:
+            raise
+        return existente
 
 
 @router.get("/daily-logs", response_model=list[DailyLogOut])
