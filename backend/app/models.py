@@ -359,3 +359,53 @@ class DeviceToken(Base):
     device_token: Mapped[str] = mapped_column(String(255), unique=True)
     platform: Mapped[str] = mapped_column(String(30), default="ANDROID")
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+# ---------------------------------------------------------------------------
+# Módulos de Heber: observaciones semanales, planeación/menú y registro diario
+# ---------------------------------------------------------------------------
+
+
+class WeeklyObservation(Base):
+    """Observación manual (de la familia o de la educadora) en el resumen semanal de un niño."""
+
+    __tablename__ = "weekly_observations"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    child_id: Mapped[str] = mapped_column(ForeignKey("children.id", ondelete="CASCADE"), index=True)
+    week_key: Mapped[str] = mapped_column(String(120), index=True)
+    author_role: Mapped[str] = mapped_column(String(20))  # FAMILIA | EDUCADORA
+    author_user_id: Mapped[str] = mapped_column(ForeignKey("usuarios.id", ondelete="CASCADE"))
+    author_name: Mapped[str] = mapped_column(String(120))
+    text: Mapped[str] = mapped_column(Text)
+    time: Mapped[str] = mapped_column(String(30))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class DailyPlan(Base):
+    """Planeación y menú de un día para una sala (uno por sala y fecha)."""
+
+    __tablename__ = "daily_plans"
+
+    room_id: Mapped[str] = mapped_column(ForeignKey("rooms.id", ondelete="CASCADE"), primary_key=True)
+    date: Mapped[str] = mapped_column(String(10), primary_key=True)  # YYYY-MM-DD
+    breakfast: Mapped[str] = mapped_column(Text)
+    snack: Mapped[str] = mapped_column(Text)
+    lunch: Mapped[str] = mapped_column(Text)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    activities: Mapped[str] = mapped_column(Text, default="[]")  # JSON [{time, title}]
+    updated_by: Mapped[str] = mapped_column(String(120))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class DailyLog(Base):
+    """Registro diario de un niño con los apartados de la hoja oficial (ingreso, estadía, egreso)."""
+
+    __tablename__ = "daily_logs"
+
+    child_id: Mapped[str] = mapped_column(ForeignKey("children.id", ondelete="CASCADE"), primary_key=True)
+    date: Mapped[str] = mapped_column(String(10), primary_key=True)  # YYYY-MM-DD
+    ingreso: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON
+    estadia: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON
+    egreso: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())

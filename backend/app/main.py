@@ -17,6 +17,8 @@ from .routers import (
     auth,
     bitacora,
     children,
+    daily_logs,
+    daily_plans,
     family_groups,
     lost_objects,
     media,
@@ -24,10 +26,11 @@ from .routers import (
     rooms,
     staff_chats,
     suggestions,
+    weekly_observations,
     weekly_summaries,
     ws_notifications,
 )
-from .seed import seed_database
+from .seed import seed_database, seed_modulos_heber
 
 
 @asynccontextmanager
@@ -38,6 +41,7 @@ async def lifespan(_: FastAPI):
 
     with SessionLocal() as db:
         seed_database(db)
+        seed_modulos_heber(db)
 
     yield
 
@@ -71,6 +75,9 @@ routers_list = [
     attendance.router,
     bitacora.router,
     weekly_summaries.router,
+    weekly_observations.router,
+    daily_plans.router,
+    daily_logs.router,
     staff_chats.router,
     parent_chats.router,
     family_groups.router,

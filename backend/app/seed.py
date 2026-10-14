@@ -344,3 +344,115 @@ def seed_database(db: Session) -> None:
     )
 
     db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Datos de ejemplo de observaciones semanales, planeación/menú y registro diario.
+# Se ejecuta en cada arranque y solo agrega lo que falta (no borra nada).
+# ---------------------------------------------------------------------------
+
+_MENUS_SEMANA = [
+    ("Avena con plátano y leche", "Gajos de mandarina", "Crema de calabaza, arroz con pollo y agua de jamaica", "Mateo García: menú sin nuez."),
+    ("Hot cakes de avena con fruta", "Yogur natural", "Sopa de fideo, tortitas de verdura y agua de pepino", ""),
+    ("Huevo revuelto con jitomate y tortilla", "Pepino y jícama", "Lentejas con zanahoria, arroz y agua de limón", ""),
+    ("Pan integral con frijoles y queso fresco", "Manzana picada", "Caldo de verduras, pescado empapelado y puré de papa", ""),
+    ("Licuado de fresa y galletas de avena", "Papaya", "Pasta con verduras, pollo deshebrado y agua de melón", ""),
+]
+
+_ACTIVIDADES_SEMANA = [
+    [("09:00", "Asamblea de bienvenida y canciones"), ("10:00", "Motricidad fina: ensartar cuentas grandes"), ("11:30", "Juego libre en el patio")],
+    [("09:00", "Asamblea: los colores"), ("10:00", "Pintura con dedos sobre mural"), ("11:30", "Cuentacuentos con títeres")],
+    [("09:00", "Asamblea: los animales de la granja"), ("10:00", "Circuito de psicomotricidad"), ("11:30", "Música y movimiento")],
+    [("09:00", "Asamblea: el clima"), ("10:00", "Taller sensorial con texturas"), ("11:30", "Jardín: regar las plantas")],
+    [("09:00", "Asamblea y repaso de la semana"), ("10:00", "Construcción con bloques"), ("11:30", "Mini fiesta de cumpleaños del mes")],
+]
+
+
+def seed_modulos_heber(db: Session) -> None:
+    import json
+    from datetime import timedelta
+
+    from .horario import hoy
+    from .models import Child, DailyLog, DailyPlan, Room, WeeklyObservation
+
+    if db.get(Room, "sala_1a") is None:
+        return  # La base todavía no tiene los datos base
+
+    # 1. Observación semanal de ejemplo
+    if db.get(WeeklyObservation, "wobs_1") is None and db.get(Usuario, "usr_familia_garcia") is not None:
+        db.add(
+            WeeklyObservation(
+                id="wobs_1",
+                child_id="mateo_garcia",
+                week_key="Semana del 15 al 19 de Septiembre, 2026",
+                author_role="FAMILIA",
+                author_user_id="usr_familia_garcia",
+                author_name="Familia García",
+                text="En casa también lo notamos más tranquilo para dormir. El fin de semana comió brócoli en puré sin problema.",
+                time="19/09 07:40 PM",
+            )
+        )
+
+    # 2. Planeación de la semana escolar actual (lunes a viernes), si falta algún día
+    lunes = hoy() - timedelta(days=hoy().weekday())
+    for i in range(5):
+        dia = (lunes + timedelta(days=i)).isoformat()
+        if db.get(DailyPlan, ("sala_1a", dia)) is None:
+            desayuno, colacion, comida, notas = _MENUS_SEMANA[i]
+            db.add(
+                DailyPlan(
+                    room_id="sala_1a",
+                    date=dia,
+                    breakfast=desayuno,
+                    snack=colacion,
+                    lunch=comida,
+                    notes=notas,
+                    activities=json.dumps([{"time": t, "title": a} for t, a in _ACTIVIDADES_SEMANA[i]], ensure_ascii=False),
+                    updated_by="Educadora Sala 1A",
+                )
+            )
+
+    # 3. Registro diario de los últimos 10 días hábiles (antes de hoy) para la sala 1A
+    if db.scalar(select(DailyLog).limit(1)) is None:
+        alumnos = db.scalars(select(Child).where(Child.room_id == "sala_1a").order_by(Child.id)).all()
+        dias = []
+        d = hoy() - timedelta(days=1)
+        while len(dias) < 10:
+            if d.weekday() < 5:
+                dias.append(d)
+            d -= timedelta(days=1)
+        comidas = ["TODO", "POCO", "TODO", "PIDIO_MAS", "TODO"]
+        animos = ["FELIZ", "FELIZ", "TRISTE", "FELIZ", "ENOJADO"]
+        for n, alumno in enumerate(alumnos):
+            for k, dia in enumerate(sorted(dias)):
+                idx = (n + k) % 5
+                entrada = f"08:{(5 * idx):02d}"
+                salida = f"{14 + idx % 2}:{(10 * idx):02d}"
+                db.add(
+                    DailyLog(
+                        child_id=alumno.id,
+                        date=dia.isoformat(),
+                        ingreso=json.dumps({
+                            "time": entrada, "assistantName": "Laura Gómez", "deliveredBy": "Mamá",
+                            "receivedBy": "Laura Gómez", "isSick": False, "medicationWithPrescription": "NO_APLICA",
+                            "hasSymptoms": False, "symptoms": "", "arrivedClean": True, "backpackComplete": True,
+                            "goodPhysicalCondition": True, "injuries": "", "observations": "",
+                        }),
+                        estadia=json.dumps({
+                            "breakfast": comidas[idx], "snack": "TODO", "lunch": comidas[(idx + 1) % 5],
+                            "foodNotes": "", "slept": True, "napMinutes": 45 + 15 * (idx % 3), "napComments": "",
+                            "sphincterControl": "NO_APLICA", "sphincterPeeCount": None, "sphincterPoopCount": None,
+                            "peeCount": 3, "poopCount": 1, "excretionNotes": "", "mood": animos[idx],
+                            "cried": idx == 2, "fought": False, "participated": True, "moodNotes": "",
+                            "hadAccident": False, "accidentDescription": "", "accidentFolio": "",
+                            "hadHealthIssue": False, "healthIssue": "", "careProvided": "", "generalNotes": "",
+                        }),
+                        egreso=json.dumps({
+                            "time": salida, "goodPhysicalCondition": True, "injuries": "", "collectedBy": "Mamá",
+                            "deliveredClean": True, "belongingsComplete": True, "observations": "",
+                            "deliveredByStaff": "Laura Gómez",
+                        }),
+                    )
+                )
+
+    db.commit()

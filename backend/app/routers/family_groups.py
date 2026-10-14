@@ -1,15 +1,17 @@
 """Módulo 9: Grupos Familiares (/family-groups)"""
 
-import time
 import uuid
+from datetime import datetime
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..acceso import es_personal, hijos_de
 from ..db import get_db
 from ..deps import Identidad, requiere_educadora, usuario_actual
 from ..errors import ApiError
+from ..horario import hora_12h
 from ..models import (
     Child,
     ChildParent,
@@ -28,6 +30,23 @@ from ..schemas import (
 )
 
 router = APIRouter(prefix="/family-groups", tags=["family-groups"])
+
+
+def _grupo_visible(group_id: str, quien: Identidad, db: Session) -> FamilyGroup:
+    """El personal ve todos los grupos; una familia solo los grupos donde está alguno de sus hijos."""
+    grupo = db.get(FamilyGroup, group_id)
+    if grupo is None:
+        raise ApiError(404, f"No existe el grupo con id {group_id}", "grupo_inexistente")
+    if not es_personal(quien):
+        hijos = hijos_de(quien, db)
+        miembro = db.scalar(
+            select(FamilyGroupMember.id).where(
+                FamilyGroupMember.group_id == group_id, FamilyGroupMember.child_id.in_(hijos)
+            )
+        ) if hijos else None
+        if miembro is None:
+            raise ApiError(403, "No perteneces a este grupo", "sin_acceso_grupo")
+    return grupo
 
 
 @router.get("/candidates", response_model=list[CandidateOut])
@@ -100,9 +119,14 @@ def crear_grupo_familiar(
         raise ApiError(422, "El título del grupo no puede estar vacío")
     if not body.memberChildIds:
         raise ApiError(422, "Debe incluir al menos un menor en el grupo")
+    miembros_ids = list(dict.fromkeys(body.memberChildIds))
+    existentes = set(db.scalars(select(Child.id).where(Child.id.in_(miembros_ids))).all())
+    faltantes = [c for c in miembros_ids if c not in existentes]
+    if faltantes:
+        raise ApiError(404, f"No existen los alumnos: {', '.join(faltantes)}", "alumno_inexistente")
 
     grupo_id = f"fgroup_{uuid.uuid4().hex[:8]}"
-    hora_actual = time.strftime("%I:%M %p")
+    hora_actual = hora_12h()
     grupo = FamilyGroup(
         id=grupo_id,
         title=body.title.strip(),
@@ -114,7 +138,7 @@ def crear_grupo_familiar(
     db.add(grupo)
     db.flush()
 
-    for cid in body.memberChildIds:
+    for cid in miembros_ids:
         db.add(FamilyGroupMember(group_id=grupo_id, child_id=cid))
 
     db.commit()
@@ -122,7 +146,7 @@ def crear_grupo_familiar(
     return FamilyGroupOut(
         id=grupo.id,
         title=grupo.title,
-        memberChildIds=body.memberChildIds,
+        memberChildIds=miembros_ids,
         createdById=grupo.created_by_id,
         avatarBgColor=grupo.avatar_bg_color,
         lastMessage=grupo.last_message,
@@ -133,11 +157,16 @@ def crear_grupo_familiar(
 @router.get("/{groupId}/messages", response_model=list[FamilyGroupMessageOut])
 def obtener_mensajes_grupo_familiar(
     groupId: str,
-    _: Identidad = Depends(usuario_actual),
+    quien: Identidad = Depends(usuario_actual),
     db: Session = Depends(get_db),
 ) -> list[FamilyGroupMessageOut]:
-    """Obtiene el historial de mensajes compartidos en el grupo familiar."""
-    mensajes = db.scalars(select(FamilyGroupMessage).where(FamilyGroupMessage.group_id == groupId)).all()
+    """Obtiene el historial de mensajes compartidos en el grupo familiar (del más viejo al más nuevo)."""
+    _grupo_visible(groupId, quien, db)
+    mensajes = db.scalars(
+        select(FamilyGroupMessage)
+        .where(FamilyGroupMessage.group_id == groupId)
+        .order_by(FamilyGroupMessage.created_at, FamilyGroupMessage.id)
+    ).all()
     resultado = []
     for m in mensajes:
         adjunto = None
@@ -168,11 +197,11 @@ def enviar_mensaje_grupo_familiar(
     db: Session = Depends(get_db),
 ) -> FamilyGroupMessageOut:
     """Envía un mensaje o archivo adjunto al grupo familiar."""
-    grupo = db.get(FamilyGroup, groupId)
-    if grupo is None:
-        raise ApiError(404, f"No existe el grupo con id {groupId}")
+    grupo = _grupo_visible(groupId, quien, db)
+    if not body.text.strip() and body.attachment is None:
+        raise ApiError(422, "El mensaje está vacío", "mensaje_vacio")
 
-    hora_actual = time.strftime("%I:%M %p")
+    hora_actual = hora_12h()
     msg_id = f"fgm_{uuid.uuid4().hex[:8]}"
 
     att_uri = body.attachment.uri if body.attachment else None
@@ -189,11 +218,12 @@ def enviar_mensaje_grupo_familiar(
         attachment_uri=att_uri,
         attachment_name=att_name,
         attachment_mime_type=att_mime,
+        created_at=datetime.now(),
     )
     db.add(nuevo_msg)
 
     # Actualizar estado del grupo
-    grupo.last_message = body.text
+    grupo.last_message = body.text.strip() or (f"📎 {att_name}" if att_name else "📎 Archivo adjunto")
     grupo.last_message_time = hora_actual
     db.commit()
 

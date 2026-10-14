@@ -518,3 +518,132 @@ class MediaUploadOut(BaseModel):
 class DeviceTokenRequest(BaseModel):
     deviceToken: str
     platform: str = "ANDROID"
+
+
+# ---------------------------------------------------------------------------
+# Observaciones semanales (/weekly-observations)
+# ---------------------------------------------------------------------------
+
+WEEKLY_OBSERVATION_MAX_LENGTH = 500
+
+
+class WeeklyObservationOut(BaseModel):
+    id: str
+    childId: str
+    weekKey: str
+    authorRole: Literal["FAMILIA", "EDUCADORA"]
+    authorName: str
+    text: str
+    time: str
+
+
+class CreateWeeklyObservationRequest(BaseModel):
+    weekKey: str = Field(min_length=1, max_length=120)
+    text: str
+
+
+# ---------------------------------------------------------------------------
+# Planeación y menú diario (/daily-plans)
+# ---------------------------------------------------------------------------
+
+class DailyMenuData(BaseModel):
+    breakfast: str = Field(min_length=1, max_length=300)
+    snack: str = Field(min_length=1, max_length=300)
+    lunch: str = Field(min_length=1, max_length=300)
+    notes: str = Field(default="", max_length=500)
+
+
+class PlannedActivityData(BaseModel):
+    time: str = Field(pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+    title: str = Field(min_length=1, max_length=200)
+
+
+class DailyPlanOut(BaseModel):
+    date: str
+    roomId: str
+    menu: DailyMenuData
+    activities: list[PlannedActivityData]
+    updatedBy: str
+
+
+class SaveDailyPlanRequest(BaseModel):
+    menu: DailyMenuData
+    activities: list[PlannedActivityData] = Field(min_length=1, max_length=20)
+    roomId: str = "sala_1a"
+
+
+# ---------------------------------------------------------------------------
+# Registro diario / hoja oficial "Bitácora de filtro diario" (/daily-logs)
+# Los nombres de los campos son los mismos que en la app (model/DailyLog.kt).
+# ---------------------------------------------------------------------------
+
+HORA_24H = r"^([01]\d|2[0-3]):[0-5]\d$"
+
+
+class IngresoLogData(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    time: str = Field(pattern=HORA_24H)
+    assistantName: str = ""
+    deliveredBy: str = ""
+    receivedBy: str = ""
+    isSick: bool | None = None
+    medicationWithPrescription: str | None = None
+    hasSymptoms: bool | None = None
+    symptoms: str = ""
+    arrivedClean: bool | None = None
+    backpackComplete: bool | None = None
+    goodPhysicalCondition: bool | None = None
+    injuries: str = ""
+    observations: str = ""
+
+
+class EstadiaLogData(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    breakfast: str | None = None
+    snack: str | None = None
+    lunch: str | None = None
+    foodNotes: str = ""
+    slept: bool | None = None
+    napMinutes: int | None = Field(default=None, ge=0, le=600)
+    napComments: str = ""
+    sphincterControl: str | None = None
+    sphincterPeeCount: int | None = Field(default=None, ge=0, le=50)
+    sphincterPoopCount: int | None = Field(default=None, ge=0, le=50)
+    peeCount: int | None = Field(default=None, ge=0, le=50)
+    poopCount: int | None = Field(default=None, ge=0, le=50)
+    excretionNotes: str = ""
+    mood: str | None = None
+    cried: bool | None = None
+    fought: bool | None = None
+    participated: bool | None = None
+    moodNotes: str = ""
+    hadAccident: bool | None = None
+    accidentDescription: str = ""
+    accidentFolio: str = ""
+    hadHealthIssue: bool | None = None
+    healthIssue: str = ""
+    careProvided: str = ""
+    generalNotes: str = ""
+
+
+class EgresoLogData(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    time: str = Field(pattern=HORA_24H)
+    goodPhysicalCondition: bool | None = None
+    injuries: str = ""
+    collectedBy: str = ""
+    deliveredClean: bool | None = None
+    belongingsComplete: bool | None = None
+    observations: str = ""
+    deliveredByStaff: str = ""
+
+
+class DailyLogOut(BaseModel):
+    childId: str
+    date: str
+    ingreso: IngresoLogData | None = None
+    estadia: EstadiaLogData | None = None
+    egreso: EgresoLogData | None = None

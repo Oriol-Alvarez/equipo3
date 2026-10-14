@@ -35,7 +35,7 @@ if not _postgres_disponible():
 from app.config import settings
 from app.db import Base, SessionLocal, engine
 from app.main import app
-from app.seed import seed_database
+from app.seed import seed_database, seed_modulos_heber
 
 # Imagen PNG válida de 2x2 píxeles
 PNG_CHICO = base64.b64decode(
@@ -61,6 +61,7 @@ def setup_database():
     Base.metadata.create_all(engine)
     with SessionLocal() as db:
         seed_database(db)
+        seed_modulos_heber(db)
     yield
 
 
