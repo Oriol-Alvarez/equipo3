@@ -42,6 +42,9 @@ import com.example.etapa1.data.repository.impl.NetworkFamilyGroupsRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkLostObjectsRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkRoomRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkSuggestionsRepositoryImpl
+import com.example.etapa1.data.remote.ChatConexion
+import com.example.etapa1.data.repository.impl.NetworkBitacoraRepositoryImpl
+import com.example.etapa1.data.repository.impl.NetworkMessagesRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkWeeklyObservationsRepositoryImpl
 
 open class AppContainer(val context: Context) {
@@ -59,6 +62,9 @@ open class AppContainer(val context: Context) {
 
     val tokenManager by lazy { TokenManager(context) }
     val api by lazy { NetworkClient.createApi(tokenManager) }
+    val chatConexion: ChatConexion by lazy {
+        ChatConexion(NetworkClient.createOkHttpClient(tokenManager))
+    }
 
     // Repositorios Mock originales (preservados sin modificaciones)
     private val mockAuthRepository by lazy { MockAuthRepositoryImpl() }
@@ -83,10 +89,12 @@ open class AppContainer(val context: Context) {
     private val networkAnnouncementRepository by lazy { NetworkAnnouncementRepositoryImpl(api) }
     private val networkSuggestionsRepository by lazy { NetworkSuggestionsRepositoryImpl(api) }
     private val networkLostObjectsRepository by lazy { NetworkLostObjectsRepositoryImpl(api) }
-    private val networkFamilyGroupsRepository by lazy { NetworkFamilyGroupsRepositoryImpl(api, tokenManager, context) }
+    private val networkFamilyGroupsRepository by lazy { NetworkFamilyGroupsRepositoryImpl(api, tokenManager, context, chatConexion) }
     private val networkWeeklyObservationsRepository by lazy { NetworkWeeklyObservationsRepositoryImpl(api) }
     private val networkDailyPlanRepository by lazy { NetworkDailyPlanRepositoryImpl(api) }
     private val networkDailyLogRepository by lazy { NetworkDailyLogRepositoryImpl(api) }
+    private val networkMessagesRepository by lazy { NetworkMessagesRepositoryImpl(api, tokenManager, chatConexion) }
+    private val networkBitacoraRepository by lazy { NetworkBitacoraRepositoryImpl(api, tokenManager, chatConexion) }
 
     // Repositorios expuestos a la aplicación (conmutación transparente según `useMocks`)
     open val authRepository: AuthRepository
@@ -111,10 +119,10 @@ open class AppContainer(val context: Context) {
         get() = if (useMocks) mockLostObjectsRepository else networkLostObjectsRepository
 
     open val bitacoraRepository: BitacoraRepository
-        get() = mockBitacoraRepository
+        get() = if (useMocks) mockBitacoraRepository else networkBitacoraRepository
 
     open val messagesRepository: MessagesRepository
-        get() = mockMessagesRepository
+        get() = if (useMocks) mockMessagesRepository else networkMessagesRepository
 
     open val familyGroupsRepository: FamilyGroupsRepository
         get() = if (useMocks) mockFamilyGroupsRepository else networkFamilyGroupsRepository
@@ -127,6 +135,17 @@ open class AppContainer(val context: Context) {
 
     open val dailyLogRepository: DailyLogRepository
         get() = if (useMocks) mockDailyLogRepository else networkDailyLogRepository
+
+    fun asegurarConexionChat() {
+        val token = tokenManager.token
+        if (!useMocks && !token.isNullOrBlank()) {
+            chatConexion.conectar(NetworkClient.baseUrl, token)
+        }
+    }
+
+    fun desconectarChat() {
+        chatConexion.desconectar()
+    }
 
     val logSheetExporter: LogSheetExporter by lazy { AndroidLogSheetExporter(context) }
 }

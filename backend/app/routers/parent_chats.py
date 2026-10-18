@@ -108,6 +108,23 @@ def enviar_mensaje_chat_bitacora(
     db.add(nuevo_msg)
     db.commit()
 
+    from .ws_notifications import ws_manager
+    msg_dict = {
+        "id": msg_id,
+        "childId": childId,
+        "chatId": childId,
+        "senderId": quien.id,
+        "senderName": quien.display_name,
+        "time": hora_actual,
+        "message": body.message,
+        "fileUri": body.fileUri,
+        "fileName": body.fileName,
+        "fileMimeType": body.fileMimeType,
+        "isOutgoing": False,
+    }
+    ws_manager.broadcast_sync("chat:bitacora:new", {"childId": childId, "chatId": childId, "message": msg_dict})
+    ws_manager.broadcast_sync("chat:message:new", {"chatId": childId, "message": msg_dict})
+
     return BitacoraMessageOut(
         id=msg_id,
         senderId=quien.id,

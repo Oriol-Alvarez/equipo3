@@ -121,6 +121,26 @@ def enviar_mensaje_trabajador(
     chat.last_message_time = hora_actual
     db.commit()
 
+    from .ws_notifications import ws_manager
+    ws_manager.broadcast_sync(
+        "chat:message:new",
+        {
+            "chatId": chatId,
+            "message": {
+                "id": msg_id,
+                "chatId": chatId,
+                "senderId": quien.id,
+                "senderName": quien.display_name,
+                "message": body.message,
+                "time": hora_actual,
+                "isOutgoing": False,
+                "fileUri": body.fileUri,
+                "fileName": body.fileName,
+                "fileMimeType": body.fileMimeType,
+            },
+        },
+    )
+
     return WorkerChatMessageOut(
         id=msg_id,
         senderId=quien.id,
@@ -180,6 +200,23 @@ def enviar_chat_global_personal(
     )
     db.add(nuevo_msg)
     db.commit()
+
+    from .ws_notifications import ws_manager
+    ws_manager.broadcast_sync(
+        "chat:message:new",
+        {
+            "chatId": "global_staff_chat",
+            "message": {
+                "id": msg_id,
+                "chatId": "global_staff_chat",
+                "senderId": quien.id,
+                "senderName": quien.display_name,
+                "message": body.message,
+                "time": hora_actual,
+                "isOutgoing": False,
+            },
+        },
+    )
 
     return WorkerChatMessageOut(
         id=msg_id,

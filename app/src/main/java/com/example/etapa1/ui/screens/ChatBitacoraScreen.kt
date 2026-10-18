@@ -107,10 +107,12 @@ fun ChatBitacoraScreen(
     onAttendanceClick: () -> Unit = {}
 ) {
     val timelineItems by viewModel.timelineItems.collectAsState()
+    val conexionEstado by viewModel.conexionEstado.collectAsState()
 
     ChatBitacoraScreen(
         child = child,
         timelineItems = timelineItems,
+        conexionEstado = conexionEstado,
         isWorkerRole = isWorkerRole,
         onBack = onBack,
         onChildInfoClick = onChildInfoClick,
@@ -126,6 +128,7 @@ fun ChatBitacoraScreen(
 fun ChatBitacoraScreen(
     child: Child,
     timelineItems: List<TimelineItem>,
+    conexionEstado: com.example.etapa1.domain.EstadoConexion = com.example.etapa1.domain.EstadoConexion.Conectado,
     isWorkerRole: Boolean = true,
     onBack: () -> Unit,
     onChildInfoClick: () -> Unit = {},
@@ -383,12 +386,18 @@ fun ChatBitacoraScreen(
                             Spacer(modifier = Modifier.width(10.dp))
 
                             Column {
-                                Text(
-                                    text = child.shortName,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextPrimary
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = child.shortName,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary
+                                    )
+                                    com.example.etapa1.ui.components.ChipConexion(estado = conexionEstado)
+                                }
                                 Text(
                                     text = "${child.ageText} • ${child.roomText}",
                                     fontSize = 12.sp,

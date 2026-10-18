@@ -30,7 +30,7 @@ class NetworkAuthRepositoryImpl(
     override fun login(email: String, password: String, role: UserRole): Result<UserRole> {
         return try {
             val response = runBlocking(Dispatchers.IO) {
-                api.login(LoginRequestDto(email = email.trim(), password = password, role = role.name))
+                api.login(LoginRequestDto(email = email.trim(), password = password, role = null))
             }
 
             if (response.isSuccessful && response.body() != null) {

@@ -9,11 +9,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
 import com.example.etapa1.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -82,31 +81,13 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Logo de 'Sonrisas de Cristal' cargado desde el Image Asset logo (R.mipmap.logo)
+ * Logo de 'Sonrisas de Cristal'
  */
 @Composable
 fun DaycareLogo(
     modifier: Modifier = Modifier,
     size: Dp = 82.dp
 ) {
-    val context = LocalContext.current
-    val drawable = remember {
-        ContextCompat.getDrawable(context, R.mipmap.logo)
-    }
-    val painter = remember(drawable) {
-        if (drawable != null) {
-            val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else 300
-            val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else 300
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            val canvas = android.graphics.Canvas(bitmap)
-            drawable.setBounds(0, 0, width, height)
-            drawable.draw(canvas)
-            BitmapPainter(bitmap.asImageBitmap())
-        } else {
-            null
-        }
-    }
-
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -119,16 +100,14 @@ fun DaycareLogo(
                 .border(1.dp, Color(0xFFE0E7F1), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            if (painter != null) {
-                Image(
-                    painter = painter,
-                    contentDescription = "Logo Sonrisas de Cristal",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Fit
-                )
-            }
+            Image(
+                painter = painterResource(id = R.drawable.ic_daycare_logo),
+                contentDescription = "Logo Sonrisas de Cristal",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+                contentScale = ContentScale.Fit
+            )
         }
     }
 }

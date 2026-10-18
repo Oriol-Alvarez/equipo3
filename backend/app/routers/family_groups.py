@@ -239,6 +239,25 @@ def enviar_mensaje_grupo_familiar(
     grupo.last_message_time = hora_actual
     db.commit()
 
+    from .ws_notifications import ws_manager
+    att_dict = body.attachment.model_dump() if body.attachment else None
+    ws_manager.broadcast_sync(
+        "group:message:new",
+        {
+            "groupId": groupId,
+            "chatId": groupId,
+            "message": {
+                "id": msg_id,
+                "groupId": groupId,
+                "senderId": quien.id,
+                "senderName": quien.display_name,
+                "text": body.text,
+                "time": hora_actual,
+                "attachment": att_dict,
+            },
+        },
+    )
+
     return FamilyGroupMessageOut(
         id=msg_id,
         senderId=quien.id,

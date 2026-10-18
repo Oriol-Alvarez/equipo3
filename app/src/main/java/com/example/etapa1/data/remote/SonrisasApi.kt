@@ -158,4 +158,46 @@ interface SonrisasApi {
         @Path("date") date: String,
         @Body request: EgresoLogDto
     ): Response<DailyLogDto>
+
+    // ---------------------------------------------------------------- mensajería de personal y chat global
+    @GET("staff/members")
+    suspend fun getStaffMembers(): Response<List<StaffMemberDto>>
+
+    @GET("chats/workers")
+    suspend fun getWorkerChats(): Response<List<WorkerChatDto>>
+
+    @GET("chats/workers/{chatId}/messages")
+    suspend fun getWorkerChatMessages(@Path("chatId") chatId: String): Response<List<WorkerChatMessageDto>>
+
+    @POST("chats/workers/{chatId}/messages")
+    suspend fun sendWorkerMessage(
+        @Path("chatId") chatId: String,
+        @Body request: SendWorkerMessageDto
+    ): Response<WorkerChatMessageDto>
+
+    @GET("chats/staff-global/messages")
+    suspend fun getStaffGlobalChat(): Response<StaffGlobalChatDto>
+
+    @POST("chats/staff-global/messages")
+    suspend fun sendStaffGlobalMessage(@Body request: SendWorkerMessageDto): Response<WorkerChatMessageDto>
+
+    // ---------------------------------------------------------------- chat bitácora individual y línea de tiempo
+    @GET("rooms/{roomId}/parent-chats")
+    suspend fun getParentChatsByRoom(@Path("roomId") roomId: String): Response<List<ParentChatSummaryDto>>
+
+    @GET("chats/bitacora/{childId}/messages")
+    suspend fun getBitacoraMessages(@Path("childId") childId: String): Response<List<BitacoraMessageDto>>
+
+    @POST("chats/bitacora/{childId}/messages")
+    suspend fun sendBitacoraMessage(
+        @Path("childId") childId: String,
+        @Body request: SendBitacoraMessageDto
+    ): Response<BitacoraMessageDto>
+
+    @GET("children/{childId}/timeline")
+    suspend fun getChildTimeline(
+        @Path("childId") childId: String,
+        @Query("date") date: String? = null
+    ): Response<List<TimelineItemDto>>
 }
+

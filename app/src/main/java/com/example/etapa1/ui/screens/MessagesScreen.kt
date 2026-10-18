@@ -171,13 +171,19 @@ fun MessagesContent(
                     .padding(horizontal = 14.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "Mensajes",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = BrandBlue,
-                    textAlign = TextAlign.Center
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Mensajes",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = BrandBlue,
+                        textAlign = TextAlign.Center
+                    )
+                    com.example.etapa1.ui.components.ChipConexion(estado = uiState.conexionEstado)
+                }
 
                 // Botón Crear Grupo (arriba izquierda): de trabajadores o de familias según el modo
                 IconButton(

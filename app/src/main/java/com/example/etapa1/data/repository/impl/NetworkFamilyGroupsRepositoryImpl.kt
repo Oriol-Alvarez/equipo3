@@ -3,7 +3,9 @@ package com.example.etapa1.data.repository.impl
 import android.content.Context
 import android.net.Uri
 import com.example.etapa1.data.remote.AttachmentDto
+import com.example.etapa1.data.remote.ChatConexion
 import com.example.etapa1.data.remote.CreateFamilyGroupDto
+import com.example.etapa1.data.remote.EventoServidor
 import com.example.etapa1.data.remote.FamilyGroupDto
 import com.example.etapa1.data.remote.FamilyGroupMessageDto
 import com.example.etapa1.data.remote.RemoteSync
@@ -38,7 +40,8 @@ import java.util.Locale
 class NetworkFamilyGroupsRepositoryImpl(
     private val api: SonrisasApi,
     private val tokenManager: TokenManager,
-    private val context: Context
+    private val context: Context,
+    private val chatConexion: ChatConexion? = null
 ) : FamilyGroupsRepository {
 
     /** Los cambios se mandan al servidor en orden, uno por uno. */
@@ -54,6 +57,26 @@ class NetworkFamilyGroupsRepositoryImpl(
 
     init {
         refresh()
+        observarWebSocket()
+    }
+
+    private fun observarWebSocket() {
+        val conexion = chatConexion ?: return
+        RemoteSync.launch("Escuchar mensajes de grupos familiares en WebSocket") {
+            conexion.eventos.collect { evento ->
+                if (evento is EventoServidor.NuevoMensajeGrupo) {
+                    val domainMsg = evento.message.toDomain()
+                    _groups.update { current ->
+                        current.map { group ->
+                            if (group.id == evento.groupId) {
+                                if (group.messages.any { it.id == domainMsg.id }) group
+                                else group.copy(messages = listOf(domainMsg) + group.messages)
+                            } else group
+                        }
+                    }
+                }
+            }
+        }
     }
 
     override fun currentParticipant(): GroupParticipant? {

@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class LoginRequest(BaseModel):
     email: str
     password: str
-    role: str = "FAMILIAR"  # EDUCADORA | FAMILIAR | DIRECCION
+    role: str | None = None  # EDUCADORA | FAMILIAR | DIRECCION
 
 
 class RegisterRequest(BaseModel):

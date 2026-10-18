@@ -66,7 +66,7 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
-# Inclusión de Routers (prefijo oficial /api/v1 y compatibilidad /api)
+# Inclusión de Routers (prefijo oficial /api/v1)
 # ---------------------------------------------------------------------------
 routers_list = [
     auth.router,
@@ -90,12 +90,9 @@ routers_list = [
 
 for r in routers_list:
     app.include_router(r, prefix="/api/v1")
-    # Compatibilidad con llamadas que usen /api directamente
     app.include_router(r, prefix="/api")
 
-
 @app.get("/health")
-@app.get("/api/v1/health")
 @app.get("/api/health")
 def health_check() -> dict:
     return {

@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class LoginRequestDto(
     val email: String,
     val password: String,
-    val role: String
+    val role: String? = null
 )
 
 @Serializable
@@ -174,3 +174,106 @@ data class LostItemDto(
     val room: String = "Sala 1A",
     val isClaimed: Boolean = false
 )
+
+// ---------------------------------------------------------------- Mensajería y Chat en Tiempo Real
+@Serializable
+data class StaffMemberDto(
+    val id: String,
+    val name: String,
+    val role: String,
+    val avatarInitials: String,
+    val avatarBgColor: Long,
+    val isOnline: Boolean = true
+)
+
+@Serializable
+data class WorkerChatMessageDto(
+    val id: String,
+    val senderId: String,
+    val senderName: String,
+    val message: String,
+    val time: String,
+    val isOutgoing: Boolean = false,
+    val fileUri: String? = null,
+    val fileName: String? = null,
+    val fileMimeType: String? = null
+)
+
+@Serializable
+data class WorkerChatDto(
+    val id: String,
+    val title: String,
+    val subtitle: String,
+    val lastMessage: String? = null,
+    val lastMessageTime: String? = null,
+    val unreadCount: Int = 0,
+    val isGlobal: Boolean = false,
+    val isGroup: Boolean = false,
+    val avatarInitials: String = "SC",
+    val avatarBgColor: Long = 4280391378L
+)
+
+@Serializable
+data class StaffGlobalChatDto(
+    val id: String,
+    val title: String,
+    val membersCount: Int = 18,
+    val messages: List<WorkerChatMessageDto> = emptyList()
+)
+
+@Serializable
+data class SendWorkerMessageDto(
+    val message: String,
+    val fileUri: String? = null,
+    val fileName: String? = null,
+    val fileMimeType: String? = null
+)
+
+@Serializable
+data class ParentChatSummaryDto(
+    val childId: String,
+    val childName: String,
+    val parentName: String,
+    val lastMessage: String? = null,
+    val lastMessageTime: String? = null,
+    val unreadCount: Int = 0
+)
+
+@Serializable
+data class BitacoraMessageDto(
+    val id: String,
+    val senderId: String,
+    val senderName: String,
+    val time: String,
+    val message: String,
+    val isOutgoing: Boolean = false,
+    val fileUri: String? = null,
+    val fileName: String? = null,
+    val fileMimeType: String? = null
+)
+
+@Serializable
+data class SendBitacoraMessageDto(
+    val message: String,
+    val fileUri: String? = null,
+    val fileName: String? = null,
+    val fileMimeType: String? = null
+)
+
+@Serializable
+data class TimelineItemDto(
+    val type: String,
+    val id: String,
+    val time: String,
+    val text: String? = null,
+    val iconType: String? = null,
+    val message: String? = null,
+    val isOutgoing: Boolean? = null,
+    val fileUri: String? = null,
+    val fileName: String? = null,
+    val fileMimeType: String? = null,
+    val category: String? = null,
+    val portionLabel: String? = null,
+    val description: String? = null
+)
+
