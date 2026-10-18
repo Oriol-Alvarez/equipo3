@@ -36,6 +36,10 @@ class TokenManager(context: Context) {
         get() = prefs.getString("user_display_name", null)
         set(value) = prefs.edit().putString("user_display_name", value).apply()
 
+    var deviceToken: String?
+        get() = prefs.getString("fcm_device_token", null)
+        set(value) = prefs.edit().putString("fcm_device_token", value).apply()
+
     fun clear() {
         prefs.edit().clear().apply()
     }

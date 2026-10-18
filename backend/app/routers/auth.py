@@ -4,7 +4,7 @@ import time
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -12,6 +12,7 @@ from ..config import settings
 from ..db import get_db
 from ..deps import Identidad, usuario_actual
 from ..errors import ApiError
+from ..rate_limit import limiter
 from ..models import Sesion, Usuario
 from ..schemas import (
     LoginRequest,
@@ -55,7 +56,8 @@ def emitir_sesion(db: Session, user: Usuario) -> tuple[str, str, int]:
 
 
 @router.post("/login", response_model=LoginResponse)
-def login(body: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
+@limiter.limit("5/minute")
+def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
     """Valida credenciales según el rol seleccionado y devuelve el token JWT y el perfil."""
     user = db.scalar(select(Usuario).where(Usuario.email == body.email.strip().lower()))
     if user is None or not verify_password(body.password, user.password_hash):
@@ -85,7 +87,8 @@ def login(body: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
 
 
 @router.post("/register", response_model=LoginResponse, status_code=201)
-def register(body: RegisterRequest, db: Session = Depends(get_db)) -> LoginResponse:
+@limiter.limit("3/minute")
+def register(request: Request, body: RegisterRequest, db: Session = Depends(get_db)) -> LoginResponse:
     """Registra una nueva cuenta de usuario (útil para pruebas y altas iniciales)."""
     email_limpio = body.email.strip().lower()
     existente = db.scalar(select(Usuario).where(Usuario.email == email_limpio))

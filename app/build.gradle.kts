@@ -57,6 +57,10 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
 
+    // Firebase Cloud Messaging (Push Notifications)
+    implementation(platform("com.google.firebase:firebase-bom:33.9.0"))
+    implementation("com.google.firebase:firebase-messaging-ktx")
+
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(platform(libs.androidx.compose.bom))
