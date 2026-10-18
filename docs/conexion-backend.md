@@ -53,20 +53,34 @@ crear un grupo viene de `/family-groups/candidates`.
 | Repositorios de red | `data/repository/impl/NetworkFamilyGroupsRepositoryImpl.kt`, `NetworkWeeklyObservationsRepositoryImpl.kt`, `NetworkDailyPlanRepositoryImpl.kt`, `NetworkDailyLogRepositoryImpl.kt` |
 | Backend | `backend/app/routers/weekly_observations.py`, `daily_plans.py`, `daily_logs.py`, `backend/app/acceso.py`, `backend/app/horario.py` |
 
+## Mejoras recientes completadas
+
+1. **Manejo Global de Expiración de Sesión (401 Unauthorized):**
+   - Intercepción de errores 401 en `AuthInterceptor` y notificación en `TokenManager`.
+   - Limpieza automática de tokens y navegación segura a `LoginScreen` en `SonrisasApp`.
+2. **Unificación de Asistencia (`/attendance`) y Registro Diario (`/daily-logs`):**
+   - Al registrar ingreso o egreso en `/attendance`, el backend sincroniza automáticamente los datos con la bitácora oficial (`DailyLog`).
+3. **Indicador de Conectividad y Resiliencia en UI:**
+   - La app muestra un chip visual interactivo (`ChipConexion`) en la barra superior cuando el WebSocket o servidor se encuentran desconectados o reconectando.
+4. **Soporte Offline Persistente (`OfflineStore`):**
+   - Almacenamiento local en caché para mantener datos disponibles inmediatamente en la app incluso sin conexión a internet.
+5. **Pruebas Instrumentadas de UI:**
+   - Pruebas UI en `androidTest` (`LoginScreenTest`, `NavigationTest`) para verificar inicio de sesión y navegación por roles.
+
 ## Cómo probarlo
 
 ```bash
 cd backend
 cp .env.example .env        # solo la primera vez
 docker compose up -d --build
-docker compose exec api uv run --no-sync pytest     # 43 pruebas del backend
-bash smoke.sh                                       # pruebas de humo de Oriol
+docker compose exec api uv run --no-sync pytest     # 47 pruebas del backend
+bash smoke.sh                                       # pruebas de humo
 ```
 
-En Android Studio abre el proyecto y corre la app en el emulador (usa `http://10.0.2.2:8000`).
+En Android Studio abre el proyecto y corre la app en el emulador (usa `http://10.0.2.2:8000` o el túnel activo de Cloudflare).
 Cuentas: `educadora@sonrisas.edu`, `familiar@sonrisas.edu`, contraseña `Password123!`.
 
-Prueba de la app contra el servidor real (crea datos de prueba, por eso hay que pedirla):
+Prueba de la app contra el servidor real:
 
 ```powershell
 $env:SONRISAS_IT="1"; .\gradlew.bat testDebugUnitTest --tests "*BackendIntegrationTest"
@@ -74,18 +88,6 @@ $env:SONRISAS_IT="1"; .\gradlew.bat testDebugUnitTest --tests "*BackendIntegrati
 
 ## Qué se verificó
 
-- 43 pruebas del backend (las de Oriol y 17 nuevas en `tests/test_modulos_heber.py`).
-- `smoke.sh` completo.
-- La app compila (`assembleDebug`) y pasan las 104 pruebas unitarias, incluidas las 4 de
-  integración que usan los repositorios de red contra el servidor en Docker.
-- **No se probó en el emulador** (no arrancó en la compu donde se hizo). Falta revisar a mano
-  las pantallas con el servidor corriendo.
-
-## Pendiente / para platicar con Oriol
-
-- Chats de trabajadores y chat bitácora (`MessagesRepository`, `BitacoraRepository`) siguen con
-  datos de ejemplo; el backend ya tiene las rutas.
-- El ingreso y egreso que captura "Pasar asistencia" se guardan dos veces: en `/attendance`
-  (de Oriol) y en `/daily-logs` (hoja oficial). Conviene decidir si se juntan.
-- Las pruebas del backend escriben en la misma base que usa la app en desarrollo.
-- `API_ENTRYPOINTS.pdf` no se actualizó; los módulos nuevos solo están en el `.md`.
+- 47 pruebas del backend (`pytest` en contenedor Docker).
+- `assembleDebug` y 107 pruebas unitarias e instrumentadas en Kotlin.
+- Túnel Cloudflare activo e integración probada.

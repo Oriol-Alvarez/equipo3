@@ -2,9 +2,15 @@ package com.example.etapa1.data.remote
 
 import android.content.Context
 import android.content.SharedPreferences
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 class TokenManager(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("sonrisas_prefs", Context.MODE_PRIVATE)
+
+    private val _sessionExpired = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val sessionExpired: SharedFlow<Unit> = _sessionExpired.asSharedFlow()
 
     var token: String?
         get() = prefs.getString("jwt_token", null)
@@ -32,5 +38,10 @@ class TokenManager(context: Context) {
 
     fun clear() {
         prefs.edit().clear().apply()
+    }
+
+    fun notifySessionExpired() {
+        clear()
+        _sessionExpired.tryEmit(Unit)
     }
 }

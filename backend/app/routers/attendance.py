@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .daily_logs import _registro
 from ..db import get_db
 from ..deps import Identidad, requiere_educadora, usuario_actual
 from ..errors import ApiError
@@ -14,7 +15,9 @@ from ..models import AttendanceRecord, Child
 from ..schemas import (
     AttendanceRecordOut,
     AttendanceResponse,
+    EgresoLogData,
     EgresoRequest,
+    IngresoLogData,
     IngresoRequest,
 )
 
@@ -63,6 +66,26 @@ def registrar_ingreso(
     alumno.arrival_time = body.entryTime
     alumno.status_text = f"{body.entryTime} • Presente"
 
+    # Sincronización con la bitácora oficial (DailyLog)
+    med_opt = body.medicationOption if body.medicationOption in {"SI", "NO", "NO_APLICA"} else "NO_APLICA"
+    ingreso_log = IngresoLogData(
+        time=body.entryTime,
+        assistantName=body.assistantName or "",
+        deliveredBy=body.delivererName or "",
+        receivedBy=body.receiverStaffName or "",
+        isSick=body.isChildSick,
+        medicationWithPrescription=med_opt,
+        hasSymptoms=body.hasSymptoms,
+        symptoms=body.symptomsDetail or "",
+        arrivedClean=body.isClean,
+        backpackComplete=body.backpackComplete,
+        goodPhysicalCondition=body.goodPhysicalCondition,
+        injuries=body.injuryDetail or "",
+        observations=body.observations or "",
+    )
+    daily_log = _registro(body.childId, body.date, db)
+    daily_log.ingreso = ingreso_log.model_dump_json()
+
     db.commit()
 
     return AttendanceResponse(
@@ -108,6 +131,20 @@ def registrar_egreso(
     # Actualizar estado del alumno
     alumno.is_present = False
     alumno.status_text = f"{body.exitTime} • Retirado"
+
+    # Sincronización con la bitácora oficial (DailyLog)
+    egreso_log = EgresoLogData(
+        time=body.exitTime,
+        goodPhysicalCondition=body.goodPhysicalCondition,
+        injuries=body.injuryDetail or "",
+        collectedBy=body.receiverTutorName or "",
+        deliveredClean=body.isClean,
+        belongingsComplete=body.backpackComplete,
+        observations=body.observations or "",
+        deliveredByStaff=body.delivererStaffName or "",
+    )
+    daily_log = _registro(body.childId, body.date, db)
+    daily_log.egreso = egreso_log.model_dump_json()
 
     db.commit()
 
