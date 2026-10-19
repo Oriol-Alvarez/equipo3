@@ -23,7 +23,7 @@ class MockChildRepositoryImpl : ChildRepository {
     }
 
     override fun updateChildAttendance(childId: String, isPresent: Boolean, time: String, statusText: String) {
-        _childrenSala1A.update { currentList ->
+        val updater: (List<Child>) -> List<Child> = { currentList ->
             currentList.map { child ->
                 if (child.id == childId) {
                     child.copy(
@@ -36,6 +36,12 @@ class MockChildRepositoryImpl : ChildRepository {
                 }
             }
         }
+        _childrenSala1A.update(updater)
+        _parentChildren.update(updater)
+    }
+
+    override fun refresh() {
+        // En modo mock no requiere recarga remota
     }
 
     private val _childProfiles = mutableMapOf<String, ChildFullProfile>()
@@ -48,6 +54,7 @@ class MockChildRepositoryImpl : ChildRepository {
 
     override fun updateChildFullProfile(childId: String, profile: ChildFullProfile) {
         _childProfiles[childId] = profile
+        MockDataRepository.updateChildFullProfile(childId, profile)
     }
 
     override fun getWeeklySummaryForChild(child: Child): WeeklySummary {

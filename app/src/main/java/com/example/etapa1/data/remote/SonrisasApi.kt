@@ -72,6 +72,12 @@ interface SonrisasApi {
     @POST("suggestions")
     suspend fun createSuggestion(@Body request: CreateSuggestionDto): Response<SuggestionDto>
 
+    @PATCH("suggestions/{id}/status")
+    suspend fun updateSuggestionStatus(
+        @Path("id") id: String,
+        @Body request: UpdateSuggestionStatusDto
+    ): Response<SuggestionDto>
+
     @GET("lost-objects")
     suspend fun getLostObjects(
         @Query("category") category: String? = null,

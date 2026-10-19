@@ -155,6 +155,7 @@ def seed_database(db: Session) -> None:
         pediatrician="Dra. Sofía Morales",
         pediatrician_phone="+52 555 111 222",
         emergency_phone="+52 555 333 444",
+        emergency_phone_relation="Abuela materna",
         mother_name="María López Fernández",
         mother_phone="+52 555 123 456",
         father_name="Carlos García Ramos",
@@ -267,6 +268,25 @@ def seed_database(db: Session) -> None:
             subject="Variedad de frutas frescas en merienda matutina",
             content="Nos gustaría proponer si es posible incluir mayor variedad de frutas de temporada en la media mañana.",
             status="PENDIENTE",
+        )
+    )
+    db.add(
+        Suggestion(
+            id="sug_2",
+            parent_user_id="usr_familia_garcia",
+            parent_name="Marcos López",
+            child_id="mateo_garcia",
+            child_name="Mateo García",
+            room_name="Sala 1A",
+            date="11/10/2026",
+            time="17:15 PM",
+            category="INSTALACIONES",
+            subject="Toldo de sombra para el arenero del patio",
+            content="Notamos que en los días soleados la zona del arenero exterior recibe sol directo al mediodía.",
+            status="EN_REVISION",
+            response="Muchas gracias por la observación, Marcos. El área de mantenimiento ya está evaluando presupuesto.",
+            response_date="11/10/2026 06:00 PM",
+            responder_name="Laura Méndez (Dirección)",
         )
     )
 

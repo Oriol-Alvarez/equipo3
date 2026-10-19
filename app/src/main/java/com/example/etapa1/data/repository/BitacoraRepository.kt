@@ -13,8 +13,9 @@ interface BitacoraRepository {
         fileUri: String? = null,
         fileName: String? = null,
         fileMimeType: String? = null,
-        senderRole: UserRole? = null
+        senderRole: UserRole? = null,
+        date: String? = null
     )
-    fun addEventChip(time: String, text: String, iconType: String)
-    fun addActivityCard(time: String, category: String, portionLabel: String, description: String, childId: String = "mateo_garcia")
+    fun addEventChip(time: String, text: String, iconType: String, date: String? = null)
+    fun addActivityCard(time: String, category: String, portionLabel: String, description: String, childId: String = "mateo_garcia", date: String? = null)
 }

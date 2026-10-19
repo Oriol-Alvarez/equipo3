@@ -90,22 +90,25 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var hasError by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val state = com.example.etapa1.ui.state.LoginUiState(
         email = email,
         password = password,
         passwordVisible = passwordVisible,
-        hasError = hasError
+        hasError = hasError,
+        errorMessage = errorMessage
     )
 
     LoginContent(
         uiState = state,
-        onEmailChange = { email = it; hasError = false },
-        onPasswordChange = { password = it; hasError = false },
+        onEmailChange = { email = it; hasError = false; errorMessage = null },
+        onPasswordChange = { password = it; hasError = false; errorMessage = null },
         onTogglePasswordVisibility = { passwordVisible = !passwordVisible },
         onSubmitLogin = {
             if (email.isBlank() || password.isBlank()) {
                 hasError = true
+                errorMessage = "Por favor, introduce tu correo y contraseña."
             } else {
                 val role = if (email.contains("familiar", ignoreCase = true)) UserRole.FAMILIAR else UserRole.EDUCADORA
                 onLoginSuccess(role)
@@ -228,6 +231,7 @@ fun LoginContent(
 
             // Banner de error (si está activo)
             if (uiState.hasError) {
+                val errorText = uiState.errorMessage ?: "Correo o contraseña incorrectos"
                 Spacer(modifier = Modifier.height(12.dp))
                 Box(
                     modifier = Modifier
@@ -235,14 +239,15 @@ fun LoginContent(
                         .clip(RoundedCornerShape(16.dp))
                         .background(AlertRedBg)
                         .border(1.dp, AlertRedBorder, RoundedCornerShape(16.dp))
-                        .padding(vertical = 8.dp, horizontal = 12.dp),
+                        .padding(vertical = 10.dp, horizontal = 14.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Correo o contraseña incorrectos",
+                        text = errorText,
                         color = AlertRed,
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center
                     )
                 }
             }

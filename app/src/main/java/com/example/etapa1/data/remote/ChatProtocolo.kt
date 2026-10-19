@@ -60,6 +60,7 @@ data class ChatMessagePayload(
     val senderName: String = "",
     val message: String = "",
     val time: String = "",
+    val date: String? = null,
     val isOutgoing: Boolean = false,
     val fileUri: String? = null,
     val fileName: String? = null,

@@ -40,6 +40,7 @@ def test_expediente_completo_contrato(cliente: TestClient, familiar: Persona):
         "pediatrician",
         "pediatricianPhone",
         "emergencyPhone",
+        "emergencyPhoneRelation",
         "motherName",
         "fatherName",
         "authorizedPickups",
@@ -188,4 +189,46 @@ def test_mensaje_con_hora_personalizada_y_orden_cronologico_timeline(
 
     # 09:15 AM (mensaje) < 10:00 AM (actividad) < 11:30 AM (mensaje)
     assert idx_msg1 < idx_act < idx_msg2
+
+
+def test_elementos_diferentes_dias_ordenados_por_dia_y_hora(
+    cliente: TestClient, educadora: Persona, familiar: Persona
+):
+    # Actividad de un día previo a mediodía (12:20 PM el 12/10/2026)
+    r_act = cliente.post(
+        "/api/v1/children/mateo_garcia/activities",
+        headers=educadora.headers,
+        json={
+            "time": "12:20 PM",
+            "date": "12/10/2026",
+            "category": "Alimentación",
+            "title": "Almuerzo",
+            "description": "Comió su plato principal",
+        },
+    )
+    assert r_act.status_code == 201
+    id_act = r_act.json()["id"]
+
+    # Mensaje enviado un día posterior por la mañana temprana (08:30 AM el 19/10/2026)
+    r_msg = cliente.post(
+        "/api/v1/chats/bitacora/mateo_garcia/messages",
+        headers=familiar.headers,
+        json={
+            "message": "Mensaje de días después a primera hora",
+            "time": "08:30 AM",
+            "date": "19/10/2026",
+        },
+    )
+    assert r_msg.status_code == 201
+    id_msg = r_msg.json()["id"]
+
+    r_timeline = cliente.get("/api/v1/children/mateo_garcia/timeline", headers=familiar.headers)
+    assert r_timeline.status_code == 200
+    timeline = r_timeline.json()
+
+    idx_act = next(i for i, item in enumerate(timeline) if item["id"] == id_act)
+    idx_msg = next(i for i, item in enumerate(timeline) if item["id"] == id_msg)
+
+    # 12/10/2026 12:20 PM debe ir ANTES de 19/10/2026 08:30 AM
+    assert idx_act < idx_msg
 

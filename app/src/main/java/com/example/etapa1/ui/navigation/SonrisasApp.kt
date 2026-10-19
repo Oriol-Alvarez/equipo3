@@ -43,6 +43,7 @@ fun SonrisasApp() {
 
             androidx.compose.runtime.LaunchedEffect(actual.sesion) {
                 app?.container?.asegurarConexionChat()
+                app?.container?.childRepository?.refresh()
             }
 
             SonrisasNavHost(

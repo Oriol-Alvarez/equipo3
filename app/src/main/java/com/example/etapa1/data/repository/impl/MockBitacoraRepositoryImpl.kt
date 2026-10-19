@@ -23,12 +23,15 @@ class MockBitacoraRepositoryImpl : BitacoraRepository {
         fileUri: String?,
         fileName: String?,
         fileMimeType: String?,
-        senderRole: UserRole?
+        senderRole: UserRole?,
+        date: String?
     ) {
         val currentTime = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.US).format(java.util.Date())
+        val currentDate = date ?: "12/10/2026"
         val message = TimelineItem.ChatMessage(
             id = "msg_${System.currentTimeMillis()}",
             time = currentTime,
+            date = currentDate,
             message = text,
             isOutgoing = isOutgoing,
             fileUri = fileUri,
@@ -39,20 +42,24 @@ class MockBitacoraRepositoryImpl : BitacoraRepository {
         _mateoTimeline.update { (it + message).ordenadaCronologicamente() }
     }
 
-    override fun addEventChip(time: String, text: String, iconType: String) {
+    override fun addEventChip(time: String, text: String, iconType: String, date: String?) {
+        val currentDate = date ?: "12/10/2026"
         val chip = TimelineItem.EventChip(
             id = "chip_${System.currentTimeMillis()}",
             time = time,
+            date = currentDate,
             text = text,
             iconType = iconType
         )
         _mateoTimeline.update { (it + chip).ordenadaCronologicamente() }
     }
 
-    override fun addActivityCard(time: String, category: String, portionLabel: String, description: String, childId: String) {
+    override fun addActivityCard(time: String, category: String, portionLabel: String, description: String, childId: String, date: String?) {
+        val currentDate = date ?: "12/10/2026"
         val card = TimelineItem.ActivityCard(
             id = "act_${System.currentTimeMillis()}",
             time = time,
+            date = currentDate,
             category = category,
             portionLabel = portionLabel,
             description = description
@@ -84,6 +91,49 @@ class MockBitacoraRepositoryImpl : BitacoraRepository {
         return 9999
     }
 
+    private fun parseItemTimestamp(dateStr: String, timeStr: String): Long {
+        val cleanTime = timeStr.trim().uppercase(java.util.Locale.US)
+            .replace(".", "")
+            .replace("A M", "AM")
+            .replace("P M", "PM")
+        val cleanDate = dateStr.trim().ifEmpty { "12/10/2026" }
+
+        val dateFormats = listOf(
+            "dd/MM/yyyy",
+            "yyyy-MM-dd",
+            "dd-MM-yyyy"
+        )
+        val timeFormats = listOf(
+            "hh:mm a",
+            "h:mm a",
+            "HH:mm",
+            "H:mm"
+        )
+        for (df in dateFormats) {
+            for (tf in timeFormats) {
+                try {
+                    val sdf = java.text.SimpleDateFormat("$df $tf", java.util.Locale.US)
+                    val parsed = sdf.parse("$cleanDate $cleanTime")
+                    if (parsed != null) {
+                        return parsed.time
+                    }
+                } catch (_: Exception) {
+                }
+            }
+            try {
+                val sdfDate = java.text.SimpleDateFormat(df, java.util.Locale.US)
+                val parsedDate = sdfDate.parse(cleanDate)
+                if (parsedDate != null) {
+                    val minutes = parseTimeToMinutes(cleanTime)
+                    return parsedDate.time + (minutes * 60L * 1000L)
+                }
+            } catch (_: Exception) {
+            }
+        }
+
+        return parseTimeToMinutes(cleanTime).toLong() * 60L * 1000L
+    }
+
     private fun List<TimelineItem>.ordenadaCronologicamente(): List<TimelineItem> =
-        this.sortedBy { parseTimeToMinutes(it.time) }
+        this.sortedBy { parseItemTimestamp(it.date, it.time) }
 }

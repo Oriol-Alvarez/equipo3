@@ -32,17 +32,19 @@ class NewActivityViewModelTest {
             fileUri: String?,
             fileName: String?,
             fileMimeType: String?,
-            senderRole: UserRole?
+            senderRole: UserRole?,
+            date: String?
         ) {}
 
-        override fun addEventChip(time: String, text: String, iconType: String) {}
+        override fun addEventChip(time: String, text: String, iconType: String, date: String?) {}
 
         override fun addActivityCard(
             time: String,
             category: String,
             portionLabel: String,
             description: String,
-            childId: String
+            childId: String,
+            date: String?
         ) {
             activitiesAdded.add(Triple(category, portionLabel, description))
             lastChildId = childId

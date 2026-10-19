@@ -49,11 +49,12 @@ class NetworkAuthRepositoryImpl(
                 _currentUserRole.value = resolvedRole
                 Result.success(resolvedRole)
             } else {
-                val errorMsg = response.errorBody()?.string() ?: "Código ${response.code()}"
-                Result.failure(Exception("Error de autenticación: $errorMsg"))
+                val errorMsg = com.example.etapa1.data.remote.NetworkErrorHelper.parseResponse(response)
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val errorMsg = com.example.etapa1.data.remote.NetworkErrorHelper.parseException(e)
+            Result.failure(Exception(errorMsg, e))
         }
     }
 

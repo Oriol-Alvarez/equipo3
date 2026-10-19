@@ -122,10 +122,13 @@ def actualizar_estado_sugerencia(
         raise ApiError(404, f"No existe la sugerencia con id {id}")
 
     sug.status = body.status
-    sug.response = body.response
-    sug.responder_name = body.responderName
-    sug.response_date = time.strftime("%d/%m/%Y %I:%M %p")
+    if body.response is not None:
+        sug.response = body.response
+        sug.response_date = time.strftime("%d/%m/%Y %I:%M %p")
+    if body.responderName is not None:
+        sug.responder_name = body.responderName
     db.commit()
+    db.refresh(sug)
 
     return SuggestionOut(
         id=sug.id,

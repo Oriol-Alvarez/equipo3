@@ -49,6 +49,8 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -120,6 +122,7 @@ fun AppBottomBar(
     selectedTab: Int = 0,
     showMessagesTab: Boolean = true,
     hasUnreadMessages: Boolean = false,
+    unreadMessagesCount: Int = 0,
     onTabSelected: (Int) -> Unit = {}
 ) {
     Surface(
@@ -151,26 +154,31 @@ fun AppBottomBar(
 
             // Tab 1 (opcional): Mensajes
             if (showMessagesTab) {
+                val effectiveCount = if (unreadMessagesCount > 0) unreadMessagesCount else if (hasUnreadMessages) 1 else 0
                 BottomNavItem(
                     modifier = Modifier.weight(1f),
                     icon = {
-                        Box(contentAlignment = Alignment.Center) {
+                        BadgedBox(
+                            badge = {
+                                if (effectiveCount > 0) {
+                                    Badge(
+                                        containerColor = AlertRed,
+                                        contentColor = Color.White
+                                    ) {
+                                        Text(
+                                            text = if (effectiveCount > 99) "99+" else effectiveCount.toString(),
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.MailOutline,
                                 contentDescription = "Mensajes",
                                 tint = if (selectedTab == 1) BrandBlue else TextMuted
                             )
-                            if (hasUnreadMessages) {
-                                // Notification dot
-                                Box(
-                                    modifier = Modifier
-                                        .size(7.dp)
-                                        .align(Alignment.TopEnd)
-                                        .offset(x = 2.dp, y = (-2).dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFFE53935))
-                                )
-                            }
                         }
                     },
                     label = "Mensajes",

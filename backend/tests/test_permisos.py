@@ -115,3 +115,21 @@ def test_educadora_puede_responder_sugerencia(cliente: TestClient, educadora: Pe
     assert r.status_code == 200
     assert r.json()["status"] == "ATENDIDA"
     assert r.json()["response"] == "Coordinado con el equipo docente."
+
+
+def test_educadora_puede_marcar_sugerencia_en_progreso_como_atendida(cliente: TestClient, educadora: Persona):
+    # sug_2 inicia en estado EN_REVISION en seed
+    r = cliente.patch(
+        "/api/v1/suggestions/sug_2/status",
+        headers=educadora.headers,
+        json={
+            "status": "ATENDIDA",
+            "response": "Instalación completada y verificada.",
+            "responderName": "Mantenimiento / Dirección",
+        },
+    )
+    assert r.status_code == 200
+    datos = r.json()
+    assert datos["status"] == "ATENDIDA"
+    assert "Instalación completada" in datos["response"]
+

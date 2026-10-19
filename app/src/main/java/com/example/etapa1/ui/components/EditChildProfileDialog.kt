@@ -98,6 +98,7 @@ fun EditChildProfileDialog(
         medicalNotes: String,
         habitsAndPedagogicalNotes: String,
         emergencyPhone: String,
+        emergencyPhoneRelation: String,
         authorizedPickups: List<String>,
         medicalCertificateUri: String?,
         medicalCertificateName: String?,
@@ -112,6 +113,8 @@ fun EditChildProfileDialog(
     var medicalNotes by remember { mutableStateOf(fullProfile.medicalNotes) }
     var habitsAndPedagogicalNotes by remember { mutableStateOf(fullProfile.generalNotes) }
     var emergencyPhone by remember { mutableStateOf(fullProfile.emergencyPhone) }
+    var emergencyPhoneRelation by remember { mutableStateOf(fullProfile.emergencyPhoneRelation) }
+    var emergencyRelationError by remember { mutableStateOf(false) }
 
     val authorizedPickups = remember {
         mutableStateListOf<String>().apply { addAll(fullProfile.authorizedPickups) }
@@ -399,6 +402,25 @@ fun EditChildProfileDialog(
                         icon = Icons.Default.Phone
                     ) {
                         OutlinedTextField(
+                            value = emergencyPhoneRelation,
+                            onValueChange = {
+                                emergencyPhoneRelation = it
+                                if (it.isNotBlank()) emergencyRelationError = false
+                            },
+                            label = { Text("Parentesco / Relación *") },
+                            placeholder = { Text("Ej. Madre, Padre, Abuela, Tutor legal") },
+                            isError = emergencyRelationError,
+                            supportingText = if (emergencyRelationError) {
+                                { Text("Debes indicar el parentesco del contacto de emergencia", color = AlertRed) }
+                            } else null,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = outlinedTextFieldColors()
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedTextField(
                             value = emergencyPhone,
                             onValueChange = { emergencyPhone = it },
                             label = { Text("Teléfono de emergencia") },
@@ -606,6 +628,10 @@ fun EditChildProfileDialog(
 
                         Button(
                             onClick = {
+                                if (emergencyPhone.isNotBlank() && emergencyPhoneRelation.isBlank()) {
+                                    emergencyRelationError = true
+                                    return@Button
+                                }
                                 if (newPersonName.isNotBlank() && newPersonRelationship.isNotBlank() && newPersonDni.isNotBlank()) {
                                     val formatted = "${newPersonName.trim()} (${newPersonRelationship.trim()}) - DNI: ${newPersonDni.trim().uppercase()}"
                                     authorizedPickups.add(formatted)
@@ -616,6 +642,7 @@ fun EditChildProfileDialog(
                                     medicalNotes,
                                     habitsAndPedagogicalNotes,
                                     emergencyPhone,
+                                    emergencyPhoneRelation,
                                     authorizedPickups.toList(),
                                     certificateUri,
                                     certificateName,

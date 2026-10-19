@@ -34,6 +34,7 @@ class LoginViewModelTest {
         val role = viewModel.submitLogin()
         assertNull(role)
         assertTrue(viewModel.uiState.value.hasError)
+        assertEquals("Por favor, introduce tu correo y contraseña.", viewModel.uiState.value.errorMessage)
     }
 
     @Test
@@ -45,6 +46,32 @@ class LoginViewModelTest {
         val role = viewModel.submitLogin()
         assertEquals(UserRole.EDUCADORA, role)
         assertFalse(viewModel.uiState.value.hasError)
+        assertNull(viewModel.uiState.value.errorMessage)
         assertTrue(viewModel.uiState.value.isSuccess)
+    }
+
+    @Test
+    fun submitLogin_whenRepositoryFails_setsSpecificErrorMessage() {
+        val failingRepo = object : com.example.etapa1.data.repository.AuthRepository {
+            override val currentUserRole = authRepository.currentUserRole
+            override fun login(email: String, password: String, role: UserRole): Result<UserRole> {
+                return Result.failure(Exception("No se pudo conectar con el servidor. Verifica tu conexión."))
+            }
+            override fun setRole(role: UserRole) {}
+            override fun logout() {}
+        }
+        val failingVm = LoginViewModel(failingRepo)
+        failingVm.onEmailChanged("educadora@sonrisas.com")
+        failingVm.onPasswordChanged("wrong")
+
+        val role = failingVm.submitLogin()
+        assertNull(role)
+        assertTrue(failingVm.uiState.value.hasError)
+        assertEquals("No se pudo conectar con el servidor. Verifica tu conexión.", failingVm.uiState.value.errorMessage)
+
+        // Typing again should clear the error
+        failingVm.onPasswordChanged("new")
+        assertFalse(failingVm.uiState.value.hasError)
+        assertNull(failingVm.uiState.value.errorMessage)
     }
 }

@@ -164,6 +164,13 @@ data class CreateSuggestionDto(
 )
 
 @Serializable
+data class UpdateSuggestionStatusDto(
+    val status: String,
+    val response: String? = null,
+    val responderName: String? = null
+)
+
+@Serializable
 data class LostItemDto(
     val id: String,
     val title: String,
@@ -246,6 +253,7 @@ data class BitacoraMessageDto(
     val senderId: String,
     val senderName: String,
     val time: String,
+    val date: String? = null,
     val message: String,
     val isOutgoing: Boolean = false,
     val fileUri: String? = null,
@@ -259,7 +267,8 @@ data class SendBitacoraMessageDto(
     val fileUri: String? = null,
     val fileName: String? = null,
     val fileMimeType: String? = null,
-    val time: String? = null
+    val time: String? = null,
+    val date: String? = null
 )
 
 @Serializable
@@ -267,6 +276,7 @@ data class TimelineItemDto(
     val type: String,
     val id: String,
     val time: String,
+    val date: String? = null,
     val text: String? = null,
     val iconType: String? = null,
     val message: String? = null,

@@ -23,13 +23,14 @@ object RemoteSync {
 
     val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    /** Ejecuta [block] en segundo plano; si falla la red, solo lo registra en Logcat. */
+    /** Ejecuta [block] en segundo plano; si falla la red, traduce el error y lo registra en Logcat. */
     fun launch(what: String, block: suspend () -> Unit) {
         scope.launch {
             try {
                 block()
             } catch (e: Exception) {
-                Log.w(TAG, "$what: ${e.message}")
+                val errorMsg = NetworkErrorHelper.parseException(e)
+                Log.w(TAG, "$what: $errorMsg (Detalle técnico: ${e.message})")
             }
         }
     }
@@ -47,7 +48,8 @@ object RemoteSync {
                     try {
                         block()
                     } catch (e: Exception) {
-                        Log.w(TAG, "$what: ${e.message}")
+                        val errorMsg = NetworkErrorHelper.parseException(e)
+                        Log.w(TAG, "$what: $errorMsg (Detalle técnico: ${e.message})")
                     }
                 }
             }
@@ -58,12 +60,16 @@ object RemoteSync {
         }
     }
 
-    /** Cuerpo de la respuesta o null (y lo registra) si el servidor contestó con error. */
+    /** Cuerpo de la respuesta o null (y lo registra con mensaje en español) si el servidor contestó con error. */
     fun <T> Response<T>.bodyOrLog(what: String): T? {
         if (isSuccessful) return body()
-        Log.w(TAG, "$what: HTTP ${code()} ${errorBody()?.string().orEmpty()}")
+        val friendly = NetworkErrorHelper.parseResponse(this)
+        Log.w(TAG, "$what: $friendly (HTTP ${code()})")
         return null
     }
+
+    /** Devuelve el mensaje amigable de error del servidor. */
+    fun <T> Response<T>.errorMessage(): String = NetworkErrorHelper.parseResponse(this)
 
     /** Convierte una ruta del servidor ("/api/v1/media/x") en URL completa para mostrarla en la app. */
     fun absoluteUrl(uri: String): String {

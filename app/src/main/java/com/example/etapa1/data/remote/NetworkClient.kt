@@ -9,7 +9,7 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.concurrent.TimeUnit
 
 object NetworkClient {
-    const val DEFAULT_BASE_URL = "https://list-testament-sea-workplace.trycloudflare.com/api/v1/"
+    const val DEFAULT_BASE_URL = "https://kitchen-become-dan-biz.trycloudflare.com/api/v1/"
     var baseUrl: String = DEFAULT_BASE_URL
 
     val json: Json = Json {

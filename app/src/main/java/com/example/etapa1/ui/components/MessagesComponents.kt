@@ -120,7 +120,7 @@ enum class MessagesMode(val label: String) {
 @Composable
 fun UnreadBadgeCircle(
     count: Int,
-    backgroundColor: Color = BrandBlue,
+    backgroundColor: Color = AlertRed,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -349,7 +349,7 @@ fun PinnedGlobalWorkerChatCard(
                 if (chat.unreadCount > 0) {
                     UnreadBadgeCircle(
                         count = chat.unreadCount,
-                        backgroundColor = BrandBlue
+                        backgroundColor = AlertRed
                     )
                 } else {
                     Spacer(modifier = Modifier.size(20.dp))
@@ -454,7 +454,7 @@ fun WorkerChatItem(
                 if (hasUnread) {
                     UnreadBadgeCircle(
                         count = chat.unreadCount,
-                        backgroundColor = BrandBlue
+                        backgroundColor = AlertRed
                     )
                 } else {
                     Spacer(modifier = Modifier.size(20.dp))
@@ -550,7 +550,7 @@ fun ParentChatItem(
                 if (hasUnread) {
                     UnreadBadgeCircle(
                         count = chatSummary.unreadCount,
-                        backgroundColor = BrandBlue
+                        backgroundColor = AlertRed
                     )
                 } else {
                     Spacer(modifier = Modifier.size(20.dp))

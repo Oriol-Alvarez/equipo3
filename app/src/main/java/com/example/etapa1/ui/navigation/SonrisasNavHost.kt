@@ -89,6 +89,7 @@ fun SonrisasNavHost(
                     selectedTab = selectedBottomTab,
                     showMessagesTab = isEducadora,
                     hasUnreadMessages = totalUnreadMessages > 0,
+                    unreadMessagesCount = totalUnreadMessages,
                     onTabSelected = { tab -> navigateToTab(currentTabs[tab]) }
                 )
             }
@@ -305,11 +306,14 @@ fun SonrisasNavHost(
                 LaunchedEffect(selectedParentChild.id) {
                     vm.selectChild(selectedParentChild)
                 }
+                val childUnreadChat = messagesUiState.parentChats.find { it.child.id == selectedParentChild.id }?.unreadCount ?: 0
                 ParentHomeScreen(
                     viewModel = vm,
                     unreadAnnouncementsCount = unreadAnnouncementsCount,
+                    unreadMessagesCount = childUnreadChat,
                     onNavigateToChat = { child ->
                         selectedChild = child
+                        messagesViewModel.markParentChatAsRead(child.id)
                         nav.navigate(Route.CHAT_BITACORA)
                     },
                     onNavigateToChildDetail = { child ->

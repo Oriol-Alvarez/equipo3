@@ -108,6 +108,7 @@ def obtener_expediente(
         pediatrician=perfil.pediatrician,
         pediatricianPhone=perfil.pediatrician_phone,
         emergencyPhone=perfil.emergency_phone,
+        emergencyPhoneRelation=perfil.emergency_phone_relation or "Tutor legal",
         motherName=perfil.mother_name,
         motherPhone=perfil.mother_phone,
         fatherName=perfil.father_name,
@@ -142,6 +143,8 @@ def actualizar_expediente(
         perfil.medical_notes = body.medicalNotes
     if body.emergencyPhone is not None:
         perfil.emergency_phone = body.emergencyPhone
+    if body.emergencyPhoneRelation is not None:
+        perfil.emergency_phone_relation = body.emergencyPhoneRelation
     if body.authorizedPickups is not None:
         perfil.authorized_pickups = json.dumps(body.authorizedPickups)
     if body.medicalCertificateUri is not None:

@@ -192,12 +192,14 @@ class NetworkMessagesRepositoryImpl(
                             fileMimeType = m.fileMimeType
                         )
 
+                        val isIncoming = nuevoMsg.senderId != tokenManager.userId
                         if (evento.chatId == _globalChat.value.id || evento.chatId == "global_staff_chat") {
                             _globalChat.update { actual ->
                                 if (actual.messages.any { it.id == nuevoMsg.id }) actual
                                 else actual.copy(
                                     lastMessage = "${nuevoMsg.senderName}: ${nuevoMsg.message}",
                                     lastMessageTime = nuevoMsg.time,
+                                    unreadCount = if (isIncoming) actual.unreadCount + 1 else actual.unreadCount,
                                     messages = actual.messages + nuevoMsg
                                 )
                             }
@@ -209,6 +211,7 @@ class NetworkMessagesRepositoryImpl(
                                         else chat.copy(
                                             lastMessage = nuevoMsg.message,
                                             lastMessageTime = nuevoMsg.time,
+                                            unreadCount = if (isIncoming) chat.unreadCount + 1 else chat.unreadCount,
                                             messages = chat.messages + nuevoMsg
                                         )
                                     } else chat
@@ -218,13 +221,15 @@ class NetworkMessagesRepositoryImpl(
                     }
 
                     is EventoServidor.NuevoMensajeBitacora -> {
+                        val isIncoming = evento.message.senderId != tokenManager.userId
                         // Actualizar resumen en la lista de chats de padres
                         _parentChats.update { lista ->
                             lista.map { item ->
                                 if (item.child.id == evento.childId) {
                                     item.copy(
                                         lastMessage = evento.message.message,
-                                        lastMessageTime = evento.message.time.ifEmpty { horaActual() }
+                                        lastMessageTime = evento.message.time.ifEmpty { horaActual() },
+                                        unreadCount = if (isIncoming) item.unreadCount + 1 else item.unreadCount
                                     )
                                 } else item
                             }

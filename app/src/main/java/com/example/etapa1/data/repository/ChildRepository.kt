@@ -16,4 +16,5 @@ interface ChildRepository {
     fun getWeeklySummaryForChild(child: Child): WeeklySummary
     fun getWeeklySummariesForChild(child: Child): List<WeeklySummary>
     fun getDailyBitacorasForChild(child: Child): List<DailyBitacora>
+    fun refresh()
 }

@@ -108,6 +108,7 @@ class ChildFullProfileOut(BaseModel):
     pediatrician: str
     pediatricianPhone: str
     emergencyPhone: str
+    emergencyPhoneRelation: str = "Tutor legal"
     motherName: str
     motherPhone: str
     fatherName: str
@@ -126,6 +127,7 @@ class ChildProfileUpdate(BaseModel):
     medicalNotes: str | None = None
     habitsAndPedagogicalNotes: str | None = None
     emergencyPhone: str | None = None
+    emergencyPhoneRelation: str | None = None
     authorizedPickups: list[str] | None = None
     medicalCertificateUri: str | None = None
     medicalCertificateName: str | None = None
@@ -204,6 +206,7 @@ class TimelineItemOut(BaseModel):
     type: Literal["EVENT_CHIP", "CHAT_MESSAGE", "ACTIVITY_CARD"]
     id: str
     time: str
+    date: str | None = None
     # Campos para EVENT_CHIP
     text: str | None = None
     iconType: str | None = None
@@ -350,6 +353,7 @@ class BitacoraMessageOut(BaseModel):
     senderId: str
     senderName: str
     time: str
+    date: str | None = None
     message: str
     isOutgoing: bool
     fileUri: str | None = None
@@ -361,6 +365,7 @@ class SendBitacoraMessageRequest(BaseModel):
     fileName: str | None = None
     fileMimeType: str | None = None
     time: str | None = None
+    date: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -471,8 +476,8 @@ class CreateSuggestionRequest(BaseModel):
 
 class UpdateSuggestionStatusRequest(BaseModel):
     status: str
-    response: str
-    responderName: str
+    response: str | None = None
+    responderName: str | None = None
 
 
 # ---------------------------------------------------------------------------

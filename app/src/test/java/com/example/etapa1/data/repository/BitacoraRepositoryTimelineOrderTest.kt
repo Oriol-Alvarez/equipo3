@@ -45,4 +45,40 @@ class BitacoraRepositoryTimelineOrderTest {
         assertTrue("10:15 AM debe ir antes de 02:00 PM", idx1015am < idx2pm)
         assertTrue("02:00 PM debe ir antes de 04:30 PM", idx2pm < idx430pm)
     }
+
+    @Test
+    fun itemsFromDifferentDays_areSortedChronologicallyByDayAndTime() {
+        val repo = MockBitacoraRepositoryImpl()
+
+        // Actividad previa a mediodía (12:20 PM el 12/10/2026)
+        repo.addActivityCard(
+            time = "12:20 PM",
+            category = "Alimentación",
+            portionLabel = "Almuerzo",
+            description = "Comió sopa",
+            childId = "mateo_garcia",
+            date = "12/10/2026"
+        )
+
+        // Mensaje y foto enviados días después a primera hora de la mañana (08:30 AM el 19/10/2026)
+        repo.addChatMessage(
+            text = "Foto y mensaje de hoy por la mañana",
+            isOutgoing = true,
+            fileUri = "content://media/foto.jpg",
+            fileName = "foto.jpg",
+            fileMimeType = "image/jpeg",
+            date = "19/10/2026"
+        )
+
+        val items = repo.mateoTimeline.value
+        val idxActividad = items.indexOfLast { it.time == "12:20 PM" && it.date == "12/10/2026" }
+        val idxMensajeFoto = items.indexOfFirst { it.date == "19/10/2026" }
+
+        assertTrue("Debe existir la actividad", idxActividad >= 0)
+        assertTrue("Debe existir el mensaje posterior", idxMensajeFoto >= 0)
+        assertTrue(
+            "El mensaje de hoy (19/10/2026) debe aparecer DESPUÉS de la actividad del día previo (12/10/2026), sin importar que su hora sea más temprana",
+            idxActividad < idxMensajeFoto
+        )
+    }
 }
