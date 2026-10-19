@@ -35,4 +35,7 @@ echo "3. Iniciando escaneo de la API con ZAP (OpenAPI) usando autenticación JWT
 # Corremos el escáner específico de APIs de ZAP
 docker run --rm -v "$(pwd -W)/zap_reports:/zap/wrk/:rw" ghcr.io/zaproxy/zaproxy:stable zap-api-scan.py -t $OPENAPI_URL -f openapi -r zap_api_report.html -z "-configfile /zap/wrk/auth.prop"
 
-echo "Escaneo finalizado. Revisa zap_reports/zap_api_report.html"
+echo "4. Iniciando escaneo Baseline con ZAP..."
+docker run --rm -v "$(pwd -W)/zap_reports:/zap/wrk/:rw" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t $TARGET -r zap_report.html
+
+echo "Escaneo finalizado. Revisa zap_reports/zap_api_report.html y zap_reports/zap_report.html"

@@ -218,7 +218,7 @@ td {
 	</h2>
 
 	<h3>
-		Generated on Mon, 19 Oct 2026 00:36:56
+		Generated on Mon, 19 Oct 2026 00:55:33
 	</h3>
 
 	<h3>
@@ -259,7 +259,7 @@ td {
 					<div>Low</div>
 				</td>
 				<td align="center">
-					<div>2</div>
+					<div>0</div>
 				</td>
 			</tr>
 			<tr>
@@ -308,25 +308,7 @@ td {
 					<div>Percentage of responses with status code 4xx</div>
 				</td>
 				<td align="center">
-					<div>81 %</div>
-				</td>
-				</tr>
-			
-				<tr>
-				<td class="risk-1">
-					<div>Low</div>
-				</td>
-				<td>
-					<div>Warning</div>
-				</td>
-				<td>
-					<div></div>
-				</td>
-				<td>
-					<div>ZAP warnings logged - see the zap.log file for details</div>
-				</td>
-				<td align="center">
-					<div>8   </div>
+					<div>88 %</div>
 				</td>
 				</tr>
 			
@@ -344,7 +326,7 @@ td {
 					<div>Percentage of slow responses</div>
 				</td>
 				<td align="center">
-					<div>50 %</div>
+					<div>55 %</div>
 				</td>
 				</tr>
 			
@@ -363,24 +345,6 @@ td {
 				</td>
 				<td align="center">
 					<div>11 %</div>
-				</td>
-				</tr>
-			
-				<tr>
-				<td class="risk-0">
-					<div>Info</div>
-				</td>
-				<td>
-					<div>Exceeded Low</div>
-				</td>
-				<td>
-					<div>http://host.docker.internal:8000</div>
-				</td>
-				<td>
-					<div>Percentage of responses with status code 5xx</div>
-				</td>
-				<td align="center">
-					<div>7 %</div>
 				</td>
 				</tr>
 			
@@ -538,27 +502,11 @@ td {
 					align="center">Number of Instances</th>
 			</tr>
 			<tr>
-				<td><a href="#100000">A Server Error response code was returned by the server</a></td>
-				<td align="center" class="risk-1">Low</td>
-				
-				
-				<td align="center">24</td>
-				
-			</tr>
-			<tr>
-				<td><a href="#90022">Application Error Disclosure</a></td>
-				<td align="center" class="risk-1">Low</td>
-				
-				
-				<td align="center">4</td>
-				
-			</tr>
-			<tr>
 				<td><a href="#100000">A Client Error response code was returned by the server</a></td>
 				<td align="center" class="risk-0">Informational</td>
 				
 				
-				<td align="center">315</td>
+				<td align="center">339</td>
 				
 			</tr>
 			<tr>
@@ -591,1123 +539,6 @@ td {
 
 	
 		<h3>Alert Detail</h3>
-		
-			<table class="results">
-				<tr height="24">
-					<th width="20%" class="risk-1"><a
-						id="100000"></a>
-						<div>Low</div></th>
-					<th class="risk-1">A Server Error response code was returned by the server</th>
-				</tr>
-				<tr>
-					<td width="20%">Description</td>
-					<td width="80%">
-							<div>A response code of 500 was returned by the server.</div>
-							<br />
-						
-							<div>This may indicate that the application is failing to handle unexpected input correctly.</div>
-							<br />
-						
-							<div>Raised by the &#39;Alert on HTTP Response Code Error&#39; script</div>
-							
-						</td>
-				</tr>
-				<TR vAlign="top">
-					<TD colspan="2"></TD>
-				</TR>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/attendance/records?childId=%00&amp;date=">http://host.docker.internal:8000/api/attendance/records?childId=%00&amp;date=</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/attendance/records (childId,date)</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">GET</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/timeline?date=%00">http://host.docker.internal:8000/api/children/childId/timeline?date=%00</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/children/childId/timeline (date)</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">GET</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/daily-plans?from=&amp;to=&amp;roomId=%00">http://host.docker.internal:8000/api/daily-plans?from=&amp;to=&amp;roomId=%00</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/daily-plans (from,roomId,to)</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">GET</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/suggestions?status=%00&amp;category=&amp;search=ZAP">http://host.docker.internal:8000/api/suggestions?status=%00&amp;category=&amp;search=ZAP</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/suggestions (category,search,status)</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">GET</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/attendance/records?childId=%00&amp;date=">http://host.docker.internal:8000/api/v1/attendance/records?childId=%00&amp;date=</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/attendance/records (childId,date)</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">GET</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/timeline?date=%00">http://host.docker.internal:8000/api/v1/children/childId/timeline?date=%00</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/timeline (date)</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">GET</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/daily-plans?from=&amp;to=&amp;roomId=%00">http://host.docker.internal:8000/api/v1/daily-plans?from=&amp;to=&amp;roomId=%00</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/daily-plans (from,roomId,to)</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">GET</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/suggestions?status=%00&amp;category=&amp;search=ZAP">http://host.docker.internal:8000/api/v1/suggestions?status=%00&amp;category=&amp;search=ZAP</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/suggestions (category,search,status)</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">GET</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/weekly-observations?weekKey=%00">http://host.docker.internal:8000/api/v1/weekly-observations?weekKey=%00</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/weekly-observations (weekKey)</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">GET</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/weekly-observations?weekKey=%00">http://host.docker.internal:8000/api/weekly-observations?weekKey=%00</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/weekly-observations (weekKey)</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">GET</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/chats/staff-global/messages">http://host.docker.internal:8000/api/chats/staff-global/messages</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/chats/staff-global/messages ()({message})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">POST</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/timeline/events">http://host.docker.internal:8000/api/children/childId/timeline/events</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/children/childId/timeline/events ()({time,text,iconType})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">POST</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/timeline/events/">http://host.docker.internal:8000/api/children/childId/timeline/events/</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/children/childId/timeline/events/ ()({time,text,iconType})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">POST</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/lost-objects">http://host.docker.internal:8000/api/lost-objects</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/lost-objects ()({title,description,category,location,room,imageUri})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">POST</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/notifications/device-token">http://host.docker.internal:8000/api/notifications/device-token</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/notifications/device-token ()({deviceToken,platform})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">POST</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/chats/staff-global/messages">http://host.docker.internal:8000/api/v1/chats/staff-global/messages</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/chats/staff-global/messages ()({message})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">POST</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/timeline/events">http://host.docker.internal:8000/api/v1/children/childId/timeline/events</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/timeline/events ()({time,text,iconType})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">POST</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/timeline/events/">http://host.docker.internal:8000/api/v1/children/childId/timeline/events/</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/timeline/events/ ()({time,text,iconType})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">POST</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/lost-objects">http://host.docker.internal:8000/api/v1/lost-objects</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/lost-objects ()({title,description,category,location,room,imageUri})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">POST</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/notifications/device-token">http://host.docker.internal:8000/api/v1/notifications/device-token</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/notifications/device-token ()({deviceToken,platform})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">POST</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/full-profile">http://host.docker.internal:8000/api/children/childId/full-profile</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/children/childId/full-profile ()({pediatrician,pediatricianPhone,medicalNotes,habitsAndPedagogicalNotes,emergencyPhone,authorizedPickups:[],medicalCertificateUri,medicalCertificateName,medicalCertificateDate})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">PUT</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/full-profile/">http://host.docker.internal:8000/api/children/childId/full-profile/</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/children/childId/full-profile/ ()({pediatrician,pediatricianPhone,medicalNotes,habitsAndPedagogicalNotes,emergencyPhone,authorizedPickups:[],medicalCertificateUri,medicalCertificateName,medicalCertificateDate})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">PUT</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/full-profile">http://host.docker.internal:8000/api/v1/children/childId/full-profile</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/full-profile ()({pediatrician,pediatricianPhone,medicalNotes,habitsAndPedagogicalNotes,emergencyPhone,authorizedPickups:[],medicalCertificateUri,medicalCertificateName,medicalCertificateDate})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">PUT</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/full-profile/">http://host.docker.internal:8000/api/v1/children/childId/full-profile/</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/full-profile/ ()({pediatrician,pediatricianPhone,medicalNotes,habitsAndPedagogicalNotes,emergencyPhone,authorizedPickups:[],medicalCertificateUri,medicalCertificateName,medicalCertificateDate})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">PUT</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">500</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-				<tr>
-					<td width="20%">Instances</td>
-					
-					
-					<td width="80%">24</td>
-					
-				</tr>
-				<tr>
-					<td width="20%">Solution</td>
-					<td width="80%"></td>
-				</tr>
-				<tr>
-					<td width="20%">Reference</td>
-					<td width="80%"></td>
-				</tr>
-				<tr>
-					<td width="20%">CWE Id</td>
-					<td width="80%"><a
-						href="https://cwe.mitre.org/data/definitions/388.html">388</a></td>
-				</tr>
-				<tr>
-					<td width="20%">WASC Id</td>
-					<td width="80%">20</td>
-				</tr>
-				<tr>
-					<td width="20%">Plugin Id</td>
-					<td width="80%"><a
-						href="https://www.zaproxy.org/docs/alerts/100000/">100000</a></td>
-				</tr>
-			</table>
-			<div class="spacer"></div>
-		
-			<table class="results">
-				<tr height="24">
-					<th width="20%" class="risk-1"><a
-						id="90022"></a>
-						<div>Low</div></th>
-					<th class="risk-1">Application Error Disclosure</th>
-				</tr>
-				<tr>
-					<td width="20%">Description</td>
-					<td width="80%">
-							<div>This page contains an error/warning message that may disclose sensitive information like the location of the file that produced the unhandled exception. This information can be used to launch further attacks against the web application. The alert could be a false positive if the error message is found inside a documentation page.</div>
-							
-						</td>
-				</tr>
-				<TR vAlign="top">
-					<TD colspan="2"></TD>
-				</TR>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/timeline/events">http://host.docker.internal:8000/api/children/childId/timeline/events</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/children/childId/timeline/events ()({time,text,iconType})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">POST</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">HTTP/1.1 500 Internal Server Error</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/timeline/events">http://host.docker.internal:8000/api/v1/children/childId/timeline/events</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/timeline/events ()({time,text,iconType})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">POST</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">HTTP/1.1 500 Internal Server Error</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/full-profile">http://host.docker.internal:8000/api/children/childId/full-profile</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/children/childId/full-profile ()({pediatrician,pediatricianPhone,medicalNotes,habitsAndPedagogicalNotes,emergencyPhone,authorizedPickups:[],medicalCertificateUri,medicalCertificateName,medicalCertificateDate})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">PUT</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">HTTP/1.1 500 Internal Server Error</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/full-profile">http://host.docker.internal:8000/api/v1/children/childId/full-profile</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/full-profile ()({pediatrician,pediatricianPhone,medicalNotes,habitsAndPedagogicalNotes,emergencyPhone,authorizedPickups:[],medicalCertificateUri,medicalCertificateName,medicalCertificateDate})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">PUT</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">HTTP/1.1 500 Internal Server Error</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-				<tr>
-					<td width="20%">Instances</td>
-					
-					
-					<td width="80%">4</td>
-					
-				</tr>
-				<tr>
-					<td width="20%">Solution</td>
-					<td width="80%">
-							<div>Review the source code of this page. Implement custom error pages. Consider implementing a mechanism to provide a unique error reference/identifier to the client (browser) while logging the details on the server side and not exposing them to the user.</div>
-							
-						</td>
-				</tr>
-				<tr>
-					<td width="20%">Reference</td>
-					<td width="80%"></td>
-				</tr>
-				<tr>
-					<td width="20%">CWE Id</td>
-					<td width="80%"><a
-						href="https://cwe.mitre.org/data/definitions/550.html">550</a></td>
-				</tr>
-				<tr>
-					<td width="20%">WASC Id</td>
-					<td width="80%">13</td>
-				</tr>
-				<tr>
-					<td width="20%">Plugin Id</td>
-					<td width="80%"><a
-						href="https://www.zaproxy.org/docs/alerts/90022/">90022</a></td>
-				</tr>
-			</table>
-			<div class="spacer"></div>
 		
 			<table class="results">
 				<tr height="24">
@@ -1952,12 +783,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/664855480734289098">http://host.docker.internal:8000/664855480734289098</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/339874299487551398">http://host.docker.internal:8000/339874299487551398</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/664855480734289098</td>
+						<td width="80%">http://host.docker.internal:8000/339874299487551398</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -2060,12 +891,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/5479331916471767639">http://host.docker.internal:8000/api/5479331916471767639</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/7184025517047889431">http://host.docker.internal:8000/api/7184025517047889431</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/5479331916471767639</td>
+						<td width="80%">http://host.docker.internal:8000/api/7184025517047889431</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -2096,12 +927,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/announcements/5840067612976947091">http://host.docker.internal:8000/api/announcements/5840067612976947091</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/announcements/3683701627890207105">http://host.docker.internal:8000/api/announcements/3683701627890207105</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/announcements/5840067612976947091</td>
+						<td width="80%">http://host.docker.internal:8000/api/announcements/3683701627890207105</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -2204,12 +1035,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/announcements/id/1031464456744092511">http://host.docker.internal:8000/api/announcements/id/1031464456744092511</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/announcements/id/2801784108525202876">http://host.docker.internal:8000/api/announcements/id/2801784108525202876</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/announcements/id/1031464456744092511</td>
+						<td width="80%">http://host.docker.internal:8000/api/announcements/id/2801784108525202876</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -2348,12 +1179,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/attendance/161052946122262776">http://host.docker.internal:8000/api/attendance/161052946122262776</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/attendance/8951758862049537356">http://host.docker.internal:8000/api/attendance/8951758862049537356</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/attendance/161052946122262776</td>
+						<td width="80%">http://host.docker.internal:8000/api/attendance/8951758862049537356</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -2374,6 +1205,42 @@ td {
 						<td width="20%"
 							class="indent2">Evidence</td>
 						<td width="80%">404</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/attendance/records?childId=%00&amp;date=">http://host.docker.internal:8000/api/attendance/records?childId=%00&amp;date=</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/attendance/records (childId,date)</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">GET</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -2456,12 +1323,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/auth/7965486242648566744">http://host.docker.internal:8000/api/auth/7965486242648566744</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/auth/8745428068916666009">http://host.docker.internal:8000/api/auth/8745428068916666009</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/auth/7965486242648566744</td>
+						<td width="80%">http://host.docker.internal:8000/api/auth/8745428068916666009</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -2564,12 +1431,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/chats/325662949951093649">http://host.docker.internal:8000/api/chats/325662949951093649</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/chats/386055540102918728">http://host.docker.internal:8000/api/chats/386055540102918728</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/chats/325662949951093649</td>
+						<td width="80%">http://host.docker.internal:8000/api/chats/386055540102918728</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -2672,12 +1539,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/chats/bitacora/4214125213824756892">http://host.docker.internal:8000/api/chats/bitacora/4214125213824756892</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/chats/bitacora/3972630672147705909">http://host.docker.internal:8000/api/chats/bitacora/3972630672147705909</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/chats/bitacora/4214125213824756892</td>
+						<td width="80%">http://host.docker.internal:8000/api/chats/bitacora/3972630672147705909</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -2780,12 +1647,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/chats/bitacora/childId/2207228643383370473">http://host.docker.internal:8000/api/chats/bitacora/childId/2207228643383370473</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/chats/bitacora/childId/2000410699744269912">http://host.docker.internal:8000/api/chats/bitacora/childId/2000410699744269912</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/chats/bitacora/childId/2207228643383370473</td>
+						<td width="80%">http://host.docker.internal:8000/api/chats/bitacora/childId/2000410699744269912</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -2888,12 +1755,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/chats/staff-global/7499705522749383363">http://host.docker.internal:8000/api/chats/staff-global/7499705522749383363</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/chats/staff-global/8221158899099045449">http://host.docker.internal:8000/api/chats/staff-global/8221158899099045449</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/chats/staff-global/7499705522749383363</td>
+						<td width="80%">http://host.docker.internal:8000/api/chats/staff-global/8221158899099045449</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -2924,12 +1791,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/chats/workers/3615192298754771685">http://host.docker.internal:8000/api/chats/workers/3615192298754771685</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/chats/workers/6220079813901793844">http://host.docker.internal:8000/api/chats/workers/6220079813901793844</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/chats/workers/3615192298754771685</td>
+						<td width="80%">http://host.docker.internal:8000/api/chats/workers/6220079813901793844</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -3032,12 +1899,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/chats/workers/chatId/3246554764070348032">http://host.docker.internal:8000/api/chats/workers/chatId/3246554764070348032</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/chats/workers/chatId/8104155002129956910">http://host.docker.internal:8000/api/chats/workers/chatId/8104155002129956910</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/chats/workers/chatId/3246554764070348032</td>
+						<td width="80%">http://host.docker.internal:8000/api/chats/workers/chatId/8104155002129956910</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -3140,12 +2007,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/children/1513438171417071981">http://host.docker.internal:8000/api/children/1513438171417071981</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/children/920667418508469625">http://host.docker.internal:8000/api/children/920667418508469625</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/children/1513438171417071981</td>
+						<td width="80%">http://host.docker.internal:8000/api/children/920667418508469625</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -3248,12 +2115,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/6726997049441271819">http://host.docker.internal:8000/api/children/childId/6726997049441271819</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/7155430280050585748">http://host.docker.internal:8000/api/children/childId/7155430280050585748</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/children/childId/6726997049441271819</td>
+						<td width="80%">http://host.docker.internal:8000/api/children/childId/7155430280050585748</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -3392,12 +2259,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/daily-logs/7547508578752049272">http://host.docker.internal:8000/api/children/childId/daily-logs/7547508578752049272</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/daily-logs/286600716712759847">http://host.docker.internal:8000/api/children/childId/daily-logs/286600716712759847</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/children/childId/daily-logs/7547508578752049272</td>
+						<td width="80%">http://host.docker.internal:8000/api/children/childId/daily-logs/286600716712759847</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -3500,12 +2367,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/daily-logs/fecha/4834226289396063934">http://host.docker.internal:8000/api/children/childId/daily-logs/fecha/4834226289396063934</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/daily-logs/fecha/4840711583646068831">http://host.docker.internal:8000/api/children/childId/daily-logs/fecha/4840711583646068831</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/children/childId/daily-logs/fecha/4834226289396063934</td>
+						<td width="80%">http://host.docker.internal:8000/api/children/childId/daily-logs/fecha/4840711583646068831</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -3608,12 +2475,48 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/timeline/632540354466758769">http://host.docker.internal:8000/api/children/childId/timeline/632540354466758769</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/timeline?date=%00">http://host.docker.internal:8000/api/children/childId/timeline?date=%00</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/children/childId/timeline/632540354466758769</td>
+						<td width="80%">http://host.docker.internal:8000/api/children/childId/timeline (date)</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">GET</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/timeline/3201385000608438328">http://host.docker.internal:8000/api/children/childId/timeline/3201385000608438328</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/children/childId/timeline/3201385000608438328</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -3752,12 +2655,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/weekly-summaries/5092717547986417417">http://host.docker.internal:8000/api/children/childId/weekly-summaries/5092717547986417417</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/weekly-summaries/1720300446417307154">http://host.docker.internal:8000/api/children/childId/weekly-summaries/1720300446417307154</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/children/childId/weekly-summaries/5092717547986417417</td>
+						<td width="80%">http://host.docker.internal:8000/api/children/childId/weekly-summaries/1720300446417307154</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -3896,6 +2799,42 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/daily-plans?from=&amp;to=&amp;roomId=%00">http://host.docker.internal:8000/api/daily-plans?from=&amp;to=&amp;roomId=%00</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/daily-plans (from,roomId,to)</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">GET</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
 						<td width="80%"><a href="http://host.docker.internal:8000/api/daily-plans?from=http%3A%2F%2Fwww.google.com%2F&amp;to=&amp;roomId=sala_1a">http://host.docker.internal:8000/api/daily-plans?from=http%3A%2F%2Fwww.google.com%2F&amp;to=&amp;roomId=sala_1a</a></td>
 					</tr>
 					<tr>
@@ -3932,12 +2871,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/daily-plans/3084579144744194740">http://host.docker.internal:8000/api/daily-plans/3084579144744194740</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/daily-plans/5292573723693365296">http://host.docker.internal:8000/api/daily-plans/5292573723693365296</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/daily-plans/3084579144744194740</td>
+						<td width="80%">http://host.docker.internal:8000/api/daily-plans/5292573723693365296</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -4076,12 +3015,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/family-groups/1455455987057790574">http://host.docker.internal:8000/api/family-groups/1455455987057790574</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/family-groups/2075539112796089095">http://host.docker.internal:8000/api/family-groups/2075539112796089095</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/family-groups/1455455987057790574</td>
+						<td width="80%">http://host.docker.internal:8000/api/family-groups/2075539112796089095</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -4184,12 +3123,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/family-groups/groupId/6852489640364155774">http://host.docker.internal:8000/api/family-groups/groupId/6852489640364155774</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/family-groups/groupId/963138246832616599">http://host.docker.internal:8000/api/family-groups/groupId/963138246832616599</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/family-groups/groupId/6852489640364155774</td>
+						<td width="80%">http://host.docker.internal:8000/api/family-groups/groupId/963138246832616599</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -4328,12 +3267,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/lost-objects/6079643402539401682">http://host.docker.internal:8000/api/lost-objects/6079643402539401682</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/lost-objects/534147360343762440">http://host.docker.internal:8000/api/lost-objects/534147360343762440</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/lost-objects/6079643402539401682</td>
+						<td width="80%">http://host.docker.internal:8000/api/lost-objects/534147360343762440</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -4436,12 +3375,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/lost-objects/id/6485558770120583304">http://host.docker.internal:8000/api/lost-objects/id/6485558770120583304</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/lost-objects/id/2447037039476380156">http://host.docker.internal:8000/api/lost-objects/id/2447037039476380156</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/lost-objects/id/6485558770120583304</td>
+						<td width="80%">http://host.docker.internal:8000/api/lost-objects/id/2447037039476380156</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -4544,12 +3483,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/media/1732299014297123018">http://host.docker.internal:8000/api/media/1732299014297123018</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/media/5960610929014424830">http://host.docker.internal:8000/api/media/5960610929014424830</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/media/1732299014297123018</td>
+						<td width="80%">http://host.docker.internal:8000/api/media/5960610929014424830</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -4724,12 +3663,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/notifications/5233603165823402228">http://host.docker.internal:8000/api/notifications/5233603165823402228</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/notifications/4464718826114182272">http://host.docker.internal:8000/api/notifications/4464718826114182272</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/notifications/5233603165823402228</td>
+						<td width="80%">http://host.docker.internal:8000/api/notifications/4464718826114182272</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -4832,12 +3771,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/parents/2502835783183963167">http://host.docker.internal:8000/api/parents/2502835783183963167</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/parents/127851823971887077">http://host.docker.internal:8000/api/parents/127851823971887077</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/parents/2502835783183963167</td>
+						<td width="80%">http://host.docker.internal:8000/api/parents/127851823971887077</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -4940,12 +3879,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/parents/me/4779493452421892810">http://host.docker.internal:8000/api/parents/me/4779493452421892810</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/parents/me/7273880617996333442">http://host.docker.internal:8000/api/parents/me/7273880617996333442</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/parents/me/4779493452421892810</td>
+						<td width="80%">http://host.docker.internal:8000/api/parents/me/7273880617996333442</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -5048,12 +3987,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/rooms/4281335029396580370">http://host.docker.internal:8000/api/rooms/4281335029396580370</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/rooms/664718251496408020">http://host.docker.internal:8000/api/rooms/664718251496408020</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/rooms/4281335029396580370</td>
+						<td width="80%">http://host.docker.internal:8000/api/rooms/664718251496408020</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -5156,12 +4095,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/rooms/roomId/1944906609473728558">http://host.docker.internal:8000/api/rooms/roomId/1944906609473728558</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/rooms/roomId/2519481591558765064">http://host.docker.internal:8000/api/rooms/roomId/2519481591558765064</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/rooms/roomId/1944906609473728558</td>
+						<td width="80%">http://host.docker.internal:8000/api/rooms/roomId/2519481591558765064</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -5300,12 +4239,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/staff/6731598269561336317">http://host.docker.internal:8000/api/staff/6731598269561336317</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/staff/1023439211568774342">http://host.docker.internal:8000/api/staff/1023439211568774342</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/staff/6731598269561336317</td>
+						<td width="80%">http://host.docker.internal:8000/api/staff/1023439211568774342</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -5336,12 +4275,48 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/suggestions/8382953933911438159">http://host.docker.internal:8000/api/suggestions/8382953933911438159</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/suggestions?status=%00&amp;category=&amp;search=ZAP">http://host.docker.internal:8000/api/suggestions?status=%00&amp;category=&amp;search=ZAP</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/suggestions/8382953933911438159</td>
+						<td width="80%">http://host.docker.internal:8000/api/suggestions (category,search,status)</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">GET</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/suggestions/5011075321460562235">http://host.docker.internal:8000/api/suggestions/5011075321460562235</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/suggestions/5011075321460562235</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -5444,12 +4419,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/suggestions/id/5338962248663856893">http://host.docker.internal:8000/api/suggestions/id/5338962248663856893</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/suggestions/id/1082579244657785329">http://host.docker.internal:8000/api/suggestions/id/1082579244657785329</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/suggestions/id/5338962248663856893</td>
+						<td width="80%">http://host.docker.internal:8000/api/suggestions/id/1082579244657785329</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -5552,12 +4527,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/5016781253608091266">http://host.docker.internal:8000/api/v1/5016781253608091266</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/5436967588354982133">http://host.docker.internal:8000/api/v1/5436967588354982133</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/5016781253608091266</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/5436967588354982133</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -5588,12 +4563,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/announcements/2855897730371058114">http://host.docker.internal:8000/api/v1/announcements/2855897730371058114</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/announcements/5418454679313479924">http://host.docker.internal:8000/api/v1/announcements/5418454679313479924</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/announcements/2855897730371058114</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/announcements/5418454679313479924</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -5696,12 +4671,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/announcements/id/637026611686155353">http://host.docker.internal:8000/api/v1/announcements/id/637026611686155353</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/announcements/id/4620485097053448396">http://host.docker.internal:8000/api/v1/announcements/id/4620485097053448396</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/announcements/id/637026611686155353</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/announcements/id/4620485097053448396</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -5804,12 +4779,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/attendance/2146477416506495186">http://host.docker.internal:8000/api/v1/attendance/2146477416506495186</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/attendance/7116962499477164486">http://host.docker.internal:8000/api/v1/attendance/7116962499477164486</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/attendance/2146477416506495186</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/attendance/7116962499477164486</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -5830,6 +4805,42 @@ td {
 						<td width="20%"
 							class="indent2">Evidence</td>
 						<td width="80%">404</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/attendance/records?childId=%00&amp;date=">http://host.docker.internal:8000/api/v1/attendance/records?childId=%00&amp;date=</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/attendance/records (childId,date)</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">GET</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -5912,12 +4923,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/auth/4721783802186410684">http://host.docker.internal:8000/api/v1/auth/4721783802186410684</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/auth/1478061613367879871">http://host.docker.internal:8000/api/v1/auth/1478061613367879871</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/auth/4721783802186410684</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/auth/1478061613367879871</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -6020,12 +5031,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/chats/6173403897808661278">http://host.docker.internal:8000/api/v1/chats/6173403897808661278</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/chats/2164404089259897502">http://host.docker.internal:8000/api/v1/chats/2164404089259897502</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/chats/6173403897808661278</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/chats/2164404089259897502</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -6128,12 +5139,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/chats/bitacora/7187304583378232130">http://host.docker.internal:8000/api/v1/chats/bitacora/7187304583378232130</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/chats/bitacora/5105426778991435060">http://host.docker.internal:8000/api/v1/chats/bitacora/5105426778991435060</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/chats/bitacora/7187304583378232130</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/chats/bitacora/5105426778991435060</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -6236,12 +5247,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/chats/bitacora/childId/2902030803332411212">http://host.docker.internal:8000/api/v1/chats/bitacora/childId/2902030803332411212</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/chats/bitacora/childId/5362007242756768976">http://host.docker.internal:8000/api/v1/chats/bitacora/childId/5362007242756768976</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/chats/bitacora/childId/2902030803332411212</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/chats/bitacora/childId/5362007242756768976</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -6344,12 +5355,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/chats/staff-global/7867131384390791497">http://host.docker.internal:8000/api/v1/chats/staff-global/7867131384390791497</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/chats/staff-global/2973872925241365659">http://host.docker.internal:8000/api/v1/chats/staff-global/2973872925241365659</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/chats/staff-global/7867131384390791497</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/chats/staff-global/2973872925241365659</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -6380,12 +5391,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/chats/workers/7960773740824110307">http://host.docker.internal:8000/api/v1/chats/workers/7960773740824110307</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/chats/workers/6780404332640219442">http://host.docker.internal:8000/api/v1/chats/workers/6780404332640219442</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/chats/workers/7960773740824110307</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/chats/workers/6780404332640219442</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -6488,12 +5499,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/chats/workers/chatId/5566427183148809937">http://host.docker.internal:8000/api/v1/chats/workers/chatId/5566427183148809937</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/chats/workers/chatId/1123737067657390482">http://host.docker.internal:8000/api/v1/chats/workers/chatId/1123737067657390482</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/chats/workers/chatId/5566427183148809937</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/chats/workers/chatId/1123737067657390482</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -6596,12 +5607,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/1099101861548685655">http://host.docker.internal:8000/api/v1/children/1099101861548685655</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/7045244853548737267">http://host.docker.internal:8000/api/v1/children/7045244853548737267</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/children/1099101861548685655</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/children/7045244853548737267</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -6704,12 +5715,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/2852037287125215062">http://host.docker.internal:8000/api/v1/children/childId/2852037287125215062</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/7583556957301154843">http://host.docker.internal:8000/api/v1/children/childId/7583556957301154843</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/2852037287125215062</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/7583556957301154843</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -6848,12 +5859,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/daily-logs/6595466696239549059">http://host.docker.internal:8000/api/v1/children/childId/daily-logs/6595466696239549059</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/daily-logs/1165225940108674257">http://host.docker.internal:8000/api/v1/children/childId/daily-logs/1165225940108674257</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/daily-logs/6595466696239549059</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/daily-logs/1165225940108674257</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -6956,12 +5967,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/daily-logs/fecha/2813765072226216142">http://host.docker.internal:8000/api/v1/children/childId/daily-logs/fecha/2813765072226216142</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/daily-logs/fecha/3169233302889545445">http://host.docker.internal:8000/api/v1/children/childId/daily-logs/fecha/3169233302889545445</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/daily-logs/fecha/2813765072226216142</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/daily-logs/fecha/3169233302889545445</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -7064,12 +6075,48 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/timeline/1592033738472436123">http://host.docker.internal:8000/api/v1/children/childId/timeline/1592033738472436123</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/timeline?date=%00">http://host.docker.internal:8000/api/v1/children/childId/timeline?date=%00</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/timeline/1592033738472436123</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/timeline (date)</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">GET</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/timeline/1130441072844315581">http://host.docker.internal:8000/api/v1/children/childId/timeline/1130441072844315581</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/timeline/1130441072844315581</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -7208,12 +6255,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/weekly-summaries/1111376469220160267">http://host.docker.internal:8000/api/v1/children/childId/weekly-summaries/1111376469220160267</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/weekly-summaries/4017057447410732471">http://host.docker.internal:8000/api/v1/children/childId/weekly-summaries/4017057447410732471</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/weekly-summaries/1111376469220160267</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/weekly-summaries/4017057447410732471</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -7352,6 +6399,42 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/daily-plans?from=&amp;to=&amp;roomId=%00">http://host.docker.internal:8000/api/v1/daily-plans?from=&amp;to=&amp;roomId=%00</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/daily-plans (from,roomId,to)</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">GET</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
 						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/daily-plans?from=http%3A%2F%2Fwww.google.com%2F&amp;to=&amp;roomId=sala_1a">http://host.docker.internal:8000/api/v1/daily-plans?from=http%3A%2F%2Fwww.google.com%2F&amp;to=&amp;roomId=sala_1a</a></td>
 					</tr>
 					<tr>
@@ -7388,12 +6471,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/daily-plans/1650836023025200443">http://host.docker.internal:8000/api/v1/daily-plans/1650836023025200443</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/daily-plans/5546715270234843987">http://host.docker.internal:8000/api/v1/daily-plans/5546715270234843987</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/daily-plans/1650836023025200443</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/daily-plans/5546715270234843987</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -7532,12 +6615,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/family-groups/1486896968649455589">http://host.docker.internal:8000/api/v1/family-groups/1486896968649455589</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/family-groups/5788795646549137926">http://host.docker.internal:8000/api/v1/family-groups/5788795646549137926</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/family-groups/1486896968649455589</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/family-groups/5788795646549137926</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -7640,12 +6723,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/family-groups/groupId/4778779223449990650">http://host.docker.internal:8000/api/v1/family-groups/groupId/4778779223449990650</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/family-groups/groupId/6928759636834522563">http://host.docker.internal:8000/api/v1/family-groups/groupId/6928759636834522563</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/family-groups/groupId/4778779223449990650</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/family-groups/groupId/6928759636834522563</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -7784,12 +6867,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/lost-objects/2248028430316364217">http://host.docker.internal:8000/api/v1/lost-objects/2248028430316364217</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/lost-objects/3072255934317393189">http://host.docker.internal:8000/api/v1/lost-objects/3072255934317393189</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/lost-objects/2248028430316364217</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/lost-objects/3072255934317393189</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -7892,12 +6975,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/lost-objects/id/8643278142697564481">http://host.docker.internal:8000/api/v1/lost-objects/id/8643278142697564481</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/lost-objects/id/753267409492173888">http://host.docker.internal:8000/api/v1/lost-objects/id/753267409492173888</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/lost-objects/id/8643278142697564481</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/lost-objects/id/753267409492173888</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -8000,12 +7083,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/media/116295775100891">http://host.docker.internal:8000/api/v1/media/116295775100891</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/media/5703335302762228354">http://host.docker.internal:8000/api/v1/media/5703335302762228354</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/media/116295775100891</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/media/5703335302762228354</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -8180,12 +7263,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/notifications/4770256819115634780">http://host.docker.internal:8000/api/v1/notifications/4770256819115634780</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/notifications/4124443428991745684">http://host.docker.internal:8000/api/v1/notifications/4124443428991745684</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/notifications/4770256819115634780</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/notifications/4124443428991745684</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -8288,12 +7371,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/parents/3281725441951061415">http://host.docker.internal:8000/api/v1/parents/3281725441951061415</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/parents/2020010584282724657">http://host.docker.internal:8000/api/v1/parents/2020010584282724657</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/parents/3281725441951061415</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/parents/2020010584282724657</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -8396,12 +7479,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/parents/me/999112244615560833">http://host.docker.internal:8000/api/v1/parents/me/999112244615560833</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/parents/me/7347862716445791433">http://host.docker.internal:8000/api/v1/parents/me/7347862716445791433</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/parents/me/999112244615560833</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/parents/me/7347862716445791433</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -8504,12 +7587,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/rooms/7336698116211358596">http://host.docker.internal:8000/api/v1/rooms/7336698116211358596</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/rooms/9156025373920310597">http://host.docker.internal:8000/api/v1/rooms/9156025373920310597</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/rooms/7336698116211358596</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/rooms/9156025373920310597</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -8612,12 +7695,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/rooms/roomId/378780531952987386">http://host.docker.internal:8000/api/v1/rooms/roomId/378780531952987386</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/rooms/roomId/2591483879579228487">http://host.docker.internal:8000/api/v1/rooms/roomId/2591483879579228487</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/rooms/roomId/378780531952987386</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/rooms/roomId/2591483879579228487</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -8756,12 +7839,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/staff/2277962677191598058">http://host.docker.internal:8000/api/v1/staff/2277962677191598058</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/staff/1214247343375247942">http://host.docker.internal:8000/api/v1/staff/1214247343375247942</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/staff/2277962677191598058</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/staff/1214247343375247942</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -8792,12 +7875,48 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/suggestions/6904088205744700115">http://host.docker.internal:8000/api/v1/suggestions/6904088205744700115</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/suggestions?status=%00&amp;category=&amp;search=ZAP">http://host.docker.internal:8000/api/v1/suggestions?status=%00&amp;category=&amp;search=ZAP</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/suggestions/6904088205744700115</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/suggestions (category,search,status)</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">GET</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/suggestions/8266510146035232408">http://host.docker.internal:8000/api/v1/suggestions/8266510146035232408</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/suggestions/8266510146035232408</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -8900,12 +8019,12 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/suggestions/id/6039864149263310248">http://host.docker.internal:8000/api/v1/suggestions/id/6039864149263310248</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/suggestions/id/2499959814294535296">http://host.docker.internal:8000/api/v1/suggestions/id/2499959814294535296</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/suggestions/id/6039864149263310248</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/suggestions/id/2499959814294535296</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -8926,6 +8045,78 @@ td {
 						<td width="20%"
 							class="indent2">Evidence</td>
 						<td width="80%">404</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/weekly-observations?weekKey=%00">http://host.docker.internal:8000/api/v1/weekly-observations?weekKey=%00</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/weekly-observations (weekKey)</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">GET</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/weekly-observations?weekKey=%00">http://host.docker.internal:8000/api/weekly-observations?weekKey=%00</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/weekly-observations (weekKey)</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">GET</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -10005,7 +9196,7 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent2">Evidence</td>
-						<td width="80%">429</td>
+						<td width="80%">403</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -10304,6 +9495,42 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/chats/staff-global/messages">http://host.docker.internal:8000/api/chats/staff-global/messages</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/chats/staff-global/messages ()({message})</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">POST</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
 						<td width="80%"><a href="http://host.docker.internal:8000/api/chats/workers/chatId/messages">http://host.docker.internal:8000/api/chats/workers/chatId/messages</a></td>
 					</tr>
 					<tr>
@@ -10546,6 +9773,78 @@ td {
 						<td width="20%"
 							class="indent2">Evidence</td>
 						<td width="80%">422</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/timeline/events">http://host.docker.internal:8000/api/children/childId/timeline/events</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/children/childId/timeline/events ()({time,text,iconType})</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">POST</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/timeline/events/">http://host.docker.internal:8000/api/children/childId/timeline/events/</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/children/childId/timeline/events/ ()({time,text,iconType})</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">POST</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -10833,6 +10132,42 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/lost-objects">http://host.docker.internal:8000/api/lost-objects</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/lost-objects ()({title,description,category,location,room,imageUri})</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">POST</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
 						<td width="80%">422</td>
 					</tr>
 					<tr>
@@ -10906,6 +10241,42 @@ td {
 						<td width="20%"
 							class="indent2">Evidence</td>
 						<td width="80%">422</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/notifications/device-token">http://host.docker.internal:8000/api/notifications/device-token</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/notifications/device-token ()({deviceToken,platform})</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">POST</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -11409,7 +10780,7 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent2">Evidence</td>
-						<td width="80%">429</td>
+						<td width="80%">403</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -11708,6 +11079,42 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/chats/staff-global/messages">http://host.docker.internal:8000/api/v1/chats/staff-global/messages</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/chats/staff-global/messages ()({message})</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">POST</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
 						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/chats/workers/chatId/messages">http://host.docker.internal:8000/api/v1/chats/workers/chatId/messages</a></td>
 					</tr>
 					<tr>
@@ -11950,6 +11357,78 @@ td {
 						<td width="20%"
 							class="indent2">Evidence</td>
 						<td width="80%">422</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/timeline/events">http://host.docker.internal:8000/api/v1/children/childId/timeline/events</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/timeline/events ()({time,text,iconType})</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">POST</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/timeline/events/">http://host.docker.internal:8000/api/v1/children/childId/timeline/events/</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/timeline/events/ ()({time,text,iconType})</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">POST</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -12237,6 +11716,42 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/lost-objects">http://host.docker.internal:8000/api/v1/lost-objects</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/lost-objects ()({title,description,category,location,room,imageUri})</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">POST</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
 						<td width="80%">422</td>
 					</tr>
 					<tr>
@@ -12310,6 +11825,42 @@ td {
 						<td width="20%"
 							class="indent2">Evidence</td>
 						<td width="80%">422</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/notifications/device-token">http://host.docker.internal:8000/api/v1/notifications/device-token</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/notifications/device-token ()({deviceToken,platform})</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">POST</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -12680,6 +12231,78 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/full-profile">http://host.docker.internal:8000/api/children/childId/full-profile</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/children/childId/full-profile ()({pediatrician,pediatricianPhone,medicalNotes,habitsAndPedagogicalNotes,emergencyPhone,authorizedPickups:[],medicalCertificateUri,medicalCertificateName,medicalCertificateDate})</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">PUT</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/children/childId/full-profile/">http://host.docker.internal:8000/api/children/childId/full-profile/</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/children/childId/full-profile/ ()({pediatrician,pediatricianPhone,medicalNotes,habitsAndPedagogicalNotes,emergencyPhone,authorizedPickups:[],medicalCertificateUri,medicalCertificateName,medicalCertificateDate})</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">PUT</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
 						<td width="80%"><a href="http://host.docker.internal:8000/api/daily-plans/fecha">http://host.docker.internal:8000/api/daily-plans/fecha</a></td>
 					</tr>
 					<tr>
@@ -13004,6 +12627,78 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/full-profile">http://host.docker.internal:8000/api/v1/children/childId/full-profile</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/full-profile ()({pediatrician,pediatricianPhone,medicalNotes,habitsAndPedagogicalNotes,emergencyPhone,authorizedPickups:[],medicalCertificateUri,medicalCertificateName,medicalCertificateDate})</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">PUT</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/full-profile/">http://host.docker.internal:8000/api/v1/children/childId/full-profile/</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/full-profile/ ()({pediatrician,pediatricianPhone,medicalNotes,habitsAndPedagogicalNotes,emergencyPhone,authorizedPickups:[],medicalCertificateUri,medicalCertificateName,medicalCertificateDate})</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">PUT</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">400</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
 						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/daily-plans/fecha">http://host.docker.internal:8000/api/v1/daily-plans/fecha</a></td>
 					</tr>
 					<tr>
@@ -13077,7 +12772,7 @@ td {
 					<td width="20%">Instances</td>
 					
 					
-					<td width="80%">315</td>
+					<td width="80%">339</td>
 					
 				</tr>
 				<tr>
@@ -13302,7 +12997,7 @@ td {
 						<td width="20%"
 							class="indent2">Other Info</td>
 						<td width="80%">
-							<div>The following pattern was used: \bSELECT\b and was detected 3 times, the first in likely comment: &quot;&lt;!--&quot;,&quot;time&quot;:&quot;11:47 PM&quot;,&quot;isOutgoing&quot;:true},{&quot;id&quot;:&quot;gm_2278903a&quot;,&quot;senderId&quot;:&quot;usr_educadora_laura&quot;,&quot;senderName&quot;:&quot;Laura Gómez&quot;,&quot;mess&quot;, see evidence field for the suspicious comment/snippet.</div>
+							<div>The following pattern was used: \bSELECT\b and was detected 4 times, the first in likely comment: &quot;&lt;!--&quot;,&quot;time&quot;:&quot;11:47 PM&quot;,&quot;isOutgoing&quot;:true},{&quot;id&quot;:&quot;gm_2278903a&quot;,&quot;senderId&quot;:&quot;usr_educadora_laura&quot;,&quot;senderName&quot;:&quot;Laura Gómez&quot;,&quot;mess&quot;, see evidence field for the suspicious comment/snippet.</div>
 							
 						</td>
 					</tr>
@@ -13341,7 +13036,7 @@ td {
 						<td width="20%"
 							class="indent2">Other Info</td>
 						<td width="80%">
-							<div>The following pattern was used: \bSELECT\b and was detected 3 times, the first in likely comment: &quot;&lt;!--&quot;,&quot;time&quot;:&quot;11:47 PM&quot;,&quot;isOutgoing&quot;:true},{&quot;id&quot;:&quot;gm_2278903a&quot;,&quot;senderId&quot;:&quot;usr_educadora_laura&quot;,&quot;senderName&quot;:&quot;Laura Gómez&quot;,&quot;mess&quot;, see evidence field for the suspicious comment/snippet.</div>
+							<div>The following pattern was used: \bSELECT\b and was detected 4 times, the first in likely comment: &quot;&lt;!--&quot;,&quot;time&quot;:&quot;11:47 PM&quot;,&quot;isOutgoing&quot;:true},{&quot;id&quot;:&quot;gm_2278903a&quot;,&quot;senderId&quot;:&quot;usr_educadora_laura&quot;,&quot;senderName&quot;:&quot;Laura Gómez&quot;,&quot;mess&quot;, see evidence field for the suspicious comment/snippet.</div>
 							
 						</td>
 					</tr>
@@ -13402,12 +13097,84 @@ td {
 					<tr>
 						<td width="20%"
 							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/auth/me">http://host.docker.internal:8000/api/v1/auth/me</a></td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/rooms/roomId">http://host.docker.internal:8000/api/rooms/roomId</a></td>
 					</tr>
 					<tr>
 						<td width="20%"
 							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/auth/me</td>
+						<td width="80%">http://host.docker.internal:8000/api/rooms/roomId</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">GET</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">authorization:</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/rooms/roomId/children?isPresent=">http://host.docker.internal:8000/api/rooms/roomId/children?isPresent=</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/rooms/roomId/children (isPresent)</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Method</td>
+						<td width="80%">GET</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Parameter</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Attack</td>
+						<td width="80%"></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Evidence</td>
+						<td width="80%">authorization:</td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Other Info</td>
+						<td width="80%"></td>
+					</tr>
+				
+					<tr>
+						<td width="20%"
+							class="indent1">URL</td>
+						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/rooms/roomId">http://host.docker.internal:8000/api/v1/rooms/roomId</a></td>
+					</tr>
+					<tr>
+						<td width="20%"
+							class="indent2">Node Name</td>
+						<td width="80%">http://host.docker.internal:8000/api/v1/rooms/roomId</td>
 					</tr>
 					<tr>
 						<td width="20%"
@@ -13500,78 +13267,6 @@ td {
 						<td width="20%"
 							class="indent2">Evidence</td>
 						<td width="80%">authorization:</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/auth/register">http://host.docker.internal:8000/api/v1/auth/register</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/auth/register ()({email,password,role,displayName,phone,codigoProfesor})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">POST</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">authorization:</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Other Info</td>
-						<td width="80%"></td>
-					</tr>
-				
-					<tr>
-						<td width="20%"
-							class="indent1">URL</td>
-						<td width="80%"><a href="http://host.docker.internal:8000/api/v1/children/childId/full-profile">http://host.docker.internal:8000/api/v1/children/childId/full-profile</a></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Node Name</td>
-						<td width="80%">http://host.docker.internal:8000/api/v1/children/childId/full-profile ()({pediatrician,pediatricianPhone,medicalNotes,habitsAndPedagogicalNotes,emergencyPhone,authorizedPickups:[],medicalCertificateUri,medicalCertificateName,medicalCertificateDate})</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Method</td>
-						<td width="80%">PUT</td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Parameter</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Attack</td>
-						<td width="80%"></td>
-					</tr>
-					<tr>
-						<td width="20%"
-							class="indent2">Evidence</td>
-						<td width="80%">PUT </td>
 					</tr>
 					<tr>
 						<td width="20%"
