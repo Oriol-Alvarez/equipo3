@@ -25,7 +25,11 @@ data class Child(
     val arrivalTime: String? = null,
     val allergyAlert: String? = null,
     val avatarInitials: String = "MG",
-    val avatarBgColor: Long = 0xFF64B5F6
+    val avatarBgColor: Long = 0xFF64B5F6,
+    /** dd/MM/yyyy; vacío si no se conoce. */
+    val birthDate: String = "",
+    /** Id de la sala en el servidor (p. ej. "sala_2b"); roomText es el nombre para mostrar. */
+    val roomId: String = ""
 )
 
 data class LostItem(
@@ -1280,6 +1284,8 @@ data class ChildFullProfile(
 )
 
 data class WeeklySummary(
+    /** Lunes de la semana (YYYY-MM-DD) en los datos del servidor; vacío en los de ejemplo. */
+    val id: String = "",
     val weekLabel: String = "Semana actual",
     val weekRangeText: String = "Semana del 22 al 29 de Septiembre, 2026",
     val attendanceDaysCount: Int = 5,

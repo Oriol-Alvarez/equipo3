@@ -5,6 +5,7 @@ import android.content.Context
 import com.example.etapa1.data.export.AndroidLogSheetExporter
 import com.example.etapa1.data.export.LogSheetExporter
 import com.example.etapa1.data.remote.NetworkClient
+import com.example.etapa1.data.remote.SubidaArchivos
 import com.example.etapa1.data.remote.TokenManager
 import com.example.etapa1.data.repository.AnnouncementRepository
 import com.example.etapa1.data.repository.AttendanceRepository
@@ -64,6 +65,7 @@ open class AppContainer(val context: Context) {
     val tokenManager by lazy { TokenManager(context) }
     val offlineStore by lazy { OfflineStore(context) }
     val api by lazy { NetworkClient.createApi(tokenManager) }
+    val subidaArchivos by lazy { SubidaArchivos(api, context) }
     val chatConexion: ChatConexion by lazy {
         ChatConexion(NetworkClient.createOkHttpClient(tokenManager))
     }
@@ -86,17 +88,17 @@ open class AppContainer(val context: Context) {
     // Repositorios de Red conectados a FastAPI
     private val networkAuthRepository by lazy { NetworkAuthRepositoryImpl(api, tokenManager) }
     private val networkRoomRepository by lazy { NetworkRoomRepositoryImpl(api) }
-    private val networkChildRepository by lazy { NetworkChildRepositoryImpl(api) }
+    private val networkChildRepository by lazy { NetworkChildRepositoryImpl(api, tokenManager) }
     private val networkAttendanceRepository by lazy { NetworkAttendanceRepositoryImpl(api) }
     private val networkAnnouncementRepository by lazy { NetworkAnnouncementRepositoryImpl(api) }
     private val networkSuggestionsRepository by lazy { NetworkSuggestionsRepositoryImpl(api) }
-    private val networkLostObjectsRepository by lazy { NetworkLostObjectsRepositoryImpl(api) }
+    private val networkLostObjectsRepository by lazy { NetworkLostObjectsRepositoryImpl(api, subidaArchivos) }
     private val networkFamilyGroupsRepository by lazy { NetworkFamilyGroupsRepositoryImpl(api, tokenManager, context, chatConexion) }
     private val networkWeeklyObservationsRepository by lazy { NetworkWeeklyObservationsRepositoryImpl(api) }
     private val networkDailyPlanRepository by lazy { NetworkDailyPlanRepositoryImpl(api) }
     private val networkDailyLogRepository by lazy { NetworkDailyLogRepositoryImpl(api) }
     private val networkMessagesRepository by lazy { NetworkMessagesRepositoryImpl(api, tokenManager, chatConexion) }
-    private val networkBitacoraRepository by lazy { NetworkBitacoraRepositoryImpl(api, tokenManager, chatConexion) }
+    private val networkBitacoraRepository by lazy { NetworkBitacoraRepositoryImpl(api, tokenManager, chatConexion, subidaArchivos) }
 
     // Repositorios expuestos a la aplicación (conmutación transparente según `useMocks`)
     open val authRepository: AuthRepository
@@ -147,6 +149,58 @@ open class AppContainer(val context: Context) {
 
     fun desconectarChat() {
         chatConexion.desconectar()
+    }
+
+    /**
+     * Al iniciar sesión: registra este teléfono para recibir notificaciones de la cuenta.
+     * Solo funciona si la app se compiló con google-services.json (Firebase configurado).
+     */
+    fun registrarTelefonoParaPush() {
+        if (useMocks) return
+        try {
+            if (com.google.firebase.FirebaseApp.getApps(context).isEmpty()) return
+            com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnCompleteListener { tarea ->
+                val telefono = tarea.result
+                if (tarea.isSuccessful && !telefono.isNullOrBlank()) {
+                    com.example.etapa1.data.remote.PushNotificationHelper.registerDeviceToken(api, tokenManager, telefono)
+                }
+            }
+        } catch (_: Exception) {
+            // Firebase sin configurar: la app funciona igual, solo sin notificaciones push
+        }
+    }
+
+    /** Al iniciar sesión: pide al servidor los datos del usuario que acaba de entrar. */
+    fun recargarTodo() {
+        if (useMocks) return
+        roomRepository.refresh()
+        childRepository.refresh()
+        attendanceRepository.refresh()
+        announcementRepository.refresh()
+        suggestionsRepository.refresh()
+        lostObjectsRepository.refresh()
+        messagesRepository.refresh()
+        familyGroupsRepository.refresh()
+        weeklyObservationsRepository.refresh()
+        dailyPlanRepository.refresh()
+        dailyLogRepository.refresh()
+    }
+
+    /** Al cerrar sesión: borra todo lo cargado para que el siguiente usuario no vea datos ajenos. */
+    fun limpiarTodo() {
+        if (useMocks) return
+        roomRepository.limpiar()
+        childRepository.limpiar()
+        attendanceRepository.limpiar()
+        announcementRepository.limpiar()
+        suggestionsRepository.limpiar()
+        lostObjectsRepository.limpiar()
+        messagesRepository.limpiar()
+        familyGroupsRepository.limpiar()
+        weeklyObservationsRepository.limpiar()
+        dailyPlanRepository.limpiar()
+        dailyLogRepository.limpiar()
+        bitacoraRepository.limpiar()
     }
 
     val logSheetExporter: LogSheetExporter by lazy { AndroidLogSheetExporter(context) }

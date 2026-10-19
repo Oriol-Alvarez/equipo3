@@ -33,16 +33,33 @@ class NetworkDailyPlanRepositoryImpl(
     /** Días guardados desde la app mientras corre una recarga; no se pisan con datos viejos. */
     private val dirtyDates = mutableSetOf<SimpleDate>()
 
-    init {
+    /** Sala cuya planeación se muestra; null hasta que una pantalla la abre. */
+    @Volatile
+    private var salaActual: String? = null
+
+    override fun abrirSala(roomId: String) {
+        if (roomId.isBlank()) return
+        if (salaActual != roomId) {
+            salaActual = roomId
+            _plans.value = emptyList()
+            synchronized(dirtyDates) { dirtyDates.clear() }
+        }
         refresh()
     }
 
+    override fun limpiar() {
+        salaActual = null
+        _plans.value = emptyList()
+    }
+
     override fun refresh() {
+        val sala = salaActual ?: return
         val today = SimpleDate.today()
         synchronized(dirtyDates) { dirtyDates.clear() }
-        RemoteSync.launch("Cargar planeación") {
-            api.getDailyPlans(from = today.plusDays(-14).toIso(), to = today.plusDays(30).toIso())
+        RemoteSync.launch("Cargar planeación de $sala") {
+            api.getDailyPlans(from = today.plusDays(-14).toIso(), to = today.plusDays(30).toIso(), roomId = sala)
                 .bodyOrLog("GET /daily-plans")
+                ?.takeIf { salaActual == sala }
                 ?.let { list ->
                     val loaded = list.mapNotNull { it.toDomain() }
                     _plans.update { current ->
@@ -56,6 +73,7 @@ class NetworkDailyPlanRepositoryImpl(
     override fun planFor(date: SimpleDate): DailyPlan? = _plans.value.find { it.date == date }
 
     override fun savePlan(plan: DailyPlan) {
+        val sala = salaActual ?: return
         val previous = planFor(plan.date)
         synchronized(dirtyDates) { dirtyDates.add(plan.date) }
         _plans.update { list -> list.filter { it.date != plan.date } + plan }
@@ -63,7 +81,8 @@ class NetworkDailyPlanRepositoryImpl(
         writes.enqueue("Guardar planeación") {
             val body = SaveDailyPlanDto(
                 menu = DailyMenuDto(plan.menu.breakfast, plan.menu.snack, plan.menu.lunch, plan.menu.notes),
-                activities = plan.activities.map { PlannedActivityDto(it.time, it.title) }
+                activities = plan.activities.map { PlannedActivityDto(it.time, it.title) },
+                roomId = sala
             )
             val saved = api.saveDailyPlan(plan.date.toIso(), body).bodyOrLog("PUT /daily-plans")?.toDomain()
             _plans.update { list ->

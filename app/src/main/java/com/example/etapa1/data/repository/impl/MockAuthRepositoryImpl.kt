@@ -10,7 +10,7 @@ class MockAuthRepositoryImpl : AuthRepository {
     private val _currentUserRole = MutableStateFlow(UserRole.EDUCADORA)
     override val currentUserRole: StateFlow<UserRole> = _currentUserRole.asStateFlow()
 
-    override fun login(email: String, password: String, role: UserRole): Result<UserRole> {
+    override suspend fun login(email: String, password: String, role: UserRole): Result<UserRole> {
         val resolvedRole = if (email.contains("familiar", ignoreCase = true)) {
             UserRole.FAMILIAR
         } else {

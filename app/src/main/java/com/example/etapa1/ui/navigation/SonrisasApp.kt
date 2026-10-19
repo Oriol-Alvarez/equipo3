@@ -44,12 +44,15 @@ fun SonrisasApp() {
 
             androidx.compose.runtime.LaunchedEffect(actual.sesion) {
                 app?.container?.asegurarConexionChat()
-                app?.container?.childRepository?.refresh()
+                // Datos del usuario que acaba de entrar (no los de una sesión anterior)
+                app?.container?.recargarTodo()
+                app?.container?.registrarTelefonoParaPush()
             }
 
             LaunchedEffect(Unit) {
                 app?.container?.tokenManager?.sessionExpired?.collect {
                     app.container.desconectarChat()
+                    app.container.limpiarTodo()
                     sesionViewModel.salir()
                 }
             }
@@ -58,6 +61,7 @@ fun SonrisasApp() {
                 sesion = actual.sesion,
                 onSalir = {
                     app?.container?.desconectarChat()
+                    app?.container?.limpiarTodo()
                     sesionViewModel.salir()
                 }
             )

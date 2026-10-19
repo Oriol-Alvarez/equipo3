@@ -50,7 +50,7 @@ class FamilyGroupsViewModel(
         if (currentViewer == null) {
             FamilyGroupsUiState()
         } else {
-            val childrenById = (childRepository.childrenSala1A.value + childRepository.parentChildren.value)
+            val childrenById = (childRepository.childrenOfRoom.value + childRepository.parentChildren.value)
                 .associateBy { it.id }
             FamilyGroupsUiState(
                 viewer = currentViewer,

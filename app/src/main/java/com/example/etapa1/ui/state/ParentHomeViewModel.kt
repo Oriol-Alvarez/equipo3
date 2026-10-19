@@ -6,12 +6,13 @@ import com.example.etapa1.data.repository.ChildRepository
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.ChildFullProfile
 import com.example.etapa1.model.DailyBitacora
-import com.example.etapa1.model.MockDataRepository
+import com.example.etapa1.model.SinDatos
 import com.example.etapa1.model.WeeklySummary
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -35,20 +36,23 @@ class ParentHomeViewModel(
 
     private val defaultChild = (initialChild?.let { childRepository.getChildById(it.id) ?: it })
         ?: childRepository.parentChildren.value.firstOrNull()
-        ?: MockDataRepository.mateoGarcia
-    private val defaultWeeklySummaries = childRepository.getWeeklySummariesForChild(defaultChild)
+        ?: SinDatos.nino
 
-    private val _uiState = MutableStateFlow(
-        ParentHomeUiState(
-            selectedChild = defaultChild,
-            allChildren = childRepository.parentChildren.value,
-            fullProfile = childRepository.getChildFullProfile(defaultChild),
-            dailyBitacoras = childRepository.getDailyBitacorasForChild(defaultChild),
-            weeklySummaries = defaultWeeklySummaries,
-            weeklySummary = defaultWeeklySummaries.firstOrNull() ?: childRepository.getWeeklySummaryForChild(defaultChild)
-        )
-    )
+    private val _uiState = MutableStateFlow(estadoPara(defaultChild, childRepository.parentChildren.value))
     val uiState: StateFlow<ParentHomeUiState> = _uiState.asStateFlow()
+
+    /** Arma el estado del niño con lo que ya está cargado (el repositorio pide lo que falte). */
+    private fun estadoPara(child: Child, children: List<Child>): ParentHomeUiState {
+        val summaries = if (child.id.isEmpty()) emptyList() else childRepository.getWeeklySummariesForChild(child)
+        return ParentHomeUiState(
+            selectedChild = child,
+            allChildren = children,
+            fullProfile = childRepository.getChildFullProfile(child),
+            dailyBitacoras = if (child.id.isEmpty()) emptyList() else childRepository.getDailyBitacorasForChild(child),
+            weeklySummaries = summaries,
+            weeklySummary = summaries.firstOrNull() ?: childRepository.getWeeklySummaryForChild(child)
+        )
+    }
 
     init {
         childRepository.refresh()
@@ -59,23 +63,16 @@ class ParentHomeViewModel(
         }
         try {
             launchScope?.launch {
-                childRepository.parentChildren.collect { childrenList ->
-                    if (childrenList.isNotEmpty()) {
+                // Cuando llegan los hijos o datos nuevos del servidor se vuelve a leer todo
+                combine(childRepository.parentChildren, childRepository.cambios) { hijos, _ -> hijos }
+                    .collect { childrenList ->
                         _uiState.update { current ->
-                            val updatedSelected = childrenList.find { it.id == current.selectedChild.id }
-                                ?: childrenList.first()
-                            current.copy(
-                                selectedChild = updatedSelected,
-                                allChildren = childrenList,
-                                fullProfile = childRepository.getChildFullProfile(updatedSelected),
-                                dailyBitacoras = childRepository.getDailyBitacorasForChild(updatedSelected),
-                                weeklySummaries = childRepository.getWeeklySummariesForChild(updatedSelected),
-                                weeklySummary = childRepository.getWeeklySummariesForChild(updatedSelected).firstOrNull()
-                                    ?: childRepository.getWeeklySummaryForChild(updatedSelected)
-                            )
+                            val seleccionado = childrenList.find { it.id == current.selectedChild.id }
+                                ?: childrenList.firstOrNull()
+                                ?: current.selectedChild
+                            estadoPara(seleccionado, childrenList.ifEmpty { current.allChildren })
                         }
                     }
-                }
             }
         } catch (_: Throwable) {
             // Ignorar en tests unitarios sin Dispatchers.Main
@@ -84,16 +81,8 @@ class ParentHomeViewModel(
 
     fun selectChild(child: Child) {
         val resolvedChild = childRepository.getChildById(child.id) ?: child
-        val summaries = childRepository.getWeeklySummariesForChild(resolvedChild)
-        _uiState.update {
-            it.copy(
-                selectedChild = resolvedChild,
-                fullProfile = childRepository.getChildFullProfile(resolvedChild),
-                dailyBitacoras = childRepository.getDailyBitacorasForChild(resolvedChild),
-                weeklySummaries = summaries,
-                weeklySummary = summaries.firstOrNull() ?: childRepository.getWeeklySummaryForChild(resolvedChild)
-            )
-        }
+        if (resolvedChild.id.isNotEmpty()) childRepository.cargarDetalle(resolvedChild.id)
+        _uiState.update { estadoPara(resolvedChild, it.allChildren) }
     }
 
     fun updateChildProfile(

@@ -23,7 +23,7 @@ class BirthdaysViewModel(
 ) : ViewModel() {
 
     /** Cumpleaños de la sala entre hoy y los próximos [WINDOW_DAYS] días. */
-    val roomBirthdays: StateFlow<List<UpcomingBirthday>> = childRepository.childrenSala1A
+    val roomBirthdays: StateFlow<List<UpcomingBirthday>> = childRepository.childrenOfRoom
         .map { children -> upcomingFor(children) }
         .stateIn(
             scope = viewModelScope,
@@ -42,8 +42,9 @@ class BirthdaysViewModel(
     private fun upcomingFor(children: List<Child>): List<UpcomingBirthday> {
         val currentDay = today()
         val birthdays = children.mapNotNull { child ->
-            val birthDate = SimpleDate.parse(childRepository.getChildFullProfile(child).birthDate)
-                ?: return@mapNotNull null
+            // La ficha básica ya trae la fecha; los datos de ejemplo la tienen en el expediente
+            val texto = child.birthDate.ifBlank { childRepository.getChildFullProfile(child).birthDate }
+            val birthDate = SimpleDate.parse(texto) ?: return@mapNotNull null
             BirthdayCalculator.upcoming(birthDate, child.id, child.fullName, currentDay)
         }
         return BirthdayCalculator.upcomingWithin(birthdays, WINDOW_DAYS)

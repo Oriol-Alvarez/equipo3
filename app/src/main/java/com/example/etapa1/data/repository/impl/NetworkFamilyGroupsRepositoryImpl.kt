@@ -84,6 +84,11 @@ class NetworkFamilyGroupsRepositoryImpl(
         return GroupParticipant(id = id, displayName = tokenManager.userDisplayName ?: "Yo")
     }
 
+    override fun limpiar() {
+        _groups.value = emptyList()
+        _candidates.value = emptyList()
+    }
+
     override fun refresh() {
         RemoteSync.launch("Cargar grupos") {
             val dtos = api.getFamilyGroups().bodyOrLog("GET /family-groups") ?: return@launch

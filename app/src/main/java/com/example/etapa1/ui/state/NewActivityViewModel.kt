@@ -15,10 +15,16 @@ class NewActivityViewModel(
         category: String,
         portionLabel: String,
         description: String,
-        childId: String = "mateo_garcia",
+        childId: String,
         shareWithFamilyGroups: Boolean = false
     ) {
-        bitacoraRepository.addActivityCard(time, category, portionLabel, description, childId)
+        bitacoraRepository.addActivityCard(
+            childId = childId,
+            time = time,
+            category = category,
+            portionLabel = portionLabel,
+            description = description
+        )
 
         if (shareWithFamilyGroups && familyGroupsRepository != null) {
             val participant = familyGroupsRepository.currentParticipant() ?: FamilyGroupsSampleData.EDUCADORA

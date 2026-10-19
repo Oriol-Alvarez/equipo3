@@ -12,4 +12,10 @@ interface AttendanceRepository {
         time: String,
         observations: String = ""
     ): Result<Unit>
+
+    /** Vuelve a pedir los datos al servidor. */
+    fun refresh() {}
+
+    /** Borra lo cargado al cerrar sesión. */
+    fun limpiar() {}
 }

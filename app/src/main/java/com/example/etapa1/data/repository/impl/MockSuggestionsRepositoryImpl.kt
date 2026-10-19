@@ -13,7 +13,7 @@ class MockSuggestionsRepositoryImpl : SuggestionsRepository {
     private val _suggestions = MutableStateFlow<List<ParentSuggestion>>(MockDataRepository.getInitialSuggestions())
     override val suggestions: StateFlow<List<ParentSuggestion>> = _suggestions.asStateFlow()
 
-    override fun addSuggestion(suggestion: ParentSuggestion) {
+    override fun addSuggestion(suggestion: ParentSuggestion, childId: String) {
         _suggestions.update { listOf(suggestion) + it }
     }
 

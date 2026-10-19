@@ -5,7 +5,8 @@ import kotlinx.coroutines.flow.StateFlow
 
 interface AuthRepository {
     val currentUserRole: StateFlow<UserRole>
-    fun login(email: String, password: String, role: UserRole): Result<UserRole>
+    /** Habla con el servidor: se llama desde una corrutina y no bloquea la pantalla. */
+    suspend fun login(email: String, password: String, role: UserRole): Result<UserRole>
     fun setRole(role: UserRole)
     fun logout()
 }

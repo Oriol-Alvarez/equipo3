@@ -11,15 +11,31 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
+/** Datos en memoria para el modo sin servidor (AppContainer.USE_MOCKS) y las pruebas. */
 class MockChildRepositoryImpl : ChildRepository {
-    private val _childrenSala1A = MutableStateFlow<List<Child>>(MockDataRepository.childrenSala1A)
-    override val childrenSala1A: StateFlow<List<Child>> = _childrenSala1A.asStateFlow()
+    private val _salaActual = MutableStateFlow<String?>(null)
+    override val salaActual: StateFlow<String?> = _salaActual.asStateFlow()
+
+    // Los datos de ejemplo solo tienen niños de la Sala 1A
+    private val _childrenOfRoom = MutableStateFlow<List<Child>>(MockDataRepository.childrenSala1A)
+    override val childrenOfRoom: StateFlow<List<Child>> = _childrenOfRoom.asStateFlow()
+
+    private val _cambios = MutableStateFlow(0)
+    override val cambios: StateFlow<Int> = _cambios.asStateFlow()
+
+    override fun abrirSala(roomId: String) {
+        _salaActual.value = roomId
+    }
+
+    override fun cargarDetalle(childId: String) {
+        // En memoria todo está disponible de inmediato
+    }
 
     private val _parentChildren = MutableStateFlow<List<Child>>(MockDataRepository.parentChildren)
     override val parentChildren: StateFlow<List<Child>> = _parentChildren.asStateFlow()
 
     override fun getChildById(childId: String): Child? {
-        return _childrenSala1A.value.find { it.id == childId } ?: _parentChildren.value.find { it.id == childId }
+        return _childrenOfRoom.value.find { it.id == childId } ?: _parentChildren.value.find { it.id == childId }
     }
 
     override fun updateChildAttendance(childId: String, isPresent: Boolean, time: String, statusText: String) {
@@ -36,7 +52,7 @@ class MockChildRepositoryImpl : ChildRepository {
                 }
             }
         }
-        _childrenSala1A.update(updater)
+        _childrenOfRoom.update(updater)
         _parentChildren.update(updater)
     }
 
@@ -60,7 +76,8 @@ class MockChildRepositoryImpl : ChildRepository {
     private val _weeklySummaries = mutableMapOf<String, List<WeeklySummary>>()
 
     override fun getWeeklySummaryForChild(child: Child): WeeklySummary {
-        return getWeeklySummariesForChild(child).first()
+        return getWeeklySummariesForChild(child).firstOrNull()
+            ?: MockDataRepository.getWeeklySummaryForChild(child)
     }
 
     override fun getWeeklySummariesForChild(child: Child): List<WeeklySummary> {
@@ -87,6 +104,7 @@ class MockChildRepositoryImpl : ChildRepository {
             }
         }
         _weeklySummaries[childId] = updatedList
+        _cambios.update { it + 1 }
     }
 
     override fun setWeeklySummaryReaction(
@@ -105,6 +123,7 @@ class MockChildRepositoryImpl : ChildRepository {
             }
         }
         _weeklySummaries[childId] = updatedList
+        _cambios.update { it + 1 }
     }
 
     override fun getDailyBitacorasForChild(child: Child): List<DailyBitacora> {

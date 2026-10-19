@@ -86,6 +86,7 @@ fun MessagesScreen(
         onSendMessage = viewModel::sendMessage,
         onMarkWorkerChatAsRead = viewModel::markWorkerChatAsRead,
         onMarkParentChatAsRead = viewModel::markParentChatAsRead,
+        onCreateWorkerGroup = viewModel::createWorkerGroup,
         onNavigateToHome = onNavigateToHome,
         onNavigateToChildChat = onNavigateToChildChat,
         onNavigateToMore = onNavigateToMore,
@@ -135,6 +136,8 @@ fun MessagesContent(
     onSendMessage: (chatId: String, text: String) -> Unit,
     onMarkWorkerChatAsRead: (chatId: String) -> Unit = {},
     onMarkParentChatAsRead: (childId: String) -> Unit = {},
+    /** Crea el grupo en el servidor; null = solo en pantalla (vista previa). */
+    onCreateWorkerGroup: ((title: String, memberIds: List<String>) -> Unit)? = null,
     onNavigateToHome: () -> Unit,
     onNavigateToChildChat: (Child) -> Unit,
     onNavigateToMore: () -> Unit,
@@ -395,9 +398,14 @@ fun MessagesContent(
     // Modal de Creación de Grupo
     if (showCreateGroupDialog) {
         CreateWorkerGroupDialog(
-            staffList = MockDataRepository.staffMembers,
+            staffList = uiState.staffMembers,
             onDismiss = { showCreateGroupDialog = false },
-            onCreateGroup = { groupTitle, selectedIds ->
+            onCreateGroup = create@{ groupTitle, selectedIds ->
+                if (onCreateWorkerGroup != null) {
+                    onCreateWorkerGroup(groupTitle, selectedIds)
+                    showCreateGroupDialog = false
+                    return@create
+                }
                 val newGroup = WorkerChat(
                     id = "group_${System.currentTimeMillis()}",
                     title = groupTitle,

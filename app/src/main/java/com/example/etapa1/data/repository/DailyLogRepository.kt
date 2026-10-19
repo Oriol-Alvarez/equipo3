@@ -51,4 +51,7 @@ interface DailyLogRepository {
 
     /** Vuelve a cargar los datos del servidor. En la versión en memoria no hace nada. */
     fun refresh() {}
+    
+    /** Borra lo cargado al cerrar sesión. */
+    fun limpiar() {}
 }

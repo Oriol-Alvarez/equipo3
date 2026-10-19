@@ -9,4 +9,10 @@ interface LostObjectsRepository {
     fun publishLostItem(newItem: LostItem)
     fun claimLostItem(itemId: String)
     fun deleteLostItem(itemId: String)
+
+    /** Vuelve a pedir el catálogo al servidor. */
+    fun refresh() {}
+
+    /** Borra lo cargado al cerrar sesión. */
+    fun limpiar() {}
 }

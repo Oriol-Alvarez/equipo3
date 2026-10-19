@@ -9,4 +9,7 @@ class RoomSelectionViewModel(
     private val roomRepository: RoomRepository
 ) : ViewModel() {
     val rooms: StateFlow<List<Room>> = roomRepository.rooms
+
+    /** Vuelve a pedir las salas y sus contadores de asistencia de hoy. */
+    fun recargar() = roomRepository.refresh()
 }

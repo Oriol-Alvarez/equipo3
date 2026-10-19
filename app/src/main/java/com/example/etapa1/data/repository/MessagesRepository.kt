@@ -13,4 +13,13 @@ interface MessagesRepository {
     fun sendWorkerMessage(chatId: String, text: String)
     fun markWorkerChatAsRead(chatId: String)
     fun markParentChatAsRead(childId: String)
+
+    /** Crea un grupo de conversación del personal. */
+    fun createWorkerGroup(title: String, memberIds: List<String>) {}
+
+    /** Vuelve a pedir al servidor los chats (al iniciar sesión o al recargar). */
+    fun refresh() {}
+
+    /** Borra lo cargado al cerrar sesión. */
+    fun limpiar() {}
 }

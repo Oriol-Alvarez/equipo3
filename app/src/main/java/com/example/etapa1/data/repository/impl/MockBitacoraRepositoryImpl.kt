@@ -7,17 +7,38 @@ import com.example.etapa1.model.UserRole
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
+/**
+ * Bitácora en memoria para el modo sin servidor (AppContainer.USE_MOCKS) y las pruebas.
+ * Guarda una línea de tiempo por niño; Mateo empieza con los datos de ejemplo.
+ */
 class MockBitacoraRepositoryImpl : BitacoraRepository {
-    private val _mateoTimeline = MutableStateFlow<List<TimelineItem>>(MockDataRepository.getInitialMateoTimeline())
-    override val mateoTimeline: StateFlow<List<TimelineItem>> = _mateoTimeline.asStateFlow()
+    private val porNino = mutableMapOf<String, List<TimelineItem>>(
+        MockDataRepository.mateoGarcia.id to MockDataRepository.getInitialMateoTimeline()
+    )
 
-    override fun recargar(childId: String) {
-        // En modo mock conserva el estado acumulado en memoria
+    private val _childIdActual = MutableStateFlow<String?>(null)
+    override val childIdActual: StateFlow<String?> = _childIdActual.asStateFlow()
+
+    private val _timeline = MutableStateFlow<List<TimelineItem>>(emptyList())
+    override val timeline: StateFlow<List<TimelineItem>> = _timeline.asStateFlow()
+
+    override fun abrir(childId: String) {
+        _childIdActual.value = childId
+        _timeline.value = porNino[childId].orEmpty()
+    }
+
+    private fun agregar(childId: String, item: TimelineItem) {
+        val lista = OrdenLineaDeTiempo.ordenar(porNino[childId].orEmpty() + item)
+        porNino[childId] = lista
+        if (_childIdActual.value == childId) _timeline.value = lista
     }
 
     override fun addChatMessage(
+        childId: String,
         text: String,
         isOutgoing: Boolean,
         fileUri: String?,
@@ -26,114 +47,57 @@ class MockBitacoraRepositoryImpl : BitacoraRepository {
         senderRole: UserRole?,
         date: String?
     ) {
-        val currentTime = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.US).format(java.util.Date())
-        val currentDate = date ?: "12/10/2026"
-        val message = TimelineItem.ChatMessage(
-            id = "msg_${System.currentTimeMillis()}",
-            time = currentTime,
-            date = currentDate,
-            message = text,
-            isOutgoing = isOutgoing,
-            fileUri = fileUri,
-            fileName = fileName,
-            fileMimeType = fileMimeType,
-            senderRole = senderRole
+        agregar(
+            childId,
+            TimelineItem.ChatMessage(
+                id = "msg_${System.nanoTime()}",
+                time = horaActual(),
+                date = date ?: fechaActual(),
+                message = text,
+                isOutgoing = isOutgoing,
+                fileUri = fileUri,
+                fileName = fileName,
+                fileMimeType = fileMimeType,
+                senderRole = senderRole
+            )
         )
-        _mateoTimeline.update { (it + message).ordenadaCronologicamente() }
     }
 
-    override fun addEventChip(time: String, text: String, iconType: String, date: String?) {
-        val currentDate = date ?: "12/10/2026"
-        val chip = TimelineItem.EventChip(
-            id = "chip_${System.currentTimeMillis()}",
-            time = time,
-            date = currentDate,
-            text = text,
-            iconType = iconType
+    override fun addEventChip(childId: String, time: String, text: String, iconType: String, date: String?) {
+        agregar(
+            childId,
+            TimelineItem.EventChip(
+                id = "chip_${System.nanoTime()}",
+                time = time,
+                date = date ?: fechaActual(),
+                text = text,
+                iconType = iconType
+            )
         )
-        _mateoTimeline.update { (it + chip).ordenadaCronologicamente() }
     }
 
-    override fun addActivityCard(time: String, category: String, portionLabel: String, description: String, childId: String, date: String?) {
-        val currentDate = date ?: "12/10/2026"
-        val card = TimelineItem.ActivityCard(
-            id = "act_${System.currentTimeMillis()}",
-            time = time,
-            date = currentDate,
-            category = category,
-            portionLabel = portionLabel,
-            description = description
+    override fun addActivityCard(
+        childId: String,
+        time: String,
+        category: String,
+        portionLabel: String,
+        description: String,
+        date: String?
+    ) {
+        agregar(
+            childId,
+            TimelineItem.ActivityCard(
+                id = "act_${System.nanoTime()}",
+                time = time,
+                date = date ?: fechaActual(),
+                category = category,
+                portionLabel = portionLabel,
+                description = description
+            )
         )
-        _mateoTimeline.update { (it + card).ordenadaCronologicamente() }
     }
 
-    private fun parseTimeToMinutes(timeStr: String): Int {
-        val clean = timeStr.trim().uppercase(java.util.Locale.US)
-            .replace(".", "")
-            .replace("A M", "AM")
-            .replace("P M", "PM")
-        val formats = listOf(
-            java.text.SimpleDateFormat("hh:mm a", java.util.Locale.US),
-            java.text.SimpleDateFormat("h:mm a", java.util.Locale.US),
-            java.text.SimpleDateFormat("HH:mm", java.util.Locale.US),
-            java.text.SimpleDateFormat("H:mm", java.util.Locale.US)
-        )
-        for (sdf in formats) {
-            try {
-                val date = sdf.parse(clean)
-                if (date != null) {
-                    val cal = java.util.Calendar.getInstance().apply { time = date }
-                    return cal.get(java.util.Calendar.HOUR_OF_DAY) * 60 + cal.get(java.util.Calendar.MINUTE)
-                }
-            } catch (_: Exception) {
-            }
-        }
-        return 9999
-    }
+    private fun horaActual(): String = SimpleDateFormat("hh:mm a", Locale.US).format(Date())
 
-    private fun parseItemTimestamp(dateStr: String, timeStr: String): Long {
-        val cleanTime = timeStr.trim().uppercase(java.util.Locale.US)
-            .replace(".", "")
-            .replace("A M", "AM")
-            .replace("P M", "PM")
-        val cleanDate = dateStr.trim().ifEmpty { "12/10/2026" }
-
-        val dateFormats = listOf(
-            "dd/MM/yyyy",
-            "yyyy-MM-dd",
-            "dd-MM-yyyy"
-        )
-        val timeFormats = listOf(
-            "hh:mm a",
-            "h:mm a",
-            "HH:mm",
-            "H:mm"
-        )
-        for (df in dateFormats) {
-            for (tf in timeFormats) {
-                try {
-                    val sdf = java.text.SimpleDateFormat("$df $tf", java.util.Locale.US)
-                    val parsed = sdf.parse("$cleanDate $cleanTime")
-                    if (parsed != null) {
-                        return parsed.time
-                    }
-                } catch (_: Exception) {
-                }
-            }
-            try {
-                val sdfDate = java.text.SimpleDateFormat(df, java.util.Locale.US)
-                val parsedDate = sdfDate.parse(cleanDate)
-                if (parsedDate != null) {
-                    val minutes = parseTimeToMinutes(cleanTime)
-                    return parsedDate.time + (minutes * 60L * 1000L)
-                }
-            } catch (_: Exception) {
-            }
-        }
-
-        return parseTimeToMinutes(cleanTime).toLong() * 60L * 1000L
-    }
-
-    private fun List<TimelineItem>.ordenadaCronologicamente(): List<TimelineItem> =
-        this.sortedBy { parseItemTimestamp(it.date, it.time) }
+    private fun fechaActual(): String = SimpleDateFormat("dd/MM/yyyy", Locale.US).format(Date())
 }

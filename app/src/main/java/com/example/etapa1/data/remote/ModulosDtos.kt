@@ -98,7 +98,7 @@ data class PlannedActivityDto(
 @Serializable
 data class DailyPlanDto(
     val date: String,
-    val roomId: String = "sala_1a",
+    val roomId: String = "",
     val menu: DailyMenuDto,
     val activities: List<PlannedActivityDto>,
     val updatedBy: String = ""
@@ -108,7 +108,7 @@ data class DailyPlanDto(
 data class SaveDailyPlanDto(
     val menu: DailyMenuDto,
     val activities: List<PlannedActivityDto>,
-    val roomId: String = "sala_1a"
+    val roomId: String
 )
 
 @Serializable

@@ -22,11 +22,13 @@ class NewActivityViewModelTest {
         val activitiesAdded = mutableListOf<Triple<String, String, String>>()
         var lastChildId: String? = null
 
-        override val mateoTimeline: StateFlow<List<TimelineItem>> = MutableStateFlow(emptyList())
+        override val childIdActual: StateFlow<String?> = MutableStateFlow(null)
+        override val timeline: StateFlow<List<TimelineItem>> = MutableStateFlow(emptyList())
 
-        override fun recargar(childId: String) {}
+        override fun abrir(childId: String) {}
 
         override fun addChatMessage(
+            childId: String,
             text: String,
             isOutgoing: Boolean,
             fileUri: String?,
@@ -36,14 +38,14 @@ class NewActivityViewModelTest {
             date: String?
         ) {}
 
-        override fun addEventChip(time: String, text: String, iconType: String, date: String?) {}
+        override fun addEventChip(childId: String, time: String, text: String, iconType: String, date: String?) {}
 
         override fun addActivityCard(
+            childId: String,
             time: String,
             category: String,
             portionLabel: String,
             description: String,
-            childId: String,
             date: String?
         ) {
             activitiesAdded.add(Triple(category, portionLabel, description))

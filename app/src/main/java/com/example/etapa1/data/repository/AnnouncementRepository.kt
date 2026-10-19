@@ -7,4 +7,10 @@ interface AnnouncementRepository {
     val announcements: StateFlow<List<Announcement>>
     val unreadCount: StateFlow<Int>
     fun markAsRead(id: String)
+
+    /** Vuelve a pedir los datos al servidor. */
+    fun refresh() {}
+
+    /** Borra lo cargado al cerrar sesión. */
+    fun limpiar() {}
 }

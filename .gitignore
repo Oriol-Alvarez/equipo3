@@ -13,3 +13,5 @@
 .externalNativeBuild
 .cxx
 local.properties
+# Configuración de Firebase de cada quien (notificaciones push)
+app/google-services.json

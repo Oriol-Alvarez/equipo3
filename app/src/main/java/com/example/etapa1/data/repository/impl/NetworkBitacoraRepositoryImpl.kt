@@ -1,16 +1,19 @@
 package com.example.etapa1.data.repository.impl
 
 import com.example.etapa1.data.remote.ChatConexion
+import com.example.etapa1.data.remote.CreateActivityDto
 import com.example.etapa1.data.remote.EventoServidor
+import com.example.etapa1.data.remote.QuickEventDto
 import com.example.etapa1.data.remote.RemoteSync
 import com.example.etapa1.data.remote.RemoteSync.bodyOrLog
-import com.example.etapa1.data.remote.CreateActivityDto
 import com.example.etapa1.data.remote.SendBitacoraMessageDto
 import com.example.etapa1.data.remote.SonrisasApi
+import com.example.etapa1.data.remote.SubidaArchivos
+import com.example.etapa1.data.remote.TimelineItemDto
 import com.example.etapa1.data.remote.TokenManager
 import com.example.etapa1.data.repository.BitacoraRepository
-import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.TimelineItem
+import com.example.etapa1.model.UserRole
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -24,67 +27,82 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Repositorio de la bitácora individual y chat directo (Educadora <-> Familia)
+ * Bitácora individual y chat directo (educadora <-> familia) del niño abierto en pantalla,
  * con sincronización en tiempo real vía [ChatConexion].
+ *
+ * Reglas para no mezclar niños:
+ * - [abrir] limpia la línea de tiempo al cambiar de niño y solo aplica la respuesta del
+ *   servidor si ese niño sigue abierto.
+ * - Todo lo que se envía lleva el id del niño; solo se agrega a la pantalla si es el abierto.
+ * - Los eventos en tiempo real de otros niños se ignoran.
  */
 class NetworkBitacoraRepositoryImpl(
     private val api: SonrisasApi,
-    private val tokenManager: TokenManager,
+    private val tokenManager: TokenManager?,
     private val chatConexion: ChatConexion,
-    private val defaultChildId: String = "mateo_garcia",
+    private val subidaArchivos: SubidaArchivos? = null,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 ) : BitacoraRepository {
 
-    private val _mateoTimeline = MutableStateFlow<List<TimelineItem>>(MockDataRepository.getInitialMateoTimeline())
-    override val mateoTimeline: StateFlow<List<TimelineItem>> = _mateoTimeline.asStateFlow()
+    private val _childIdActual = MutableStateFlow<String?>(null)
+    override val childIdActual: StateFlow<String?> = _childIdActual.asStateFlow()
+
+    private val _timeline = MutableStateFlow<List<TimelineItem>>(emptyList())
+    override val timeline: StateFlow<List<TimelineItem>> = _timeline.asStateFlow()
 
     init {
-        cargarLineaDeTiempo()
         observarWebSocket()
     }
 
-    override fun recargar(childId: String) {
-        cargarLineaDeTiempo(childId)
-    }
-
-    private fun cargarLineaDeTiempo(childId: String = defaultChildId) {
-        RemoteSync.launch("Cargar línea de tiempo y mensajes de bitácora") {
-            api.getChildTimeline(childId).bodyOrLog("GET /children/$childId/timeline")?.let { dtos ->
-                if (dtos.isNotEmpty()) {
-                    val convertidos = dtos.map { dto ->
-                        val itemDate = dto.date ?: "12/10/2026"
-                        when (dto.type) {
-                            "EVENT_CHIP" -> TimelineItem.EventChip(
-                                id = dto.id,
-                                time = dto.time,
-                                date = itemDate,
-                                text = dto.text ?: "",
-                                iconType = dto.iconType ?: "entry"
-                            )
-                            "ACTIVITY_CARD" -> TimelineItem.ActivityCard(
-                                id = dto.id,
-                                time = dto.time,
-                                date = itemDate,
-                                category = dto.category ?: "Otros",
-                                portionLabel = dto.portionLabel ?: "",
-                                description = dto.description ?: ""
-                            )
-                            else -> TimelineItem.ChatMessage(
-                                id = dto.id,
-                                time = dto.time,
-                                date = itemDate,
-                                message = dto.message ?: "",
-                                isOutgoing = dto.isOutgoing ?: false,
-                                fileUri = dto.fileUri,
-                                fileName = dto.fileName,
-                                fileMimeType = dto.fileMimeType
-                            )
-                        }
-                    }
-                    _mateoTimeline.value = convertidos.ordenadaCronologicamente()
-                }
+    override fun abrir(childId: String) {
+        if (_childIdActual.value != childId) {
+            _childIdActual.value = childId
+            _timeline.value = emptyList()
+        }
+        RemoteSync.launch("Cargar línea de tiempo de $childId") {
+            val dtos = api.getChildTimeline(childId).bodyOrLog("GET /children/$childId/timeline")
+                ?: return@launch
+            if (_childIdActual.value != childId) return@launch
+            val delServidor = dtos.map { it.toDomain() }
+            _timeline.update { actual ->
+                // Conserva lo que se está enviando (id temporal) para no "perderlo" al recargar
+                val pendientes = actual.filter { it.id.startsWith("temp_") }
+                (delServidor + pendientes).ordenadaCronologicamente()
             }
         }
+    }
+
+    override fun limpiar() {
+        _childIdActual.value = null
+        _timeline.value = emptyList()
+    }
+
+    private fun esActual(childId: String) = _childIdActual.value == childId
+
+    private fun agregarSiEsActual(childId: String, item: TimelineItem) {
+        if (!esActual(childId)) return
+        _timeline.update { actual ->
+            if (actual.any { it.id == item.id }) actual else (actual + item).ordenadaCronologicamente()
+        }
+    }
+
+    /** Reemplaza el elemento temporal por el definitivo del servidor (o lo agrega si no estaba). */
+    private fun confirmar(childId: String, tempId: String, definitivo: TimelineItem) {
+        if (!esActual(childId)) return
+        _timeline.update { actual ->
+            val sinDuplicados = actual.filter { it.id != definitivo.id }
+            val idx = sinDuplicados.indexOfFirst { it.id == tempId }
+            if (idx >= 0) {
+                sinDuplicados.toMutableList().apply { set(idx, definitivo) }.ordenadaCronologicamente()
+            } else {
+                (sinDuplicados + definitivo).ordenadaCronologicamente()
+            }
+        }
+    }
+
+    private fun quitar(childId: String, tempId: String) {
+        if (!esActual(childId)) return
+        _timeline.update { actual -> actual.filter { it.id != tempId } }
     }
 
     private fun observarWebSocket() {
@@ -92,57 +110,65 @@ class NetworkBitacoraRepositoryImpl(
             chatConexion.eventos.collect { evento ->
                 when (evento) {
                     is EventoServidor.NuevoMensajeBitacora -> {
-                        if (evento.childId == defaultChildId || evento.chatId == defaultChildId) {
-                            val payload = evento.message
-                            val nuevoMsg = TimelineItem.ChatMessage(
-                                id = payload.id.ifEmpty { "msg_${System.currentTimeMillis()}" },
-                                time = payload.time.ifEmpty { horaActual() },
-                                date = payload.date ?: fechaActual(),
-                                message = payload.message,
-                                isOutgoing = payload.senderId == tokenManager.userId,
-                                fileUri = payload.fileUri,
-                                fileName = payload.fileName,
-                                fileMimeType = payload.fileMimeType
-                            )
-                            _mateoTimeline.update { actual ->
-                                if (actual.any { it.id == nuevoMsg.id }) return@update actual
-                                val pendingIdx = actual.indexOfFirst {
-                                    it is TimelineItem.ChatMessage &&
-                                    it.id.startsWith("temp_") &&
-                                    it.message == nuevoMsg.message
-                                }
-                                if (pendingIdx >= 0) {
-                                    actual.toMutableList().apply { set(pendingIdx, nuevoMsg) }.ordenadaCronologicamente()
-                                } else {
-                                    (actual + nuevoMsg).ordenadaCronologicamente()
-                                }
+                        val childId = evento.childId.ifEmpty { evento.chatId }
+                        if (!esActual(childId)) return@collect
+                        val payload = evento.message
+                        val nuevo = TimelineItem.ChatMessage(
+                            id = payload.id.ifEmpty { "msg_${System.currentTimeMillis()}" },
+                            time = payload.time.ifEmpty { horaActual() },
+                            date = payload.date ?: fechaActual(),
+                            message = payload.message,
+                            isOutgoing = payload.senderId == tokenManager?.userId,
+                            fileUri = payload.fileUri?.let(RemoteSync::absoluteUrl),
+                            fileName = payload.fileName,
+                            fileMimeType = payload.fileMimeType
+                        )
+                        // Si es un mensaje propio que aún está como temporal, se reemplaza
+                        _timeline.update { actual ->
+                            if (actual.any { it.id == nuevo.id }) return@update actual
+                            val pendiente = actual.indexOfFirst {
+                                it is TimelineItem.ChatMessage && it.id.startsWith("temp_") &&
+                                    it.message == nuevo.message && nuevo.isOutgoing
+                            }
+                            if (pendiente >= 0) {
+                                actual.toMutableList().apply { set(pendiente, nuevo) }.ordenadaCronologicamente()
+                            } else {
+                                (actual + nuevo).ordenadaCronologicamente()
                             }
                         }
                     }
                     is EventoServidor.NuevaActividadBitacora -> {
-                        if (evento.childId == defaultChildId || evento.chatId == defaultChildId) {
-                            val act = evento.activity
-                            val card = TimelineItem.ActivityCard(
-                                id = act.id,
-                                time = act.time,
-                                date = act.date ?: fechaActual(),
-                                category = act.category ?: "Actividad",
-                                portionLabel = act.portionLabel ?: "",
-                                description = act.description ?: ""
-                            )
-                            _mateoTimeline.update { actual ->
-                                if (actual.any { it.id == card.id }) return@update actual
-                                val pendingIdx = actual.indexOfFirst {
-                                    it is TimelineItem.ActivityCard &&
-                                    it.id.startsWith("temp_") &&
-                                    it.category == card.category &&
-                                    it.description == card.description
-                                }
-                                if (pendingIdx >= 0) {
-                                    actual.toMutableList().apply { set(pendingIdx, card) }.ordenadaCronologicamente()
-                                } else {
-                                    (actual + card).ordenadaCronologicamente()
-                                }
+                        val childId = evento.childId.ifEmpty { evento.chatId }
+                        val card = evento.activity.toDomain()
+                        if (!esActual(childId)) return@collect
+                        _timeline.update { actual ->
+                            if (actual.any { it.id == card.id }) return@update actual
+                            val pendiente = actual.indexOfFirst {
+                                it is TimelineItem.ActivityCard && it.id.startsWith("temp_") &&
+                                    card is TimelineItem.ActivityCard &&
+                                    it.category == card.category && it.description == card.description
+                            }
+                            if (pendiente >= 0) {
+                                actual.toMutableList().apply { set(pendiente, card) }.ordenadaCronologicamente()
+                            } else {
+                                (actual + card).ordenadaCronologicamente()
+                            }
+                        }
+                    }
+                    is EventoServidor.NuevoEventoBitacora -> {
+                        val childId = evento.childId.ifEmpty { evento.chatId }
+                        val chip = evento.event.toDomain()
+                        if (!esActual(childId)) return@collect
+                        _timeline.update { actual ->
+                            if (actual.any { it.id == chip.id }) return@update actual
+                            val pendiente = actual.indexOfFirst {
+                                it is TimelineItem.EventChip && it.id.startsWith("temp_") &&
+                                    chip is TimelineItem.EventChip && it.text == chip.text
+                            }
+                            if (pendiente >= 0) {
+                                actual.toMutableList().apply { set(pendiente, chip) }.ordenadaCronologicamente()
+                            } else {
+                                (actual + chip).ordenadaCronologicamente()
                             }
                         }
                     }
@@ -153,18 +179,19 @@ class NetworkBitacoraRepositoryImpl(
     }
 
     override fun addChatMessage(
+        childId: String,
         text: String,
         isOutgoing: Boolean,
         fileUri: String?,
         fileName: String?,
         fileMimeType: String?,
-        senderRole: com.example.etapa1.model.UserRole?,
+        senderRole: UserRole?,
         date: String?
     ) {
         val hora = horaActual()
         val fecha = date ?: fechaActual()
-        val tempId = "temp_${System.currentTimeMillis()}"
-        val nuevoMsg = TimelineItem.ChatMessage(
+        val tempId = "temp_${System.nanoTime()}"
+        val pendiente = TimelineItem.ChatMessage(
             id = tempId,
             time = hora,
             date = fecha,
@@ -175,61 +202,74 @@ class NetworkBitacoraRepositoryImpl(
             fileMimeType = fileMimeType,
             senderRole = senderRole
         )
+        agregarSiEsActual(childId, pendiente)
 
-        // Actualización reactiva instantánea en la interfaz
-        _mateoTimeline.update { (it + nuevoMsg).ordenadaCronologicamente() }
-
-        // Envío asíncrono al servidor FastAPI
-        RemoteSync.launch("Enviar mensaje bitácora a $defaultChildId") {
-            val response = api.sendBitacoraMessage(
-                defaultChildId,
+        RemoteSync.launch("Enviar mensaje de bitácora a $childId") {
+            // Un archivo del teléfono se sube primero para que la otra persona lo pueda abrir
+            val uriServidor = if (fileUri != null) {
+                subidaArchivos?.subir(fileUri, fileName, fileMimeType, "bitacora")
+                    ?: run {
+                        quitar(childId, tempId)
+                        return@launch
+                    }
+            } else {
+                null
+            }
+            val enviado = api.sendBitacoraMessage(
+                childId,
                 SendBitacoraMessageDto(
                     message = text,
-                    fileUri = fileUri,
+                    fileUri = uriServidor,
                     fileName = fileName,
                     fileMimeType = fileMimeType,
                     time = hora,
                     date = fecha
                 )
+            ).bodyOrLog("POST /chats/bitacora/$childId/messages")
+            if (enviado == null) {
+                quitar(childId, tempId)
+                return@launch
+            }
+            confirmar(
+                childId,
+                tempId,
+                pendiente.copy(
+                    id = enviado.id,
+                    date = enviado.date ?: fecha,
+                    fileUri = uriServidor?.let(RemoteSync::absoluteUrl)
+                )
             )
-            response.body()?.let { serverDto ->
-                _mateoTimeline.update { actual ->
-                    val idx = actual.indexOfFirst { it.id == tempId }
-                    if (idx >= 0) {
-                        val finalMsg = nuevoMsg.copy(id = serverDto.id, date = serverDto.date ?: fecha)
-                        actual.toMutableList().apply { set(idx, finalMsg) }.ordenadaCronologicamente()
-                    } else {
-                        actual
-                    }
-                }
+        }
+    }
+
+    override fun addEventChip(childId: String, time: String, text: String, iconType: String, date: String?) {
+        val fecha = date ?: fechaActual()
+        val tempId = "temp_${System.nanoTime()}"
+        val pendiente = TimelineItem.EventChip(id = tempId, time = time, date = fecha, text = text, iconType = iconType)
+        agregarSiEsActual(childId, pendiente)
+
+        RemoteSync.launch("Registrar evento en la bitácora de $childId") {
+            val creado = api.createTimelineEvent(childId, QuickEventDto(time, text, iconType, fecha))
+                .bodyOrLog("POST /children/$childId/timeline/events")
+            if (creado == null) {
+                quitar(childId, tempId)
+            } else {
+                confirmar(childId, tempId, creado.toDomain())
             }
         }
     }
 
-    override fun addEventChip(time: String, text: String, iconType: String, date: String?) {
-        val fecha = date ?: fechaActual()
-        val chip = TimelineItem.EventChip(
-            id = "chip_${System.currentTimeMillis()}",
-            time = time,
-            date = fecha,
-            text = text,
-            iconType = iconType
-        )
-        _mateoTimeline.update { (it + chip).ordenadaCronologicamente() }
-    }
-
     override fun addActivityCard(
+        childId: String,
         time: String,
         category: String,
         portionLabel: String,
         description: String,
-        childId: String,
         date: String?
     ) {
-        val targetChildId = childId.ifEmpty { defaultChildId }
-        val tempId = "temp_${System.currentTimeMillis()}"
+        val tempId = "temp_${System.nanoTime()}"
         val fecha = date ?: fechaActual()
-        val card = TimelineItem.ActivityCard(
+        val pendiente = TimelineItem.ActivityCard(
             id = tempId,
             time = time,
             date = fecha,
@@ -237,31 +277,56 @@ class NetworkBitacoraRepositoryImpl(
             portionLabel = portionLabel,
             description = description
         )
-        _mateoTimeline.update { (it + card).ordenadaCronologicamente() }
+        agregarSiEsActual(childId, pendiente)
 
-        RemoteSync.launch("Registrar actividad para $targetChildId") {
-            val response = api.createActivity(
-                childId = targetChildId,
+        RemoteSync.launch("Registrar actividad para $childId") {
+            val res = api.createActivity(
+                childId = childId,
                 request = CreateActivityDto(
                     time = time,
                     date = fecha,
                     category = category,
-                    title = "$category: $portionLabel".trim(),
+                    title = "$category: $portionLabel".trim().removeSuffix(":"),
                     description = description,
                     portionOption = portionLabel
                 )
-            )
-            response.body()?.let { res ->
-                _mateoTimeline.update { actual ->
-                    val idx = actual.indexOfFirst { it.id == tempId }
-                    if (idx >= 0) {
-                        val finalCard = card.copy(id = res.id, date = res.timelineItem.date ?: fecha)
-                        actual.toMutableList().apply { set(idx, finalCard) }.ordenadaCronologicamente()
-                    } else {
-                        actual
-                    }
-                }
+            ).bodyOrLog("POST /children/$childId/activities")
+            if (res == null) {
+                quitar(childId, tempId)
+            } else {
+                confirmar(childId, tempId, pendiente.copy(id = res.id, date = res.timelineItem.date ?: fecha))
             }
+        }
+    }
+
+    private fun TimelineItemDto.toDomain(): TimelineItem {
+        val fecha = date ?: fechaActual()
+        return when (type) {
+            "EVENT_CHIP" -> TimelineItem.EventChip(
+                id = id,
+                time = time,
+                date = fecha,
+                text = text ?: "",
+                iconType = iconType ?: "entry"
+            )
+            "ACTIVITY_CARD" -> TimelineItem.ActivityCard(
+                id = id,
+                time = time,
+                date = fecha,
+                category = category ?: "Otros",
+                portionLabel = portionLabel ?: "",
+                description = description ?: ""
+            )
+            else -> TimelineItem.ChatMessage(
+                id = id,
+                time = time,
+                date = fecha,
+                message = message ?: "",
+                isOutgoing = isOutgoing ?: false,
+                fileUri = fileUri?.let(RemoteSync::absoluteUrl),
+                fileName = fileName,
+                fileMimeType = fileMimeType
+            )
         }
     }
 
@@ -271,73 +336,6 @@ class NetworkBitacoraRepositoryImpl(
     private fun fechaActual(): String =
         SimpleDateFormat("dd/MM/yyyy", Locale.US).format(Date())
 
-    private fun parseTimeToMinutes(timeStr: String): Int {
-        val clean = timeStr.trim().uppercase(Locale.US)
-            .replace(".", "")
-            .replace("A M", "AM")
-            .replace("P M", "PM")
-        val formats = listOf(
-            SimpleDateFormat("hh:mm a", Locale.US),
-            SimpleDateFormat("h:mm a", Locale.US),
-            SimpleDateFormat("HH:mm", Locale.US),
-            SimpleDateFormat("H:mm", Locale.US)
-        )
-        for (sdf in formats) {
-            try {
-                val date = sdf.parse(clean)
-                if (date != null) {
-                    val cal = java.util.Calendar.getInstance().apply { time = date }
-                    return cal.get(java.util.Calendar.HOUR_OF_DAY) * 60 + cal.get(java.util.Calendar.MINUTE)
-                }
-            } catch (_: Exception) {
-            }
-        }
-        return 9999
-    }
-
-    private fun parseItemTimestamp(dateStr: String, timeStr: String): Long {
-        val cleanTime = timeStr.trim().uppercase(Locale.US)
-            .replace(".", "")
-            .replace("A M", "AM")
-            .replace("P M", "PM")
-        val cleanDate = dateStr.trim().ifEmpty { "12/10/2026" }
-
-        val dateFormats = listOf(
-            "dd/MM/yyyy",
-            "yyyy-MM-dd",
-            "dd-MM-yyyy"
-        )
-        val timeFormats = listOf(
-            "hh:mm a",
-            "h:mm a",
-            "HH:mm",
-            "H:mm"
-        )
-        for (df in dateFormats) {
-            for (tf in timeFormats) {
-                try {
-                    val sdf = SimpleDateFormat("$df $tf", Locale.US)
-                    val parsed = sdf.parse("$cleanDate $cleanTime")
-                    if (parsed != null) {
-                        return parsed.time
-                    }
-                } catch (_: Exception) {
-                }
-            }
-            try {
-                val sdfDate = SimpleDateFormat(df, Locale.US)
-                val parsedDate = sdfDate.parse(cleanDate)
-                if (parsedDate != null) {
-                    val minutes = parseTimeToMinutes(cleanTime)
-                    return parsedDate.time + (minutes * 60L * 1000L)
-                }
-            } catch (_: Exception) {
-            }
-        }
-
-        return parseTimeToMinutes(cleanTime).toLong() * 60L * 1000L
-    }
-
     private fun List<TimelineItem>.ordenadaCronologicamente(): List<TimelineItem> =
-        this.sortedBy { parseItemTimestamp(it.date, it.time) }
+        OrdenLineaDeTiempo.ordenar(this)
 }

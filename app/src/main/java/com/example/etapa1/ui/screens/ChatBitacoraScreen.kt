@@ -111,11 +111,14 @@ fun ChatBitacoraScreen(
 ) {
     val timelineItems by viewModel.timelineItems.collectAsState()
     val conexionEstado by viewModel.conexionEstado.collectAsState()
+    val cambiosFicha by viewModel.cambiosFicha.collectAsState()
+    val perfil = remember(child.id, cambiosFicha) { viewModel.perfil(child) }
 
     ChatBitacoraScreen(
         child = child,
         timelineItems = timelineItems,
         conexionEstado = conexionEstado,
+        childProfile = perfil,
         isWorkerRole = isWorkerRole,
         onBack = onBack,
         onChildInfoClick = onChildInfoClick,
@@ -143,6 +146,8 @@ fun ChatBitacoraScreen(
     onChildInfoClick: () -> Unit = {},
     onNewActivityClick: () -> Unit,
     onAttendanceClick: () -> Unit = {},
+    /** Expediente real para los teléfonos del botón de llamar; null usa los datos de ejemplo (vista previa). */
+    childProfile: com.example.etapa1.model.ChildFullProfile? = null,
     onSendMessage: (String, Uri?, String?, String?) -> Unit
 ) {
     var messageText by remember { mutableStateOf("") }
@@ -503,6 +508,7 @@ fun ChatBitacoraScreen(
     if (showCallDialog) {
         ParentCallDialog(
             child = child,
+            profile = childProfile,
             onDismiss = { showCallDialog = false }
         )
     }
@@ -511,10 +517,11 @@ fun ChatBitacoraScreen(
 @Composable
 fun ParentCallDialog(
     child: Child,
+    profile: com.example.etapa1.model.ChildFullProfile? = null,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val childProfile = remember(child) { MockDataRepository.getChildFullProfile(child) }
+    val childProfile = profile ?: remember(child) { MockDataRepository.getChildFullProfile(child) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(

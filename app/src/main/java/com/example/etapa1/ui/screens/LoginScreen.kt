@@ -60,6 +60,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.state.LoginViewModel
 
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -67,6 +69,7 @@ fun LoginScreen(
     onLoginSuccess: (UserRole) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
 
     LoginContent(
         uiState = uiState,
@@ -74,9 +77,8 @@ fun LoginScreen(
         onPasswordChange = viewModel::onPasswordChanged,
         onTogglePasswordVisibility = viewModel::onTogglePasswordVisibility,
         onSubmitLogin = {
-            val role = viewModel.submitLogin()
-            if (role != null) {
-                onLoginSuccess(role)
+            scope.launch {
+                viewModel.submitLogin()?.let(onLoginSuccess)
             }
         }
     )
@@ -257,6 +259,7 @@ fun LoginContent(
             // Botón Iniciar Sesión
             Button(
                 onClick = onSubmitLogin,
+                enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
@@ -267,7 +270,7 @@ fun LoginContent(
                 )
             ) {
                 Text(
-                    text = "Iniciar Sesión",
+                    text = if (uiState.isLoading) "Entrando…" else "Iniciar Sesión",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
                 )

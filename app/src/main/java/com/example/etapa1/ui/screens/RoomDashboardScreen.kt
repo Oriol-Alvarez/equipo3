@@ -79,6 +79,7 @@ import com.example.etapa1.ui.theme.TextPrimary
 import com.example.etapa1.ui.theme.TextSecondary
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.theme.Etapa1Theme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import com.example.etapa1.ui.state.RoomDashboardViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -109,6 +110,9 @@ fun RoomDashboardScreen(
     val children by viewModel.children.collectAsState()
     val birthdays by birthdaysViewModel.roomBirthdays.collectAsState()
     val todayPlan by dailyPlanViewModel.todaySummary.collectAsState()
+
+    // La tarjeta de planeación muestra la de esta sala
+    LaunchedEffect(room.id) { dailyPlanViewModel.abrirSala(room.id) }
 
     RoomDashboardScreen(
         room = room,

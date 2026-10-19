@@ -1,7 +1,11 @@
 package com.example.etapa1.data.remote
 
 import com.example.etapa1.data.remote.RemoteSync.toIso
+import com.example.etapa1.data.repository.impl.NetworkBitacoraRepositoryImpl
+import com.example.etapa1.data.repository.impl.NetworkChildRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkDailyLogRepositoryImpl
+import com.example.etapa1.data.repository.impl.NetworkLostObjectsRepositoryImpl
+import com.example.etapa1.data.repository.impl.NetworkSuggestionsRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkDailyPlanRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkWeeklyObservationsRepositoryImpl
 import com.example.etapa1.domain.SimpleDate
@@ -10,6 +14,11 @@ import com.example.etapa1.model.DailyPlan
 import com.example.etapa1.model.EgresoLog
 import com.example.etapa1.model.FoodConsumptionOption
 import com.example.etapa1.model.IngresoLog
+import com.example.etapa1.model.LostItem
+import com.example.etapa1.model.ParentSuggestion
+import com.example.etapa1.model.SuggestionCategory
+import com.example.etapa1.model.SuggestionStatus
+import com.example.etapa1.model.TimelineItem
 import com.example.etapa1.model.MedicationPrescriptionOption
 import com.example.etapa1.model.MoodState
 import com.example.etapa1.model.ObservationAuthorRole
@@ -121,6 +130,7 @@ class BackendIntegrationTest {
     fun planeacion_repositorioDeRed() {
         assumeTrue(serverUp)
         val repo = NetworkDailyPlanRepositoryImpl(educadora)
+        repo.abrirSala("sala_1a")
         val date = SimpleDate.today()
         val title = "Actividad ${UUID.randomUUID().toString().take(6)}"
         repo.savePlan(
@@ -135,6 +145,7 @@ class BackendIntegrationTest {
                 .any { plan -> plan.activities.any { it.title == title } }
         }
         val familyRepo = NetworkDailyPlanRepositoryImpl(familia)
+        familyRepo.abrirSala("sala_1a")
         eventually("la familia ve la planeación") { familyRepo.planFor(date)?.activities?.any { it.title == title } == true }
     }
 
@@ -174,5 +185,102 @@ class BackendIntegrationTest {
         assertEquals(MedicationPrescriptionOption.SI, log.ingreso?.medicationWithPrescription)
         assertEquals(50, log.estadia?.napMinutes)
         assertEquals("15:30", log.egreso?.time)
+    }
+
+    @Test
+    fun bitacora_cadaMensajeLlegaAlNinoCorrecto() {
+        assumeTrue(serverUp)
+        val repo = NetworkBitacoraRepositoryImpl(educadora, null, ChatConexion(OkHttpClient()))
+        val texto = "Mensaje para Lucía ${UUID.randomUUID().toString().take(6)}"
+
+        repo.abrir("lucia_garcia")
+        repo.addChatMessage(childId = "lucia_garcia", text = texto)
+        eventually("el mensaje se guarda en el chat de Lucía") {
+            runBlocking { educadora.getBitacoraMessages("lucia_garcia").body()!! }.any { it.message == texto }
+        }
+        // Antes todos los mensajes se iban al chat de Mateo
+        val deMateo = runBlocking { educadora.getBitacoraMessages("mateo_garcia").body()!! }
+        assertTrue(deMateo.none { it.message == texto })
+
+        // Al abrir a otro niño no aparece el mensaje de Lucía
+        repo.abrir("sofia_lopez")
+        eventually("la línea de tiempo de Sofía no trae lo de Lucía") {
+            repo.childIdActual.value == "sofia_lopez" &&
+                repo.timeline.value.none { it is TimelineItem.ChatMessage && it.message == texto }
+        }
+    }
+
+    @Test
+    fun ninosSalasYResumenSemanal_repositorioDeRed() {
+        assumeTrue(serverUp)
+        val sala = NetworkChildRepositoryImpl(educadora)
+        sala.abrirSala("sala_2b")
+        eventually("niños de la Sala 2B") { sala.childrenOfRoom.value.isNotEmpty() }
+        assertTrue(sala.childrenOfRoom.value.all { it.roomId == "sala_2b" && it.roomText == "Sala 2B" })
+
+        val familiaRepo = NetworkChildRepositoryImpl(familia)
+        familiaRepo.refresh()
+        eventually("hijos de la familia") { familiaRepo.parentChildren.value.any { it.id == "mateo_garcia" } }
+        val mateo = familiaRepo.parentChildren.value.first { it.id == "mateo_garcia" }
+        familiaRepo.cargarDetalle(mateo.id)
+        eventually("resúmenes del servidor") { familiaRepo.getWeeklySummariesForChild(mateo).size == 4 }
+        val semana = familiaRepo.getWeeklySummariesForChild(mateo)[1]
+        assertTrue(semana.executiveSummary.isNotBlank())
+
+        familiaRepo.markWeeklySummaryReadStatus(mateo.id, semana.weekRangeText, true, "ahora")
+        eventually("la lectura queda en el servidor") {
+            runBlocking { educadora.getWeeklySummaries(mateo.id).body()!! }.first { it.id == semana.id }.isReadByParent
+        }
+        familiaRepo.markWeeklySummaryReadStatus(mateo.id, semana.weekRangeText, false)
+        eventually("y se puede quitar") {
+            !runBlocking { educadora.getWeeklySummaries(mateo.id).body()!! }.first { it.id == semana.id }.isReadByParent
+        }
+    }
+
+    @Test
+    fun objetosPerdidos_repositorioDeRed() {
+        assumeTrue(serverUp)
+        val titulo = "Gorra ${UUID.randomUUID().toString().take(6)}"
+        val repoFamilia = NetworkLostObjectsRepositoryImpl(familia)
+        repoFamilia.publishLostItem(
+            LostItem(id = "", title = titulo, description = "Azul con su nombre", category = "Ropa", room = "Sala 1A")
+        )
+        eventually("se publica en el servidor") {
+            repoFamilia.lostItems.value.any { it.title == titulo && !it.id.startsWith("temp_") }
+        }
+        val id = repoFamilia.lostItems.value.first { it.title == titulo }.id
+
+        val repoEducadora = NetworkLostObjectsRepositoryImpl(educadora)
+        eventually("la educadora lo ve") { repoEducadora.lostItems.value.any { it.id == id } }
+        repoEducadora.deleteLostItem(id)
+        eventually("se elimina en el servidor") {
+            runBlocking { educadora.getLostObjects().body()!! }.none { it.id == id }
+        }
+    }
+
+    @Test
+    fun sugerencias_repositorioDeRed() {
+        assumeTrue(serverUp)
+        val asunto = "Asunto ${UUID.randomUUID().toString().take(6)}"
+        val repoFamilia = NetworkSuggestionsRepositoryImpl(familia)
+        repoFamilia.addSuggestion(
+            ParentSuggestion(
+                id = "", parentName = "", childName = "", roomName = "", date = "", time = "",
+                category = SuggestionCategory.GENERAL, subject = asunto, content = "¿Hay junta el viernes?",
+                status = SuggestionStatus.PENDIENTE, response = null, responseDate = null, responderName = null
+            ),
+            childId = "mateo_garcia"
+        )
+        eventually("la sugerencia llega con el niño real") {
+            repoFamilia.suggestions.value.any { it.subject == asunto && it.childName == "Mateo García" }
+        }
+        val id = repoFamilia.suggestions.value.first { it.subject == asunto }.id
+
+        val repoEducadora = NetworkSuggestionsRepositoryImpl(educadora)
+        eventually("la educadora la ve") { repoEducadora.suggestions.value.any { it.id == id } }
+        repoEducadora.updateSuggestionStatus(id, SuggestionStatus.ATENDIDA, "Sí, a las 5")
+        eventually("la respuesta queda firmada por quien respondió") {
+            runBlocking { familia.getSuggestions().body()!! }.first { it.id == id }.responderName == "Laura Gómez"
+        }
     }
 }

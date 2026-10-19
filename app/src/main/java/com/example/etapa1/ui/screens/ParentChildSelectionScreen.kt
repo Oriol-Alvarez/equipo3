@@ -74,6 +74,7 @@ fun ParentChildSelectionScreen(
 
     ParentChildSelectionScreen(
         children = children,
+        onRefresh = viewModel::recargar,
         unreadAnnouncementsCount = unreadAnnouncementsCount,
         onChildSelected = onChildSelected,
         onNavigateToAnnouncements = onNavigateToAnnouncements
@@ -83,6 +84,7 @@ fun ParentChildSelectionScreen(
 @Composable
 fun ParentChildSelectionScreen(
     children: List<Child> = MockDataRepository.parentChildren,
+    onRefresh: () -> Unit = {},
     unreadAnnouncementsCount: Int = 0,
     onChildSelected: (Child) -> Unit,
     onNavigateToAnnouncements: () -> Unit = {}
@@ -138,7 +140,7 @@ fun ParentChildSelectionScreen(
                 )
 
                 IconButton(
-                    onClick = { /* Refrescar */ },
+                    onClick = onRefresh,
                     modifier = Modifier.align(Alignment.CenterEnd)
                 ) {
                     Icon(

@@ -2,6 +2,8 @@ package com.example.etapa1.data.repository.impl
 
 import com.example.etapa1.data.remote.EgresoDto
 import com.example.etapa1.data.remote.IngresoDto
+import com.example.etapa1.data.remote.RemoteSync
+import com.example.etapa1.data.remote.RemoteSync.bodyOrLog
 import com.example.etapa1.data.remote.SonrisasApi
 import com.example.etapa1.data.repository.AttendanceRepository
 import com.example.etapa1.model.AttendanceRecord
@@ -22,26 +24,28 @@ class NetworkAttendanceRepositoryImpl(
     override val attendanceRecords: StateFlow<List<AttendanceRecord>> = _attendanceRecords.asStateFlow()
 
     init {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val res = api.getAttendanceRecords()
-                if (res.isSuccessful && res.body() != null) {
-                    val list = res.body()!!.map { dto ->
-                        AttendanceRecord(
-                            id = dto.id,
-                            childId = dto.childId,
-                            isIngreso = dto.isIngreso,
-                            date = dto.date,
-                            dayOfWeek = dto.dayOfWeek,
-                            time = dto.time,
-                            observations = dto.observations
-                        )
-                    }
-                    _attendanceRecords.value = list
-                }
-            } catch (_: Exception) {
-            }
+        refresh()
+    }
+
+    override fun refresh() {
+        RemoteSync.launch("Cargar registros de asistencia") {
+            val list = api.getAttendanceRecords().bodyOrLog("GET /attendance/records")?.map { dto ->
+                AttendanceRecord(
+                    id = dto.id,
+                    childId = dto.childId,
+                    isIngreso = dto.isIngreso,
+                    date = dto.date,
+                    dayOfWeek = dto.dayOfWeek,
+                    time = dto.time,
+                    observations = dto.observations
+                )
+            } ?: return@launch
+            _attendanceRecords.value = list
         }
+    }
+
+    override fun limpiar() {
+        _attendanceRecords.value = emptyList()
     }
 
     override fun registerAttendance(

@@ -1,5 +1,6 @@
 package com.example.etapa1.data.repository.impl
 
+import com.example.etapa1.data.remote.DeviceTokenRequestDto
 import com.example.etapa1.data.remote.LoginRequestDto
 import com.example.etapa1.data.remote.RefreshRequestDto
 import com.example.etapa1.data.remote.SonrisasApi
@@ -12,7 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 class NetworkAuthRepositoryImpl(
     private val api: SonrisasApi,
@@ -27,11 +28,9 @@ class NetworkAuthRepositoryImpl(
     private val _currentUserRole = MutableStateFlow(initialRole)
     override val currentUserRole: StateFlow<UserRole> = _currentUserRole.asStateFlow()
 
-    override fun login(email: String, password: String, role: UserRole): Result<UserRole> {
-        return try {
-            val response = runBlocking(Dispatchers.IO) {
-                api.login(LoginRequestDto(email = email.trim(), password = password, role = null))
-            }
+    override suspend fun login(email: String, password: String, role: UserRole): Result<UserRole> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.login(LoginRequestDto(email = email.trim(), password = password, role = null))
 
             if (response.isSuccessful && response.body() != null) {
                 val loginData = response.body()!!
@@ -65,8 +64,17 @@ class NetworkAuthRepositoryImpl(
 
     override fun logout() {
         val refresh = tokenManager.refreshToken
-        if (!refresh.isNullOrBlank()) {
-            CoroutineScope(Dispatchers.IO).launch {
+        val tokenSesion = tokenManager.token
+        val telefono = tokenManager.deviceToken
+        CoroutineScope(Dispatchers.IO).launch {
+            // Este teléfono deja de recibir notificaciones de la cuenta que sale
+            if (!tokenSesion.isNullOrBlank() && !telefono.isNullOrBlank()) {
+                try {
+                    api.unregisterDeviceToken("Bearer $tokenSesion", DeviceTokenRequestDto(deviceToken = telefono))
+                } catch (_: Exception) {
+                }
+            }
+            if (!refresh.isNullOrBlank()) {
                 try {
                     api.logout(RefreshRequestDto(refresh))
                 } catch (_: Exception) {

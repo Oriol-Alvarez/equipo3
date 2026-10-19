@@ -484,6 +484,15 @@ fun DailyBitacoraContent(
                     }
                 }
             }
+        } else {
+            Text(
+                text = "Aún no hay registros de los últimos días.",
+                fontSize = 14.sp,
+                color = TextSecondary,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 24.dp)
+            )
         }
     }
 }
@@ -723,6 +732,15 @@ fun WeeklySummaryContent(
                     onSelectReaction = onSelectReaction?.let { callback -> { reaction -> callback(currentSummary, reaction) } }
                 )
             }
+        } else {
+            Text(
+                text = "Cargando el resumen semanal…",
+                fontSize = 14.sp,
+                color = TextSecondary,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 24.dp)
+            )
         }
     }
 }

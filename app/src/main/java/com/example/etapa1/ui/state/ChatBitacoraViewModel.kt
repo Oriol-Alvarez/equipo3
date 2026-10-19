@@ -11,16 +11,31 @@ import kotlinx.coroutines.flow.StateFlow
 
 class ChatBitacoraViewModel(
     private val bitacoraRepository: BitacoraRepository,
-    private val chatConexion: ChatConexion? = null
+    private val chatConexion: ChatConexion? = null,
+    private val messagesRepository: com.example.etapa1.data.repository.MessagesRepository? = null,
+    /** Para mostrar los teléfonos reales del expediente en el botón de llamar. */
+    private val childRepository: com.example.etapa1.data.repository.ChildRepository? = null
 ) : ViewModel() {
 
-    val timelineItems: StateFlow<List<TimelineItem>> = bitacoraRepository.mateoTimeline
+    val timelineItems: StateFlow<List<TimelineItem>> = bitacoraRepository.timeline
 
     val conexionEstado: StateFlow<EstadoConexion> =
         chatConexion?.estado ?: MutableStateFlow(EstadoConexion.Conectado)
 
-    fun recargar(childId: String = "mateo_garcia") {
-        bitacoraRepository.recargar(childId)
+    private var childId: String? = null
+
+    /** Cambia cuando llegan datos del expediente; la pantalla lo usa para volver a leer [perfil]. */
+    val cambiosFicha: StateFlow<Int> = childRepository?.cambios ?: MutableStateFlow(0)
+
+    fun perfil(child: com.example.etapa1.model.Child): com.example.etapa1.model.ChildFullProfile? =
+        childRepository?.getChildFullProfile(child)
+
+    /** Abre la bitácora del niño y marca su chat como leído. */
+    fun abrir(childId: String) {
+        this.childId = childId
+        bitacoraRepository.abrir(childId)
+        messagesRepository?.markParentChatAsRead(childId)
+        childRepository?.cargarDetalle(childId)
     }
 
     fun sendMessage(
@@ -30,8 +45,10 @@ class ChatBitacoraViewModel(
         fileMimeType: String? = null,
         senderRole: UserRole? = null
     ) {
+        val nino = childId ?: return
         if (text.isNotBlank() || fileUri != null) {
             bitacoraRepository.addChatMessage(
+                childId = nino,
                 text = text.trim(),
                 isOutgoing = true,
                 fileUri = fileUri,

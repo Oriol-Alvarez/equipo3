@@ -8,5 +8,8 @@ import kotlinx.coroutines.flow.StateFlow
 class RoomDashboardViewModel(
     private val childRepository: ChildRepository
 ) : ViewModel() {
-    val children: StateFlow<List<Child>> = childRepository.childrenSala1A
+    /** Niños de la sala abierta con [abrirSala]. */
+    val children: StateFlow<List<Child>> = childRepository.childrenOfRoom
+
+    fun abrirSala(roomId: String) = childRepository.abrirSala(roomId)
 }

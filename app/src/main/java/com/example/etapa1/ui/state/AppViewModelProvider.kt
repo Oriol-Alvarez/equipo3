@@ -19,14 +19,15 @@ object AppViewModelProvider {
             AttendanceViewModel(
                 sonrisasApplication().container.attendanceRepository,
                 sonrisasApplication().container.childRepository,
-                sonrisasApplication().container.bitacoraRepository,
                 sonrisasApplication().container.dailyLogRepository
             )
         }
         initializer {
             ChatBitacoraViewModel(
                 sonrisasApplication().container.bitacoraRepository,
-                sonrisasApplication().container.chatConexion
+                sonrisasApplication().container.chatConexion,
+                sonrisasApplication().container.messagesRepository,
+                sonrisasApplication().container.childRepository
             )
         }
         initializer {
@@ -51,7 +52,12 @@ object AppViewModelProvider {
         }
         initializer { ParentChildSelectionViewModel(sonrisasApplication().container.childRepository) }
         initializer { ParentHomeViewModel(sonrisasApplication().container.childRepository) }
-        initializer { ParentSuggestionsViewModel(sonrisasApplication().container.suggestionsRepository) }
+        initializer {
+            ParentSuggestionsViewModel(
+                sonrisasApplication().container.suggestionsRepository,
+                childRepository = sonrisasApplication().container.childRepository
+            )
+        }
         initializer { AnnouncementsViewModel(sonrisasApplication().container.announcementRepository) }
         initializer {
             FamilyGroupsViewModel(
@@ -62,7 +68,13 @@ object AppViewModelProvider {
         }
         initializer { WeeklyObservationsViewModel(sonrisasApplication().container.weeklyObservationsRepository) }
         initializer { BirthdaysViewModel(sonrisasApplication().container.childRepository) }
-        initializer { DailyPlanViewModel(sonrisasApplication().container.dailyPlanRepository) }
+        initializer {
+            val container = sonrisasApplication().container
+            DailyPlanViewModel(
+                container.dailyPlanRepository,
+                autor = { container.tokenManager.userDisplayName.orEmpty().ifBlank { "Educadora" } }
+            )
+        }
         initializer {
             ExportLogViewModel(
                 sonrisasApplication().container.dailyLogRepository,

@@ -58,6 +58,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.etapa1.ui.components.AvisoDialog
+import com.example.etapa1.ui.components.datosDeSesion
 import com.example.etapa1.ui.theme.AlertRed
 import com.example.etapa1.ui.theme.AlertRedBg
 import com.example.etapa1.ui.theme.AlertRedBorder
@@ -158,6 +160,32 @@ fun MoreMenuScreen(
     onLogout: () -> Unit
 ) {
     var selectedPolicy by remember { mutableStateOf<CenterPolicy?>(null) }
+    var mostrarCuenta by remember { mutableStateOf(false) }
+    var mostrarNotificaciones by remember { mutableStateOf(false) }
+    val sesion = datosDeSesion()
+
+    if (mostrarCuenta) {
+        AvisoDialog(
+            titulo = "Mi cuenta",
+            texto = if (sesion != null) {
+                buildString {
+                    if (sesion.nombre.isNotBlank()) append("Nombre: ${sesion.nombre}\n")
+                    if (sesion.correo.isNotBlank()) append("Correo: ${sesion.correo}\n")
+                    if (sesion.rol.isNotBlank()) append("Rol: ${sesion.rol}")
+                }.trim()
+            } else {
+                "No hay datos de la cuenta en este momento."
+            },
+            onDismiss = { mostrarCuenta = false }
+        )
+    }
+    if (mostrarNotificaciones) {
+        AvisoDialog(
+            titulo = "Notificaciones",
+            texto = "La configuración de notificaciones estará disponible próximamente. Por ahora los avisos y mensajes aparecen dentro de la app.",
+            onDismiss = { mostrarNotificaciones = false }
+        )
+    }
 
     Scaffold(
         containerColor = AppBackground,
@@ -218,7 +246,7 @@ fun MoreMenuScreen(
                             iconBg = BrandBlueContainer,
                             title = "Administración de Cuentas",
                             subtitle = "Información del perfil y tutor",
-                            onClick = { /* Informativo */ }
+                            onClick = { mostrarCuenta = true }
                         )
 
                         HorizontalDivider(
@@ -233,7 +261,7 @@ fun MoreMenuScreen(
                             iconBg = Color(0xFFF5F3FF),
                             title = "Configuración de Notificaciones",
                             subtitle = "Avisos, alertas y recordatorios",
-                            onClick = { /* Informativo */ }
+                            onClick = { mostrarNotificaciones = true }
                         )
                     }
                 }

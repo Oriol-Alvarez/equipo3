@@ -735,6 +735,24 @@ fun WorkerChatConversationDialog(
     onDismiss: () -> Unit,
     onSendMessage: (String, Uri?, String?, String?) -> Unit
 ) {
+    var avisoChat by remember { mutableStateOf<AvisoChat?>(null) }
+    when (avisoChat) {
+        AvisoChat.LLAMADA -> AvisoDialog(
+            titulo = "Llamadas",
+            texto = "Las llamadas entre el personal todavía no están disponibles. Por ahora usa los mensajes de este chat.",
+            onDismiss = { avisoChat = null }
+        )
+        AvisoChat.INFORMACION -> AvisoDialog(
+            titulo = chat.title,
+            texto = buildString {
+                append(chat.subtitle)
+                if (chat.isGroup && chat.membersCount > 0) append("\n${chat.membersCount} participantes")
+                append("\n${chat.messages.size} mensajes en la conversación")
+            },
+            onDismiss = { avisoChat = null }
+        )
+        null -> Unit
+    }
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     var showShareActivityDialog by remember { mutableStateOf(false) }
@@ -1015,7 +1033,7 @@ fun WorkerChatConversationDialog(
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = { /* Llamada */ }) {
+                            IconButton(onClick = { avisoChat = AvisoChat.LLAMADA }) {
                                 Icon(
                                     imageVector = Icons.Default.Phone,
                                     contentDescription = "Llamar",
@@ -1023,7 +1041,7 @@ fun WorkerChatConversationDialog(
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
-                            IconButton(onClick = { /* Menú de opciones */ }) {
+                            IconButton(onClick = { avisoChat = AvisoChat.INFORMACION }) {
                                 Icon(
                                     imageVector = Icons.Default.MoreVert,
                                     contentDescription = "Opciones",
@@ -1750,3 +1768,4 @@ fun ShareGroupActivityDialog(
     }
 }
 
+private enum class AvisoChat { LLAMADA, INFORMACION }

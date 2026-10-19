@@ -81,6 +81,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.etapa1.model.ObservationAuthorRole
 import com.example.etapa1.model.WeeklyObservationsSampleData
 import com.example.etapa1.ui.components.WeeklyObservationsPanel
+import com.example.etapa1.ui.components.nombreDeSesion
 import com.example.etapa1.ui.state.AppViewModelProvider
 import com.example.etapa1.ui.state.ParentHomeViewModel
 import com.example.etapa1.domain.UpcomingBirthday
@@ -125,6 +126,10 @@ fun ParentHomeScreen(
     LaunchedEffect(uiState.selectedChild.id) {
         birthdaysViewModel.selectFamilyChild(uiState.selectedChild)
     }
+    // La tarjeta de planeación muestra la de la sala de este hijo o hija
+    LaunchedEffect(uiState.selectedChild.roomId) {
+        dailyPlanViewModel.abrirSala(uiState.selectedChild.roomId)
+    }
 
     ParentHomeScreen(
         child = uiState.selectedChild,
@@ -151,7 +156,7 @@ fun ParentHomeScreen(
                 summary = summary,
                 isCurrentWeek = isCurrentWeek,
                 viewerRole = ObservationAuthorRole.FAMILIA,
-                viewerName = WeeklyObservationsSampleData.FAMILIA_GARCIA_NAME
+                viewerName = nombreDeSesion(WeeklyObservationsSampleData.FAMILIA_GARCIA_NAME)
             )
         },
         onToggleWeeklySummaryReadStatus = { summary -> viewModel.toggleWeeklySummaryReadStatus(summary) },

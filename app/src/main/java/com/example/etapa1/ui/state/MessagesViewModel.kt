@@ -112,6 +112,10 @@ class MessagesViewModel(
         messagesRepository.sendWorkerMessage(chatId, text)
     }
 
+    fun createWorkerGroup(title: String, memberIds: List<String>) {
+        messagesRepository.createWorkerGroup(title, memberIds)
+    }
+
     fun markWorkerChatAsRead(chatId: String) {
         messagesRepository.markWorkerChatAsRead(chatId)
     }

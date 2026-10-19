@@ -1,6 +1,7 @@
 package com.example.etapa1.data.repository.impl
 
 import com.example.etapa1.data.remote.ChatConexion
+import com.example.etapa1.data.remote.CreateWorkerGroupDto
 import com.example.etapa1.data.remote.EventoServidor
 import com.example.etapa1.data.remote.RemoteSync
 import com.example.etapa1.data.remote.RemoteSync.bodyOrLog
@@ -9,7 +10,6 @@ import com.example.etapa1.data.remote.SonrisasApi
 import com.example.etapa1.data.remote.TokenManager
 import com.example.etapa1.data.repository.MessagesRepository
 import com.example.etapa1.model.Child
-import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.ParentChatSummary
 import com.example.etapa1.model.WorkerChat
 import com.example.etapa1.model.WorkerChatMessage
@@ -51,19 +51,32 @@ class NetworkMessagesRepositoryImpl(
             id = "global_staff_chat",
             title = "Chat Global de Trabajadores",
             subtitle = "Canal institucional",
-            lastMessage = "Cargando mensajes...",
+            lastMessage = "",
             lastMessageTime = "",
             isGlobal = true,
             isGroup = true,
-            membersCount = 18,
+            membersCount = 0,
             messages = emptyList()
         )
     )
     override val globalChat: StateFlow<WorkerChat> = _globalChat.asStateFlow()
 
     init {
-        cargarDatosIniciales()
+        refresh()
         observarWebSocket()
+    }
+
+    override fun refresh() {
+        // Los chats internos y con familias son solo del personal
+        if (tokenManager.userRole?.uppercase() == "FAMILIAR") return
+        cargarDatosIniciales()
+    }
+
+    override fun limpiar() {
+        _workerChats.value = emptyList()
+        _parentChats.value = emptyList()
+        _staffMembers.value = emptyList()
+        _globalChat.update { it.copy(lastMessage = "", lastMessageTime = "", unreadCount = 0, messages = emptyList()) }
     }
 
     private fun cargarDatosIniciales() {
@@ -98,12 +111,15 @@ class NetworkMessagesRepositoryImpl(
                     )
                 }
                 val lastMsg = msgs.lastOrNull()
+                // Conserva el contador de no leídos que llega con la lista de chats
+                val noLeidos = _globalChat.value.unreadCount
                 _globalChat.value = WorkerChat(
+                    unreadCount = noLeidos,
                     id = dto.id,
                     title = dto.title,
                     subtitle = "Canal institucional",
-                    lastMessage = lastMsg?.message ?: "Canal activo",
-                    lastMessageTime = lastMsg?.time ?: "Hoy",
+                    lastMessage = lastMsg?.message ?: "",
+                    lastMessageTime = lastMsg?.time ?: "",
                     isGlobal = true,
                     isGroup = true,
                     membersCount = dto.membersCount,
@@ -113,7 +129,10 @@ class NetworkMessagesRepositoryImpl(
         }
 
         RemoteSync.launch("Cargar chats internos entre trabajadoras") {
-            api.getWorkerChats().bodyOrLog("GET /chats/workers")?.let { list ->
+            api.getWorkerChats().bodyOrLog("GET /chats/workers")?.let { todos ->
+                // El chat global se muestra aparte; aquí solo se toma su contador de no leídos
+                val (globales, list) = todos.partition { it.isGlobal || it.id == "global_staff_chat" }
+                globales.firstOrNull()?.let { g -> _globalChat.update { it.copy(unreadCount = g.unreadCount) } }
                 val chatsConHistorial = list.map { chatDto ->
                     val mensajesDto = api.getWorkerChatMessages(chatDto.id)
                         .bodyOrLog("GET mensajes ${chatDto.id}").orEmpty()
@@ -149,28 +168,40 @@ class NetworkMessagesRepositoryImpl(
         }
 
         RemoteSync.launch("Cargar chats con familias") {
-            api.getParentChatsByRoom("sala_1a").bodyOrLog("GET /rooms/sala_1a/parent-chats")?.let { summaries ->
-                _parentChats.value = summaries.map { s ->
-                    val child = MockDataRepository.childrenSala1A.find { it.id == s.childId }
-                        ?: Child(
+            // Una conversación por niño de cada sala, con los datos reales del niño
+            val salas = api.getRooms().bodyOrLog("GET /rooms").orEmpty()
+            val resumenes = salas.flatMap { sala ->
+                val ninos = api.getChildrenByRoom(sala.id).bodyOrLog("GET /rooms/${sala.id}/children")
+                    .orEmpty().associateBy { it.id }
+                api.getParentChatsByRoom(sala.id).bodyOrLog("GET /rooms/${sala.id}/parent-chats").orEmpty()
+                    .map { s ->
+                        val dto = ninos[s.childId]
+                        val child = Child(
                             id = s.childId,
-                            fullName = s.childName,
-                            shortName = s.childName.split(" ").firstOrNull() ?: s.childName,
-                            ageText = "2 años",
-                            roomText = "Sala 1A",
-                            groupText = "Grupo Sala 1A",
-                            statusText = "08:15 AM • Presente",
-                            isPresent = true
+                            fullName = dto?.fullName ?: s.childName,
+                            shortName = dto?.shortName ?: s.childName,
+                            ageText = dto?.ageText.orEmpty(),
+                            roomText = dto?.roomText ?: sala.name,
+                            groupText = dto?.groupText.orEmpty(),
+                            statusText = dto?.statusText.orEmpty(),
+                            isPresent = dto?.isPresent ?: false,
+                            arrivalTime = dto?.arrivalTime,
+                            allergyAlert = dto?.allergyAlert,
+                            avatarInitials = dto?.avatarInitials ?: s.childName.take(2).uppercase(),
+                            avatarBgColor = dto?.avatarBgColor ?: 0xFF64B5F6,
+                            birthDate = dto?.birthDate.orEmpty(),
+                            roomId = sala.id
                         )
-                    ParentChatSummary(
-                        child = child,
-                        parentName = s.parentName,
-                        lastMessage = s.lastMessage ?: "Sin mensajes aún.",
-                        lastMessageTime = s.lastMessageTime ?: "Hoy",
-                        unreadCount = s.unreadCount
-                    )
-                }
+                        ParentChatSummary(
+                            child = child,
+                            parentName = s.parentName,
+                            lastMessage = s.lastMessage ?: "Sin mensajes aún.",
+                            lastMessageTime = s.lastMessageTime.orEmpty(),
+                            unreadCount = s.unreadCount
+                        )
+                    }
             }
+            _parentChats.value = resumenes
         }
     }
 
@@ -287,6 +318,48 @@ class NetworkMessagesRepositoryImpl(
         }
     }
 
+    override fun createWorkerGroup(title: String, memberIds: List<String>) {
+        val titulo = title.trim()
+        if (titulo.isEmpty()) return
+        val tempId = "temp_${System.nanoTime()}"
+        val pendiente = WorkerChat(
+            id = tempId,
+            title = titulo,
+            subtitle = "Creando grupo…",
+            lastMessage = "",
+            lastMessageTime = "",
+            isGroup = true,
+            membersCount = memberIds.size + 1,
+            avatarInitials = titulo.take(2).uppercase(),
+            avatarBgColor = 0xFF00897B,
+            messages = emptyList()
+        )
+        _workerChats.update { listOf(pendiente) + it }
+        RemoteSync.launch("Crear grupo del personal") {
+            val creado = api.createWorkerGroup(CreateWorkerGroupDto(titulo, memberIds)).bodyOrLog("POST /chats/workers")
+            _workerChats.update { lista ->
+                if (creado == null) {
+                    lista.filterNot { it.id == tempId }
+                } else {
+                    lista.map {
+                        if (it.id == tempId) {
+                            it.copy(
+                                id = creado.id,
+                                subtitle = creado.subtitle,
+                                lastMessage = creado.lastMessage.orEmpty(),
+                                lastMessageTime = creado.lastMessageTime.orEmpty(),
+                                avatarInitials = creado.avatarInitials,
+                                avatarBgColor = creado.avatarBgColor
+                            )
+                        } else {
+                            it
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     override fun markWorkerChatAsRead(chatId: String) {
         if (chatId == _globalChat.value.id || chatId == "global_staff_chat") {
             _globalChat.update { it.copy(unreadCount = 0) }
@@ -295,11 +368,17 @@ class NetworkMessagesRepositoryImpl(
                 list.map { if (it.id == chatId) it.copy(unreadCount = 0) else it }
             }
         }
+        RemoteSync.launch("Marcar como leído el chat $chatId") {
+            api.markWorkerChatRead(chatId).bodyOrLog("PUT /chats/workers/$chatId/read")
+        }
     }
 
     override fun markParentChatAsRead(childId: String) {
         _parentChats.update { list ->
             list.map { if (it.child.id == childId) it.copy(unreadCount = 0) else it }
+        }
+        RemoteSync.launch("Marcar como leído el chat de bitácora de $childId") {
+            api.markBitacoraChatRead(childId).bodyOrLog("PUT /chats/bitacora/$childId/read")
         }
     }
 

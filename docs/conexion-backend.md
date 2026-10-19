@@ -67,27 +67,31 @@ crear un grupo viene de `/family-groups/candidates`.
 5. **Pruebas Instrumentadas de UI:**
    - Pruebas UI en `androidTest` (`LoginScreenTest`, `NavigationTest`) para verificar inicio de sesión y navegación por roles.
 
+## Datos reales (sin datos de ejemplo)
+
+Con `USE_MOCKS = false` todo lo que se ve sale del servidor:
+
+- **Bitácora por niño:** cada chat y su línea de tiempo es del niño abierto; los eventos y
+  actividades se guardan en `/children/{id}/timeline-events`.
+- **Resúmenes semanales:** el servidor los calcula del registro diario y la planeación de las
+  últimas 4 semanas; la familia marca "leído" y su reacción (`PUT .../weekly-summaries/{id}/feedback`).
+- **Salas y niños:** presente / retirado / "No ha ingresado" sale del registro de hoy; cada sala
+  muestra sus propios niños.
+- **Privacidad:** una familia solo ve a sus hijos, sus chats y sus sugerencias; el WebSocket solo
+  avisa al personal y a las familias de ese niño.
+- **No leídos:** cada usuario tiene su propio contador (`PUT /chats/.../read`).
+- **Al cambiar de cuenta** se borra lo cargado (`AppContainer.limpiarTodo()`) y se vuelve a pedir
+  (`recargarTodo()`).
+- **Notificaciones push:** ver el `README.md` de la raíz.
+
 ## Cómo probarlo
 
-```bash
-cd backend
-cp .env.example .env        # solo la primera vez
-docker compose up -d --build
-docker compose exec api uv run --no-sync pytest     # 47 pruebas del backend
-bash smoke.sh                                       # pruebas de humo
-```
-
-En Android Studio abre el proyecto y corre la app en el emulador (usa `http://10.0.2.2:8000` o el túnel activo de Cloudflare).
-Cuentas: `educadora@sonrisas.edu`, `familiar@sonrisas.edu`, contraseña `Password123!`.
-
-Prueba de la app contra el servidor real:
-
-```powershell
-$env:SONRISAS_IT="1"; .\gradlew.bat testDebugUnitTest --tests "*BackendIntegrationTest"
-```
+Ver el `README.md` de la raíz (backend, `local.properties`, cuentas y push).
 
 ## Qué se verificó
 
-- 47 pruebas del backend (`pytest` en contenedor Docker).
-- `assembleDebug` y 107 pruebas unitarias e instrumentadas en Kotlin.
-- Túnel Cloudflare activo e integración probada.
+- 79 pruebas del backend (`pytest`).
+- `assembleDebug` y las pruebas unitarias de la app.
+- 8 pruebas de la app contra el servidor real (`BackendIntegrationTest`): planeación, registro
+  diario, observaciones, grupos con familias, bitácora por niño, salas y resúmenes, objetos
+  perdidos y sugerencias.

@@ -15,7 +15,9 @@ data class LoginUiState(
     val passwordVisible: Boolean = false,
     val hasError: Boolean = false,
     val errorMessage: String? = null,
-    val isSuccess: Boolean = false
+    val isSuccess: Boolean = false,
+    /** Esperando la respuesta del servidor. */
+    val isLoading: Boolean = false
 )
 
 class LoginViewModel(
@@ -41,8 +43,10 @@ class LoginViewModel(
         _uiState.update { it.copy(passwordVisible = !it.passwordVisible) }
     }
 
-    fun submitLogin(): UserRole? {
+    /** Valida y pide al servidor iniciar sesión. Devuelve el rol si entró, o null. */
+    suspend fun submitLogin(): UserRole? {
         val state = _uiState.value
+        if (state.isLoading) return null
         val isValid = state.email.isNotBlank() && state.password.isNotBlank()
         if (!isValid) {
             _uiState.update {
@@ -53,13 +57,14 @@ class LoginViewModel(
             }
             return null
         }
+        _uiState.update { it.copy(isLoading = true, hasError = false, errorMessage = null) }
         val result = authRepository.login(state.email, state.password, state.selectedRole)
         return if (result.isSuccess) {
-            _uiState.update { it.copy(isSuccess = true, hasError = false, errorMessage = null) }
+            _uiState.update { it.copy(isSuccess = true, isLoading = false, hasError = false, errorMessage = null) }
             result.getOrNull() ?: state.selectedRole
         } else {
             val msg = result.exceptionOrNull()?.message ?: "Error al iniciar sesión."
-            _uiState.update { it.copy(hasError = true, errorMessage = msg) }
+            _uiState.update { it.copy(hasError = true, isLoading = false, errorMessage = msg) }
             null
         }
     }

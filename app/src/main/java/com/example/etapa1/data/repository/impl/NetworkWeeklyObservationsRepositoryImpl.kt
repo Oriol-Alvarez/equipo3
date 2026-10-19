@@ -37,6 +37,10 @@ class NetworkWeeklyObservationsRepositoryImpl(
         refresh()
     }
 
+    override fun limpiar() {
+        _observations.value = emptyList()
+    }
+
     override fun refresh() {
         RemoteSync.launch("Cargar observaciones") {
             api.getWeeklyObservations().bodyOrLog("GET /weekly-observations")?.let { list ->

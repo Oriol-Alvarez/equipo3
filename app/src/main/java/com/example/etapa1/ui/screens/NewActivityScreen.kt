@@ -38,6 +38,7 @@ import com.example.etapa1.model.ActivityCategory
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.FoodConsumptionOption
 import com.example.etapa1.model.MoodState
+import com.example.etapa1.ui.components.AvisoDialog
 import com.example.etapa1.ui.components.AccidentesSectionContent
 import com.example.etapa1.ui.components.ActivityCategoryGrid
 import com.example.etapa1.ui.components.AlimentacionSectionContent
@@ -89,25 +90,24 @@ fun NewActivityScreen(
 ) {
     var selectedCategory by remember { mutableStateOf(ActivityCategory.ALIMENTACION) }
     var shareWithFamilyGroups by remember { mutableStateOf(false) }
+    var mostrarAlergia by remember { mutableStateOf(false) }
 
     // Estado 1: Alimentación
     var desayunoOption by remember { mutableStateOf(FoodConsumptionOption.TODO) }
     var colacionOption by remember { mutableStateOf(FoodConsumptionOption.TODO) }
     var comidaOption by remember { mutableStateOf(FoodConsumptionOption.TODO) }
-    var alimentacionObservaciones by remember {
-        mutableStateOf("Mateo disfrutó mucho su comida de hoy y pidió un poco más de fruta.")
-    }
+    var alimentacionObservaciones by remember { mutableStateOf("") }
 
     // Estado 2: Descanso
     var descansoDurmio by remember { mutableStateOf(true) }
     var descansoMinutos by remember { mutableStateOf("60") }
-    var descansoComentarios by remember { mutableStateOf("Durmió tranquilo con su mantita.") }
+    var descansoComentarios by remember { mutableStateOf("") }
 
     // Estado 3: Funciones Excretoras
     var controlNoAplica by remember { mutableStateOf(false) }
     var controlAviso by remember { mutableStateOf(true) }
-    var vecesPipi by remember { mutableIntStateOf(2) }
-    var vecesPopo by remember { mutableIntStateOf(1) }
+    var vecesPipi by remember { mutableIntStateOf(0) }
+    var vecesPopo by remember { mutableIntStateOf(0) }
     var excretorasObservaciones by remember { mutableStateOf("") }
 
     // Estado 4: Estado de Ánimo
@@ -115,7 +115,7 @@ fun NewActivityScreen(
     var lloro by remember { mutableStateOf(false) }
     var peleo by remember { mutableStateOf(false) }
     var participo by remember { mutableStateOf(true) }
-    var animoObservaciones by remember { mutableStateOf("Muy participativo en la asamblea y juegos.") }
+    var animoObservaciones by remember { mutableStateOf("") }
 
     // Estado 5: Accidentes
     var tuvoAccidente by remember { mutableStateOf(false) }
@@ -201,8 +201,15 @@ fun NewActivityScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     MedicalAlertBanner(
                         text = child.allergyAlert,
-                        onClick = { /* Alerta alergias */ }
+                        onClick = { mostrarAlergia = true }
                     )
+                    if (mostrarAlergia) {
+                        AvisoDialog(
+                            titulo = "Alerta médica de ${child.shortName}",
+                            texto = "${child.allergyAlert}\n\nRevisa la ficha médica completa antes de registrar alimentos o medicamentos.",
+                            onDismiss = { mostrarAlergia = false }
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))

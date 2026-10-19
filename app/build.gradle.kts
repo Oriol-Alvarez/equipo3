@@ -6,6 +6,12 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+// Notificaciones push: Firebase se activa solo si existe app/google-services.json
+// (se descarga de la Consola de Firebase y no se sube a Git). Sin él la app funciona igual.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 // URL del backend. Cada quien la define en su propio local.properties (no se sube a Git):
 //   sonrisas.apiUrl=https://algo.trycloudflare.com/api/v1/
 // Si no está definida, se usa el backend local visto desde el emulador de Android.

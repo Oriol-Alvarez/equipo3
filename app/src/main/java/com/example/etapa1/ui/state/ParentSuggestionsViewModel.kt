@@ -23,7 +23,9 @@ data class ParentSuggestionsUiState(
 
 class ParentSuggestionsViewModel(
     private val suggestionsRepository: SuggestionsRepository,
-    coroutineScope: CoroutineScope? = null
+    coroutineScope: CoroutineScope? = null,
+    /** Para saber a qué hijo o hija se refiere la sugerencia. */
+    private val childRepository: com.example.etapa1.data.repository.ChildRepository? = null
 ) : ViewModel() {
 
     private val scope = coroutineScope ?: viewModelScope
@@ -48,18 +50,20 @@ class ParentSuggestionsViewModel(
         category: SuggestionCategory,
         subject: String,
         content: String,
-        childName: String = "Mateo García",
-        roomName: String = "Sala 1A"
+        childName: String? = null,
+        roomName: String? = null
     ): Boolean {
         if (subject.isBlank() || content.isBlank()) return false
+        val hijo = childRepository?.parentChildren?.value?.firstOrNull()
 
         val nowDate = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date())
         val nowTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
         val newSuggestion = ParentSuggestion(
             id = "sug_${System.currentTimeMillis()}",
-            parentName = "María López (Mamá de Mateo)",
-            childName = childName,
-            roomName = roomName,
+            // El servidor pone el nombre de la familia con la sesión iniciada
+            parentName = "",
+            childName = childName ?: hijo?.fullName.orEmpty(),
+            roomName = roomName ?: hijo?.roomText.orEmpty(),
             date = "Hoy, $nowDate",
             time = nowTime,
             category = category,
@@ -71,7 +75,7 @@ class ParentSuggestionsViewModel(
             responderName = null
         )
 
-        suggestionsRepository.addSuggestion(newSuggestion)
+        suggestionsRepository.addSuggestion(newSuggestion, childId = hijo?.id.orEmpty())
         _isSendingSuccess.value = true
         return true
     }

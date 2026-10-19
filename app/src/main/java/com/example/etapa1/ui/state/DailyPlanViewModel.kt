@@ -44,7 +44,9 @@ private data class EditorState(
 
 class DailyPlanViewModel(
     private val repository: DailyPlanRepository,
-    private val today: () -> SimpleDate = { SimpleDate.today() }
+    private val today: () -> SimpleDate = { SimpleDate.today() },
+    /** Nombre de quien publica; el servidor guarda el de la sesión. */
+    private val autor: () -> String = { FamilyGroupsSampleData.EDUCADORA.displayName }
 ) : ViewModel() {
 
     private val canEdit = MutableStateFlow(false)
@@ -55,6 +57,9 @@ class DailyPlanViewModel(
         // Con backend trae los datos más recientes del servidor; en modo demo no hace nada.
         repository.refresh()
     }
+
+    /** Muestra la planeación de esa sala (la de la educadora o la del hijo de la familia). */
+    fun abrirSala(roomId: String) = repository.abrirSala(roomId)
 
     val uiState: StateFlow<DailyPlanUiState> = combine(
         repository.plans,
@@ -144,7 +149,7 @@ class DailyPlanViewModel(
         return DailyPlanPresenter.toPlan(
             draft = current.draft,
             date = selectedDate.value,
-            author = FamilyGroupsSampleData.EDUCADORA.displayName
+            author = autor()
         ).fold(
             onSuccess = { plan ->
                 repository.savePlan(plan)

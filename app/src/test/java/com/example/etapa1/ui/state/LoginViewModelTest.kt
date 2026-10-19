@@ -6,6 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 
@@ -31,7 +32,7 @@ class LoginViewModelTest {
 
     @Test
     fun submitLogin_withEmptyCredentials_triggersError() {
-        val role = viewModel.submitLogin()
+        val role = runBlocking { viewModel.submitLogin() }
         assertNull(role)
         assertTrue(viewModel.uiState.value.hasError)
         assertEquals("Por favor, introduce tu correo y contraseña.", viewModel.uiState.value.errorMessage)
@@ -43,7 +44,7 @@ class LoginViewModelTest {
         viewModel.onPasswordChanged("123456")
         viewModel.onRoleSelected(UserRole.EDUCADORA)
 
-        val role = viewModel.submitLogin()
+        val role = runBlocking { viewModel.submitLogin() }
         assertEquals(UserRole.EDUCADORA, role)
         assertFalse(viewModel.uiState.value.hasError)
         assertNull(viewModel.uiState.value.errorMessage)
@@ -54,7 +55,7 @@ class LoginViewModelTest {
     fun submitLogin_whenRepositoryFails_setsSpecificErrorMessage() {
         val failingRepo = object : com.example.etapa1.data.repository.AuthRepository {
             override val currentUserRole = authRepository.currentUserRole
-            override fun login(email: String, password: String, role: UserRole): Result<UserRole> {
+            override suspend fun login(email: String, password: String, role: UserRole): Result<UserRole> {
                 return Result.failure(Exception("No se pudo conectar con el servidor. Verifica tu conexión."))
             }
             override fun setRole(role: UserRole) {}
@@ -64,7 +65,7 @@ class LoginViewModelTest {
         failingVm.onEmailChanged("educadora@sonrisas.com")
         failingVm.onPasswordChanged("wrong")
 
-        val role = failingVm.submitLogin()
+        val role = runBlocking { failingVm.submitLogin() }
         assertNull(role)
         assertTrue(failingVm.uiState.value.hasError)
         assertEquals("No se pudo conectar con el servidor. Verifica tu conexión.", failingVm.uiState.value.errorMessage)

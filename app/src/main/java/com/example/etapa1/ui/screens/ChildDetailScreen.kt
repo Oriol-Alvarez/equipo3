@@ -27,6 +27,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +56,7 @@ import com.example.etapa1.model.FamilyGroupsSampleData
 import com.example.etapa1.model.ObservationAuthorRole
 import com.example.etapa1.model.WeeklyObservationsSampleData
 import com.example.etapa1.ui.components.WeeklyObservationsPanel
+import com.example.etapa1.ui.components.nombreDeSesion
 import com.example.etapa1.ui.state.AppViewModelProvider
 import com.example.etapa1.ui.state.ChildDetailViewModel
 import com.example.etapa1.ui.state.WeeklyObservationsViewModel
@@ -70,15 +73,16 @@ fun ChildDetailScreen(
     onExportLog: (() -> Unit)? = null,
     weeklyObservationsViewModel: WeeklyObservationsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
-    val fullProfile = remember(child.id) { viewModel.getFullProfile(child) }
-    val weeklySummaries = remember(child.id) { viewModel.getWeeklySummaries(child) }
-    val bitacoras = remember(child.id) { viewModel.getDailyBitacoras(child) }
+    LaunchedEffect(child.id) { viewModel.abrir(child) }
+    val estado by viewModel.uiState.collectAsState()
+    // Mientras llega el estado de este niño se arma con lo que ya esté cargado
+    val datos = estado?.takeIf { it.childId == child.id } ?: viewModel.estadoPara(child)
 
     ChildDetailContent(
         child = child,
-        fullProfile = fullProfile,
-        weeklySummaries = weeklySummaries,
-        bitacoras = bitacoras,
+        fullProfile = datos.fullProfile,
+        weeklySummaries = datos.weeklySummaries,
+        bitacoras = datos.dailyBitacoras,
         onBack = onBack,
         onNavigateToChat = onNavigateToChat,
         onNavigateToAttendance = onNavigateToAttendance,
@@ -90,11 +94,13 @@ fun ChildDetailScreen(
                 summary = summary,
                 isCurrentWeek = isCurrentWeek,
                 viewerRole = if (isFamilyViewer) ObservationAuthorRole.FAMILIA else ObservationAuthorRole.EDUCADORA,
-                viewerName = if (isFamilyViewer) {
-                    WeeklyObservationsSampleData.FAMILIA_GARCIA_NAME
-                } else {
-                    FamilyGroupsSampleData.EDUCADORA.displayName
-                }
+                viewerName = nombreDeSesion(
+                    if (isFamilyViewer) {
+                        WeeklyObservationsSampleData.FAMILIA_GARCIA_NAME
+                    } else {
+                        FamilyGroupsSampleData.EDUCADORA.displayName
+                    }
+                )
             )
         }
     )

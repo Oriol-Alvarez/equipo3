@@ -50,6 +50,10 @@ class NetworkDailyLogRepositoryImpl(
         refresh()
     }
 
+    override fun limpiar() {
+        _logs.value = emptyList()
+    }
+
     override fun refresh() {
         val today = SimpleDate.today()
         synchronized(dirtyKeys) { dirtyKeys.clear() }

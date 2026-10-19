@@ -108,7 +108,8 @@ class SuggestionsViewModel(
             id = suggestionId,
             status = newStatus,
             response = responseText,
-            responderName = "Laura Méndez (Dirección)"
+            // El servidor guarda el nombre de quien tiene la sesión iniciada
+            responderName = null
         )
     }
 }

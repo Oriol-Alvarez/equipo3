@@ -1,9 +1,10 @@
 package com.example.etapa1.data.repository.impl
 
+import com.example.etapa1.data.remote.RemoteSync
+import com.example.etapa1.data.remote.RemoteSync.bodyOrLog
 import com.example.etapa1.data.remote.SonrisasApi
 import com.example.etapa1.data.repository.AnnouncementRepository
 import com.example.etapa1.model.Announcement
-import com.example.etapa1.model.MockDataRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,34 +17,37 @@ class NetworkAnnouncementRepositoryImpl(
     private val api: SonrisasApi
 ) : AnnouncementRepository {
 
-    private val _announcements = MutableStateFlow<List<Announcement>>(MockDataRepository.getInitialAnnouncements())
+    private val _announcements = MutableStateFlow<List<Announcement>>(emptyList())
     override val announcements: StateFlow<List<Announcement>> = _announcements.asStateFlow()
 
-    private val _unreadCount = MutableStateFlow(_announcements.value.count { it.isUnread })
+    private val _unreadCount = MutableStateFlow(0)
     override val unreadCount: StateFlow<Int> = _unreadCount.asStateFlow()
 
     init {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val res = api.getAnnouncements()
-                if (res.isSuccessful && !res.body().isNullOrEmpty()) {
-                    val list = res.body()!!.map { dto ->
-                        Announcement(
-                            id = dto.id,
-                            title = dto.title,
-                            date = dto.date,
-                            summary = dto.summary,
-                            fullContent = dto.fullContent,
-                            isUnread = dto.isUnread,
-                            author = dto.author
-                        )
-                    }
-                    _announcements.value = list
-                    _unreadCount.value = list.count { it.isUnread }
-                }
-            } catch (_: Exception) {
-            }
+        refresh()
+    }
+
+    override fun refresh() {
+        RemoteSync.launch("Cargar avisos") {
+            val list = api.getAnnouncements().bodyOrLog("GET /announcements")?.map { dto ->
+                Announcement(
+                    id = dto.id,
+                    title = dto.title,
+                    date = dto.date,
+                    summary = dto.summary,
+                    fullContent = dto.fullContent,
+                    isUnread = dto.isUnread,
+                    author = dto.author
+                )
+            } ?: return@launch
+            _announcements.value = list
+            _unreadCount.value = list.count { it.isUnread }
         }
+    }
+
+    override fun limpiar() {
+        _announcements.value = emptyList()
+        _unreadCount.value = 0
     }
 
     override fun markAsRead(id: String) {

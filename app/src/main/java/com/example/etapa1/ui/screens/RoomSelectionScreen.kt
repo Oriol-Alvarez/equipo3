@@ -53,6 +53,7 @@ import com.example.etapa1.ui.theme.TextPrimary
 import com.example.etapa1.ui.theme.TextSecondary
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.theme.Etapa1Theme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import com.example.etapa1.ui.state.RoomSelectionViewModel
 
@@ -66,9 +67,12 @@ fun RoomSelectionScreen(
     onNavigateToMore: () -> Unit = {}
 ) {
     val rooms by viewModel.rooms.collectAsState()
+    // Al volver a esta pantalla se actualizan los contadores de asistencia
+    LaunchedEffect(Unit) { viewModel.recargar() }
 
     RoomSelectionScreen(
         rooms = rooms,
+        onRefresh = viewModel::recargar,
         unreadAnnouncementsCount = unreadAnnouncementsCount,
         onRoomSelected = onRoomSelected,
         onNavigateToMessages = onNavigateToMessages,
@@ -80,6 +84,7 @@ fun RoomSelectionScreen(
 @Composable
 fun RoomSelectionScreen(
     rooms: List<Room> = MockDataRepository.rooms,
+    onRefresh: () -> Unit = {},
     onRoomSelected: (Room) -> Unit,
     unreadAnnouncementsCount: Int = 0,
     onNavigateToMessages: () -> Unit = {},
@@ -139,7 +144,7 @@ fun RoomSelectionScreen(
                 )
 
                 IconButton(
-                    onClick = { /* Refrescar */ },
+                    onClick = onRefresh,
                     modifier = Modifier.align(Alignment.CenterEnd)
                 ) {
                     Icon(

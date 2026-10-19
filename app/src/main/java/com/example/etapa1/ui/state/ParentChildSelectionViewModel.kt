@@ -13,4 +13,6 @@ class ParentChildSelectionViewModel(
     init {
         childRepository.refresh()
     }
+
+    fun recargar() = childRepository.refresh()
 }
