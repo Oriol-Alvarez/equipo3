@@ -62,10 +62,19 @@ def instalar(app: FastAPI) -> None:
             status_code=400
         )
 
+    from sqlalchemy.exc import SQLAlchemyError
+    @app.exception_handler(SQLAlchemyError)
+    async def sqlalchemy_error_handler(_: Request, e: SQLAlchemyError) -> JSONResponse:
+        logger.warning(f"Database error (SQLAlchemyError): {e}")
+        return JSONResponse(
+            {"error": "Conflicto o dato inválido para la base de datos.", "code": "db_error"},
+            status_code=400
+        )
+
     @app.exception_handler(Exception)
     async def global_exception_handler(_: Request, e: Exception) -> JSONResponse:
         logger.exception(f"Unhandled exception: {e}")
         return JSONResponse(
-            {"error": "Error interno del servidor.", "code": "internal_error"},
-            status_code=500
+            {"message": "No se pudo procesar la solicitud debido a datos malformados o estado no válido.", "code": "request_error"},
+            status_code=400
         )
