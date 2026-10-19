@@ -35,6 +35,8 @@ import androidx.compose.material.icons.filled.NightlightRound
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -477,7 +479,9 @@ fun WeeklySummaryContent(
     summaries: List<WeeklySummary>,
     selectedWeekIndex: Int = 0,
     onSelectWeek: (Int) -> Unit = {},
-    child: Child
+    child: Child,
+    onToggleReadStatus: ((WeeklySummary) -> Unit)? = null,
+    onSelectReaction: ((WeeklySummary, String) -> Unit)? = null
 ) {
     val currentSummary = summaries.getOrNull(selectedWeekIndex) ?: summaries.firstOrNull()
 
@@ -695,6 +699,177 @@ fun WeeklySummaryContent(
                         fontSize = 13.sp,
                         color = TextPrimary,
                         lineHeight = 18.sp
+                    )
+                }
+
+                // Confirmación de lectura y Reacciones de la Familia
+                WeeklySummaryReadAndReactionCard(
+                    summary = currentSummary,
+                    onToggleReadStatus = onToggleReadStatus?.let { callback -> { callback(currentSummary) } },
+                    onSelectReaction = onSelectReaction?.let { callback -> { reaction -> callback(currentSummary, reaction) } }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun WeeklySummaryReadAndReactionCard(
+    summary: WeeklySummary,
+    onToggleReadStatus: (() -> Unit)?,
+    onSelectReaction: ((String) -> Unit)?
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Confirmación de Lectura y Reacciones",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+                if (summary.isReadByParent) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(StatusPresentGreen.copy(alpha = 0.15f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "Confirmado",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = StatusPresentGreen
+                        )
+                    }
+                }
+            }
+
+            // Reacciones
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Reacción de la familia:",
+                    fontSize = 12.sp,
+                    color = TextSecondary
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val reactions = listOf(
+                        "❤️" to "Me encanta",
+                        "👍" to "Entendido",
+                        "😊" to "Feliz",
+                        "🌟" to "Excelente"
+                    )
+                    reactions.forEach { (emoji, _) ->
+                        val isSelected = summary.parentReaction == emoji
+                        Box(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(if (isSelected) BrandBlueContainer else Color.Transparent)
+                                .border(
+                                    width = if (isSelected) 1.5.dp else 1.dp,
+                                    color = if (isSelected) BrandBlue else BorderSubtle,
+                                    shape = CircleShape
+                                )
+                                .clickable(enabled = onSelectReaction != null) {
+                                    val newReaction = if (isSelected) "" else emoji
+                                    onSelectReaction?.invoke(newReaction)
+                                }
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = emoji, fontSize = 16.sp)
+                        }
+                    }
+                }
+            }
+
+            // Estado de lectura / Botón
+            if (summary.isReadByParent) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(StatusPresentGreen.copy(alpha = 0.12f))
+                        .border(1.dp, StatusPresentGreen.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = StatusPresentGreen,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Column {
+                            Text(
+                                text = "Leído por la familia",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = StatusPresentGreen
+                            )
+                            if (!summary.readTimestampText.isNullOrBlank()) {
+                                Text(
+                                    text = summary.readTimestampText,
+                                    fontSize = 11.sp,
+                                    color = TextSecondary
+                                )
+                            }
+                        }
+                    }
+
+                    if (onToggleReadStatus != null) {
+                        Text(
+                            text = "Deshacer",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = TextMuted,
+                            modifier = Modifier.clickable { onToggleReadStatus() }
+                        )
+                    }
+                }
+            } else {
+                Button(
+                    onClick = { onToggleReadStatus?.invoke() },
+                    enabled = onToggleReadStatus != null,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = BrandBlue,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Marcar como leído por la familia",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }

@@ -50,12 +50,54 @@ class MockChildRepositoryImpl : ChildRepository {
         _childProfiles[childId] = profile
     }
 
+    private val _weeklySummaries = mutableMapOf<String, List<WeeklySummary>>()
+
     override fun getWeeklySummaryForChild(child: Child): WeeklySummary {
-        return MockDataRepository.getWeeklySummaryForChild(child)
+        return getWeeklySummariesForChild(child).first()
     }
 
     override fun getWeeklySummariesForChild(child: Child): List<WeeklySummary> {
-        return MockDataRepository.getWeeklySummariesForChild(child)
+        return _weeklySummaries.getOrPut(child.id) {
+            MockDataRepository.getWeeklySummariesForChild(child)
+        }
+    }
+
+    override fun markWeeklySummaryReadStatus(
+        childId: String,
+        weekRangeText: String,
+        isRead: Boolean,
+        timestampText: String?
+    ) {
+        val currentList = _weeklySummaries[childId] ?: return
+        val updatedList = currentList.map { summary ->
+            if (summary.weekRangeText == weekRangeText) {
+                summary.copy(
+                    isReadByParent = isRead,
+                    readTimestampText = if (isRead) (timestampText ?: "Hoy, 18:30") else null
+                )
+            } else {
+                summary
+            }
+        }
+        _weeklySummaries[childId] = updatedList
+    }
+
+    override fun setWeeklySummaryReaction(
+        childId: String,
+        weekRangeText: String,
+        reaction: String?
+    ) {
+        val currentList = _weeklySummaries[childId] ?: return
+        val updatedList = currentList.map { summary ->
+            if (summary.weekRangeText == weekRangeText) {
+                summary.copy(
+                    parentReaction = if (reaction.isNullOrBlank()) null else reaction
+                )
+            } else {
+                summary
+            }
+        }
+        _weeklySummaries[childId] = updatedList
     }
 
     override fun getDailyBitacorasForChild(child: Child): List<DailyBitacora> {

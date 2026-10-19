@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class ParentHomeUiState(
     val selectedChild: Child,
@@ -79,5 +82,40 @@ class ParentHomeViewModel(
         )
         childRepository.updateChildFullProfile(currentChild.id, updated)
         _uiState.update { it.copy(fullProfile = updated) }
+    }
+
+    fun toggleWeeklySummaryReadStatus(summary: WeeklySummary) {
+        val currentChild = _uiState.value.selectedChild
+        val newReadState = !summary.isReadByParent
+        val timeNow = SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()).format(Date())
+        childRepository.markWeeklySummaryReadStatus(
+            childId = currentChild.id,
+            weekRangeText = summary.weekRangeText,
+            isRead = newReadState,
+            timestampText = if (newReadState) "Hoy, $timeNow" else null
+        )
+        val updatedSummaries = childRepository.getWeeklySummariesForChild(currentChild)
+        _uiState.update {
+            it.copy(
+                weeklySummaries = updatedSummaries,
+                weeklySummary = updatedSummaries.firstOrNull() ?: it.weeklySummary
+            )
+        }
+    }
+
+    fun setWeeklySummaryReaction(summary: WeeklySummary, reaction: String) {
+        val currentChild = _uiState.value.selectedChild
+        childRepository.setWeeklySummaryReaction(
+            childId = currentChild.id,
+            weekRangeText = summary.weekRangeText,
+            reaction = reaction
+        )
+        val updatedSummaries = childRepository.getWeeklySummariesForChild(currentChild)
+        _uiState.update {
+            it.copy(
+                weeklySummaries = updatedSummaries,
+                weeklySummary = updatedSummaries.firstOrNull() ?: it.weeklySummary
+            )
+        }
     }
 }

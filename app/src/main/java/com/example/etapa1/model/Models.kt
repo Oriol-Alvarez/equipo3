@@ -1272,7 +1272,10 @@ data class WeeklySummary(
     val foodHighlights: List<String>,
     val napHighlights: String,
     val pedagogicalHighlights: List<String>,
-    val healthAndSafetySummary: String
+    val healthAndSafetySummary: String,
+    val isReadByParent: Boolean = false,
+    val readTimestampText: String? = null,
+    val parentReaction: String? = null
 )
 
 

@@ -152,6 +152,8 @@ fun ParentHomeScreen(
                 viewerName = WeeklyObservationsSampleData.FAMILIA_GARCIA_NAME
             )
         },
+        onToggleWeeklySummaryReadStatus = { summary -> viewModel.toggleWeeklySummaryReadStatus(summary) },
+        onSetWeeklySummaryReaction = { summary, reaction -> viewModel.setWeeklySummaryReaction(summary, reaction) },
         onUpdateProfile = { ped, pedPhone, medNotes, habits, emergPhone, pickups, uri, certName, certDate ->
             viewModel.updateChildProfile(
                 pediatrician = ped,
@@ -190,6 +192,8 @@ fun ParentHomeScreen(
     onOpenDailyPlan: () -> Unit = {},
     /** Observaciones de la familia debajo del resumen semanal (semana mostrada, ¿es la actual?). */
     weeklyObservations: @Composable (WeeklySummary, Boolean) -> Unit = { _, _ -> },
+    onToggleWeeklySummaryReadStatus: ((WeeklySummary) -> Unit)? = null,
+    onSetWeeklySummaryReaction: ((WeeklySummary, String) -> Unit)? = null,
     onUpdateProfile: (
         pediatrician: String,
         pediatricianPhone: String,
@@ -527,7 +531,9 @@ fun ParentHomeScreen(
                             summaries = weeklySummaries,
                             selectedWeekIndex = selectedWeekIndex,
                             onSelectWeek = { index -> selectedWeekIndex = index },
-                            child = child
+                            child = child,
+                            onToggleReadStatus = onToggleWeeklySummaryReadStatus,
+                            onSelectReaction = onSetWeeklySummaryReaction
                         )
                     }
                 }

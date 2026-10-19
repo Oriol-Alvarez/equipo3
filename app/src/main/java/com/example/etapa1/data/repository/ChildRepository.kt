@@ -15,5 +15,7 @@ interface ChildRepository {
     fun updateChildFullProfile(childId: String, profile: ChildFullProfile)
     fun getWeeklySummaryForChild(child: Child): WeeklySummary
     fun getWeeklySummariesForChild(child: Child): List<WeeklySummary>
+    fun markWeeklySummaryReadStatus(childId: String, weekRangeText: String, isRead: Boolean, timestampText: String? = null)
+    fun setWeeklySummaryReaction(childId: String, weekRangeText: String, reaction: String?)
     fun getDailyBitacorasForChild(child: Child): List<DailyBitacora>
 }
