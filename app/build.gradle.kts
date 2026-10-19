@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -7,9 +9,10 @@ plugins {
 // URL del backend. Cada quien la define en su propio local.properties (no se sube a Git):
 //   sonrisas.apiUrl=https://algo.trycloudflare.com/api/v1/
 // Si no está definida, se usa el backend local visto desde el emulador de Android.
-val localProperties = java.util.Properties().apply {
-    val file = rootProject.file("local.properties")
-    if (file.exists()) file.inputStream().use { load(it) }
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 val sonrisasApiUrl: String = localProperties.getProperty("sonrisas.apiUrl")?.trim()
     ?.takeIf { it.isNotEmpty() }
