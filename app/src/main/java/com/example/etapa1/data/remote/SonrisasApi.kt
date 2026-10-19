@@ -211,5 +211,11 @@ interface SonrisasApi {
         @Path("childId") childId: String,
         @Body request: CreateActivityDto
     ): Response<NewActivityResponseDto>
+
+    // ---------------------------------------------------------------- notificaciones push fcm
+    @POST("notifications/device-token")
+    suspend fun registerDeviceToken(
+        @Body request: DeviceTokenRequestDto
+    ): Response<Map<String, String>>
 }
 

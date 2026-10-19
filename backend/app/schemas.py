@@ -496,11 +496,11 @@ class LostObjectOut(BaseModel):
 
 
 class CreateLostObjectRequest(BaseModel):
-    title: str
-    description: str
-    category: str
-    location: str | None = None
-    room: str = "Sala 1A"
+    title: str = Field(..., max_length=150, pattern=r"^[^%]*$")
+    description: str = Field(..., max_length=500, pattern=r"^[^%]*$")
+    category: str = Field(..., max_length=50, pattern=r"^[^%]*$")
+    location: str | None = Field(default=None, max_length=150, pattern=r"^[^%]*$")
+    room: str = Field(default="Sala 1A", max_length=50, pattern=r"^[^%]*$")
     imageUri: str | None = None
 
 
@@ -526,8 +526,8 @@ class MediaUploadOut(BaseModel):
 # ---------------------------------------------------------------------------
 
 class DeviceTokenRequest(BaseModel):
-    deviceToken: str
-    platform: str = "ANDROID"
+    deviceToken: str = Field(..., max_length=300)
+    platform: str = Field(default="ANDROID", max_length=20, pattern=r"^[a-zA-Z0-9_.-]+$")
 
 
 # ---------------------------------------------------------------------------

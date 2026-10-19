@@ -311,3 +311,9 @@ data class NewActivityResponseDto(
     val timelineItem: TimelineItemDto
 )
 
+@Serializable
+data class DeviceTokenRequestDto(
+    val deviceToken: String,
+    val platform: String = "android"
+)
+

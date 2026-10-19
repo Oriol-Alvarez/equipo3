@@ -2,9 +2,13 @@
     { "error": "mensaje amigable", "code": "codigo_error", "hint": "pista técnica" }
 """
 
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+
+logger = logging.getLogger(__name__)
 
 
 class ApiError(Exception):
@@ -49,3 +53,28 @@ def instalar(app: FastAPI) -> None:
             mensaje = "Datos inválidos en la petición"
 
         return JSONResponse({"field": campo, "error": mensaje}, status_code=422)
+
+    @app.exception_handler(ValueError)
+    async def value_error_handler(_: Request, e: ValueError) -> JSONResponse:
+        logger.warning(f"Validation error (ValueError): {e}")
+        return JSONResponse(
+            {"error": "Dato inválido proporcionado en la solicitud.", "code": "bad_request"},
+            status_code=400
+        )
+
+    from sqlalchemy.exc import SQLAlchemyError
+    @app.exception_handler(SQLAlchemyError)
+    async def sqlalchemy_error_handler(_: Request, e: SQLAlchemyError) -> JSONResponse:
+        logger.warning(f"Database error (SQLAlchemyError): {e}")
+        return JSONResponse(
+            {"error": "Conflicto o dato inválido para la base de datos.", "code": "db_error"},
+            status_code=400
+        )
+
+    @app.exception_handler(Exception)
+    async def global_exception_handler(_: Request, e: Exception) -> JSONResponse:
+        logger.exception(f"Unhandled exception: {e}")
+        return JSONResponse(
+            {"message": "No se pudo procesar la solicitud debido a datos malformados o estado no válido.", "code": "request_error"},
+            status_code=400
+        )

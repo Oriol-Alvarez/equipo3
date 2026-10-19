@@ -24,7 +24,10 @@ object NetworkClient {
             level = HttpLoggingInterceptor.Level.BODY
         }
         return OkHttpClient.Builder()
-            .addInterceptor(AuthInterceptor { tokenManager.token })
+            .addInterceptor(AuthInterceptor(
+                tokenProvider = { tokenManager.token },
+                onUnauthorized = { tokenManager.notifySessionExpired() }
+            ))
             .addInterceptor(logging)
             .pingInterval(20, TimeUnit.SECONDS)
             .connectTimeout(15, TimeUnit.SECONDS)

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -44,6 +45,13 @@ fun SonrisasApp() {
             androidx.compose.runtime.LaunchedEffect(actual.sesion) {
                 app?.container?.asegurarConexionChat()
                 app?.container?.childRepository?.refresh()
+            }
+
+            LaunchedEffect(Unit) {
+                app?.container?.tokenManager?.sessionExpired?.collect {
+                    app.container.desconectarChat()
+                    sesionViewModel.salir()
+                }
             }
 
             SonrisasNavHost(

@@ -43,6 +43,7 @@ import com.example.etapa1.data.repository.impl.NetworkLostObjectsRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkRoomRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkSuggestionsRepositoryImpl
 import com.example.etapa1.data.remote.ChatConexion
+import com.example.etapa1.data.remote.OfflineStore
 import com.example.etapa1.data.repository.impl.NetworkBitacoraRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkMessagesRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkWeeklyObservationsRepositoryImpl
@@ -61,6 +62,7 @@ open class AppContainer(val context: Context) {
     var useMocks: Boolean = USE_MOCKS
 
     val tokenManager by lazy { TokenManager(context) }
+    val offlineStore by lazy { OfflineStore(context) }
     val api by lazy { NetworkClient.createApi(tokenManager) }
     val chatConexion: ChatConexion by lazy {
         ChatConexion(NetworkClient.createOkHttpClient(tokenManager))

@@ -5,10 +5,14 @@ Estructura y diseño basados en la arquitectura de Practica 11.
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from . import almacen, errors
+from .rate_limit import limiter
 from .config import settings
 from .db import Base, SessionLocal, engine
 from .routers import (
@@ -45,13 +49,32 @@ async def lifespan(_: FastAPI):
 
     yield
 
-
 app = FastAPI(
     title="Sonrisas API - Control Escolar y Comunicación",
     version="1.0.0",
     description="Backend oficial para la aplicación móvil Sonrisas (Estancias Infantiles).",
     lifespan=lifespan,
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# ---------------------------------------------------------------------------
+# Middlewares
+# ---------------------------------------------------------------------------
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    """Integración de cabeceras de seguridad en HTTP."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Content-Security-Policy"] = "default-src 'self'"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+    return response
 
 # Instalación del manejador de errores estandarizado
 errors.instalar(app)

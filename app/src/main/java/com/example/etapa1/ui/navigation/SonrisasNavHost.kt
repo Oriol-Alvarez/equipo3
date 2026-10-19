@@ -1,5 +1,6 @@
 package com.example.etapa1.ui.navigation
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -11,16 +12,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.etapa1.SonrisasApplication
+import com.example.etapa1.domain.EstadoConexion
 import com.example.etapa1.domain.Sesion
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.ui.components.AppBottomBar
+import com.example.etapa1.ui.components.ChipConexion
 import com.example.etapa1.ui.screens.*
 import com.example.etapa1.ui.state.*
 import com.example.etapa1.ui.theme.AppBackground
@@ -81,6 +88,10 @@ fun SonrisasNavHost(
         }
     }
 
+    val context = LocalContext.current
+    val app = context.applicationContext as? SonrisasApplication
+    val estadoConexion = app?.container?.chatConexion?.estado?.collectAsState()?.value ?: EstadoConexion.Conectado
+
     Scaffold(
         containerColor = AppBackground,
         bottomBar = {
@@ -95,14 +106,15 @@ fun SonrisasNavHost(
             }
         }
     ) { paddingValues ->
-        NavHost(
-            navController = nav,
-            startDestination = startRoute,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .consumeWindowInsets(paddingValues)
-        ) {
+        Box(Modifier.fillMaxSize()) {
+            NavHost(
+                navController = nav,
+                startDestination = startRoute,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .consumeWindowInsets(paddingValues)
+            ) {
             composable(Route.ROOM_SELECTION) {
                 val vm: RoomSelectionViewModel = viewModel(factory = AppViewModelProvider.Factory)
                 RoomSelectionScreen(
@@ -352,5 +364,15 @@ fun SonrisasNavHost(
                 )
             }
         }
+
+        if (app != null && !app.container.useMocks && estadoConexion != EstadoConexion.Conectado) {
+            ChipConexion(
+                estado = estadoConexion,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = paddingValues.calculateTopPadding() + 8.dp, end = 12.dp)
+            )
+        }
     }
+}
 }
