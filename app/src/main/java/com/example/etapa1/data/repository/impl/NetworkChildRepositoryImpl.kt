@@ -86,12 +86,50 @@ class NetworkChildRepositoryImpl(
         MockDataRepository.updateChildFullProfile(childId, profile)
     }
 
+    // Los resúmenes semanales aún salen de los datos de ejemplo. Se guardan por niño para que
+    // la confirmación de lectura y la reacción de la familia se conserven mientras la app está
+    // abierta. El backend todavía no tiene endpoint para guardarlas en el servidor.
+    private val _weeklySummaries = mutableMapOf<String, List<WeeklySummary>>()
+
     override fun getWeeklySummaryForChild(child: Child): WeeklySummary {
-        return MockDataRepository.getWeeklySummaryForChild(child)
+        return getWeeklySummariesForChild(child).firstOrNull()
+            ?: MockDataRepository.getWeeklySummaryForChild(child)
     }
 
     override fun getWeeklySummariesForChild(child: Child): List<WeeklySummary> {
-        return MockDataRepository.getWeeklySummariesForChild(child)
+        return _weeklySummaries.getOrPut(child.id) {
+            MockDataRepository.getWeeklySummariesForChild(child)
+        }
+    }
+
+    override fun markWeeklySummaryReadStatus(
+        childId: String,
+        weekRangeText: String,
+        isRead: Boolean,
+        timestampText: String?
+    ) {
+        val currentList = _weeklySummaries[childId] ?: return
+        _weeklySummaries[childId] = currentList.map { summary ->
+            if (summary.weekRangeText == weekRangeText) {
+                summary.copy(
+                    isReadByParent = isRead,
+                    readTimestampText = if (isRead) timestampText else null
+                )
+            } else {
+                summary
+            }
+        }
+    }
+
+    override fun setWeeklySummaryReaction(childId: String, weekRangeText: String, reaction: String?) {
+        val currentList = _weeklySummaries[childId] ?: return
+        _weeklySummaries[childId] = currentList.map { summary ->
+            if (summary.weekRangeText == weekRangeText) {
+                summary.copy(parentReaction = if (reaction.isNullOrBlank()) null else reaction)
+            } else {
+                summary
+            }
+        }
     }
 
     override fun getDailyBitacorasForChild(child: Child): List<DailyBitacora> {
