@@ -69,3 +69,37 @@ def test_registro_docente_sin_codigo_se_degrada_a_familiar(cliente: TestClient):
     )
     assert r.status_code == 201
     assert r.json()["user"]["role"] == "FAMILIAR"
+
+
+def _login(cliente: TestClient, email: str, password: str):
+    return cliente.post("/api/v1/auth/login", json={"email": email, "password": password})
+
+
+def test_cinco_fallos_bloquean_solo_esa_cuenta(cliente: TestClient):
+    # Cinco contraseñas incorrectas seguidas para el mismo correo
+    for _ in range(5):
+        assert _login(cliente, "familiar@sonrisas.edu", "incorrecta").status_code == 401
+
+    # El sexto intento se bloquea aunque la contraseña sea correcta
+    r = _login(cliente, "familiar@sonrisas.edu", "Password123!")
+    assert r.status_code == 429
+    assert r.json()["code"] == "demasiados_intentos"
+
+    # Otra cuenta desde la misma IP sigue entrando sin problema
+    assert _login(cliente, "educadora@sonrisas.edu", "Password123!").status_code == 200
+
+
+def test_login_correcto_reinicia_el_contador(cliente: TestClient):
+    for _ in range(4):
+        assert _login(cliente, "familiar@sonrisas.edu", "incorrecta").status_code == 401
+    assert _login(cliente, "familiar@sonrisas.edu", "Password123!").status_code == 200
+    # Tras el acceso correcto el contador vuelve a cero: otros 4 fallos no bloquean
+    for _ in range(4):
+        assert _login(cliente, "familiar@sonrisas.edu", "incorrecta").status_code == 401
+    assert _login(cliente, "familiar@sonrisas.edu", "Password123!").status_code == 200
+
+
+def test_muchos_logins_correctos_no_bloquean(cliente: TestClient):
+    # Antes, 5 inicios de sesión por minuto desde la misma IP bloqueaban a todos
+    for _ in range(10):
+        assert _login(cliente, "educadora@sonrisas.edu", "Password123!").status_code == 200

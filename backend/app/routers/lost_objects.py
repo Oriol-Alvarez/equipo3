@@ -56,10 +56,10 @@ def listar_objetos_perdidos(
 @router.post("", response_model=LostObjectOut, status_code=201)
 def publicar_objeto_perdido(
     body: CreateLostObjectRequest,
-    _: Identidad = Depends(requiere_educadora),
+    _: Identidad = Depends(usuario_actual),
     db: Session = Depends(get_db),
 ) -> LostObjectOut:
-    """Registra un nuevo objeto encontrado en el centro (restringido al personal)."""
+    """Registra un objeto perdido o encontrado. Lo puede reportar el personal o una familia."""
     if not body.title.strip() or not body.description.strip():
         raise ApiError(422, "El título y la descripción del objeto son obligatorios")
 

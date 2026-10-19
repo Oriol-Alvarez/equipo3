@@ -8,9 +8,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import almacen
+from ..acceso import exigir_alumno_visible
 from ..db import get_db
 from ..deps import Identidad, requiere_familiar, usuario_actual
 from ..errors import ApiError
+from ..fichas import ficha, fichas
 from ..models import Child, ChildParent, ChildProfile
 from ..schemas import (
     ChildFullProfileOut,
@@ -35,62 +37,33 @@ def listar_hijos_de_familiar(
     if not alumnos and quien.role == "DIRECCION":
         alumnos = db.scalars(select(Child)).all()
 
-    return [
-        ChildOut(
-            id=a.id,
-            fullName=a.full_name,
-            shortName=a.short_name,
-            ageText=a.age_text,
-            roomText=a.room_id,
-            groupText=a.group_text,
-            statusText=a.status_text,
-            isPresent=a.is_present,
-            arrivalTime=a.arrival_time,
-            allergyAlert=a.allergy_alert,
-            avatarInitials=a.avatar_initials,
-            avatarBgColor=a.avatar_bg_color,
-        )
-        for a in alumnos
-    ]
+    return fichas(alumnos, db)
 
 
 @router.get("/children/{childId}", response_model=ChildOut)
 def obtener_alumno(
     childId: str,
-    _: Identidad = Depends(usuario_actual),
+    quien: Identidad = Depends(usuario_actual),
     db: Session = Depends(get_db),
 ) -> ChildOut:
     """Obtiene la ficha básica de un alumno."""
-    alumno = db.get(Child, childId)
-    if alumno is None:
-        raise ApiError(404, f"No se encontró el alumno con id {childId}", "alumno_no_encontrado")
-
-    return ChildOut(
-        id=alumno.id,
-        fullName=alumno.full_name,
-        shortName=alumno.short_name,
-        ageText=alumno.age_text,
-        roomText=alumno.room_id,
-        groupText=alumno.group_text,
-        statusText=alumno.status_text,
-        isPresent=alumno.is_present,
-        arrivalTime=alumno.arrival_time,
-        allergyAlert=alumno.allergy_alert,
-        avatarInitials=alumno.avatar_initials,
-        avatarBgColor=alumno.avatar_bg_color,
-    )
+    alumno = exigir_alumno_visible(quien, childId, db)
+    return ficha(alumno, db)
 
 
 @router.get("/children/{childId}/full-profile", response_model=ChildFullProfileOut)
 def obtener_expediente(
     childId: str,
-    _: Identidad = Depends(usuario_actual),
+    quien: Identidad = Depends(usuario_actual),
     db: Session = Depends(get_db),
 ) -> ChildFullProfileOut:
-    """Devuelve el expediente escolar y médico completo del menor."""
-    perfil = db.get(ChildProfile, childId)
-    if perfil is None:
-        raise ApiError(404, f"No existe expediente registrado para el alumno {childId}", "expediente_no_encontrado")
+    """Devuelve el expediente escolar y médico completo del menor.
+
+    Si el alumno existe pero aún no tiene expediente, se devuelve vacío para que la
+    familia o la educadora lo puedan llenar desde la app.
+    """
+    exigir_alumno_visible(quien, childId, db)
+    perfil = db.get(ChildProfile, childId) or ChildProfile(child_id=childId)
 
     pickups = []
     if perfil.authorized_pickups:
@@ -108,7 +81,7 @@ def obtener_expediente(
         pediatrician=perfil.pediatrician,
         pediatricianPhone=perfil.pediatrician_phone,
         emergencyPhone=perfil.emergency_phone,
-        emergencyPhoneRelation=perfil.emergency_phone_relation or "Tutor legal",
+        emergencyPhoneRelation=perfil.emergency_phone_relation or "",
         motherName=perfil.mother_name,
         motherPhone=perfil.mother_phone,
         fatherName=perfil.father_name,
@@ -126,10 +99,11 @@ def obtener_expediente(
 def actualizar_expediente(
     childId: str,
     body: ChildProfileUpdate,
-    _: Identidad = Depends(usuario_actual),
+    quien: Identidad = Depends(usuario_actual),
     db: Session = Depends(get_db),
 ) -> ChildFullProfileOut:
     """Actualiza datos del expediente médico y de contacto del menor."""
+    exigir_alumno_visible(quien, childId, db)
     perfil = db.get(ChildProfile, childId)
     if perfil is None:
         perfil = ChildProfile(child_id=childId)
@@ -141,6 +115,8 @@ def actualizar_expediente(
         perfil.pediatrician_phone = body.pediatricianPhone
     if body.medicalNotes is not None:
         perfil.medical_notes = body.medicalNotes
+    if body.habitsAndPedagogicalNotes is not None:
+        perfil.general_notes = body.habitsAndPedagogicalNotes
     if body.emergencyPhone is not None:
         perfil.emergency_phone = body.emergencyPhone
     if body.emergencyPhoneRelation is not None:
@@ -156,7 +132,7 @@ def actualizar_expediente(
 
     db.commit()
     db.refresh(perfil)
-    return obtener_expediente(childId, _, db)
+    return obtener_expediente(childId, quien, db)
 
 
 @router.post("/children/{childId}/medical-certificate", response_model=MedicalCertificateOut)

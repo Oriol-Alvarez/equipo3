@@ -1,16 +1,18 @@
 """Módulo 11: Buzón de Sugerencias y Quejas (/suggestions)"""
 
-import time
 import uuid
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..acceso import es_personal, exigir_alumno_visible
 from ..db import get_db
+from ..notificaciones_push import notificar
+from ..horario import ahora
 from ..deps import Identidad, requiere_educadora, requiere_familiar, usuario_actual
 from ..errors import ApiError
-from ..models import Child, Suggestion
+from ..models import Room, Suggestion
 from ..schemas import (
     CreateSuggestionRequest,
     SuggestionOut,
@@ -25,11 +27,16 @@ def listar_sugerencias(
     status: str | None = None,
     category: str | None = None,
     search: str | None = None,
-    _: Identidad = Depends(usuario_actual),
+    quien: Identidad = Depends(usuario_actual),
     db: Session = Depends(get_db),
 ) -> list[SuggestionOut]:
-    """Lista las sugerencias ciudadanas y familiares con soporte para filtros por estado y categoría."""
+    """Lista las sugerencias con filtros por estado y categoría.
+
+    El personal ve todas; cada familia solo las que ella envió.
+    """
     query = select(Suggestion).order_by(Suggestion.created_at.desc())
+    if not es_personal(quien):
+        query = query.where(Suggestion.parent_user_id == quien.id)
     if status:
         query = query.where(Suggestion.status == status)
     if category:
@@ -68,12 +75,13 @@ def crear_sugerencia(
     db: Session = Depends(get_db),
 ) -> SuggestionOut:
     """Envía una nueva sugerencia o queja por parte de la familia del menor."""
-    alumno = db.get(Child, body.childId)
-    nombre_nino = alumno.full_name if alumno else "Alumno"
+    alumno = exigir_alumno_visible(quien, body.childId, db)
+    nombre_nino = alumno.full_name
+    sala = db.get(Room, alumno.room_id)
 
     sug_id = f"sug_{uuid.uuid4().hex[:8]}"
-    fecha_hoy = time.strftime("%d/%m/%Y")
-    hora_hoy = time.strftime("%I:%M %p")
+    fecha_hoy = ahora().strftime("%d/%m/%Y")
+    hora_hoy = ahora().strftime("%I:%M %p")
 
     sugerencia = Suggestion(
         id=sug_id,
@@ -81,7 +89,7 @@ def crear_sugerencia(
         parent_name=quien.display_name,
         child_id=body.childId,
         child_name=nombre_nino,
-        room_name=body.roomName,
+        room_name=sala.name if sala else body.roomName,
         date=fecha_hoy,
         time=hora_hoy,
         category=body.category,
@@ -113,7 +121,7 @@ def crear_sugerencia(
 def actualizar_estado_sugerencia(
     id: str,
     body: UpdateSuggestionStatusRequest,
-    _: Identidad = Depends(requiere_educadora),
+    quien: Identidad = Depends(requiere_educadora),
     db: Session = Depends(get_db),
 ) -> SuggestionOut:
     """Responde y actualiza el estado de resolución de una sugerencia (ATENDIDA / EN_REVISION)."""
@@ -124,10 +132,14 @@ def actualizar_estado_sugerencia(
     sug.status = body.status
     if body.response is not None:
         sug.response = body.response
-        sug.response_date = time.strftime("%d/%m/%Y %I:%M %p")
-    if body.responderName is not None:
-        sug.responder_name = body.responderName
+        sug.response_date = ahora().strftime("%d/%m/%Y %I:%M %p")
+    if body.response is not None:
+        # Quien responde es siempre la persona con la sesión iniciada
+        sug.responder_name = quien.display_name
     db.commit()
+    if body.response:
+        notificar(db, {sug.parent_user_id}, "Respuesta a tu sugerencia", f"{sug.subject}: {body.response}",
+                  {"tipo": "sugerencia", "id": sug.id})
     db.refresh(sug)
 
     return SuggestionOut(

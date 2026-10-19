@@ -43,6 +43,8 @@ services:
     volumes:
       - ./app:/code/app
       - ./tests:/code/tests
+      # Credenciales privadas (p. ej. Firebase). La carpeta está en .gitignore.
+      - ./secretos:/code/secretos:ro
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:

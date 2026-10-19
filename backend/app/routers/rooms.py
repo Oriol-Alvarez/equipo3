@@ -1,16 +1,23 @@
 """Módulo 2: Salas y Aulas Escolares (/rooms)"""
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import Identidad, requiere_educadora
 from ..errors import ApiError
+from ..fichas import fichas
 from ..models import Child, Room, RoomEducator, Usuario
 from ..schemas import ChildOut, EducatorItem, RoomDetailOut, RoomSummaryOut
 
 router = APIRouter(prefix="/rooms", tags=["rooms"])
+
+
+def _contadores(room_id: str, db: Session) -> tuple[int, int]:
+    """Total de alumnos de la sala y cuántos están presentes HOY según su registro diario."""
+    alumnos = db.scalars(select(Child).where(Child.room_id == room_id)).all()
+    return len(alumnos), sum(1 for f in fichas(alumnos, db) if f.isPresent)
 
 
 @router.get("", response_model=list[RoomSummaryOut])
@@ -19,11 +26,10 @@ def listar_salas(
     db: Session = Depends(get_db),
 ) -> list[RoomSummaryOut]:
     """Lista las salas que la educadora o dirección tienen a su cargo con los contadores de asistencia."""
-    salas = db.scalars(select(Room)).all()
+    salas = db.scalars(select(Room).order_by(Room.name)).all()
     resultado = []
     for s in salas:
-        total = db.scalar(select(func.count()).select_from(Child).where(Child.room_id == s.id)) or 0
-        presentes = db.scalar(select(func.count()).select_from(Child).where(Child.room_id == s.id, Child.is_present.is_(True))) or 0
+        total, presentes = _contadores(s.id, db)
         resultado.append(
             RoomSummaryOut(
                 id=s.id,
@@ -47,8 +53,7 @@ def obtener_sala(
     if sala is None:
         raise ApiError(404, f"No existe la sala con id {roomId}", "sala_no_encontrada")
 
-    total = db.scalar(select(func.count()).select_from(Child).where(Child.room_id == sala.id)) or 0
-    presentes = db.scalar(select(func.count()).select_from(Child).where(Child.room_id == sala.id, Child.is_present.is_(True))) or 0
+    total, presentes = _contadores(sala.id, db)
 
     educadores_filas = db.scalars(select(RoomEducator).where(RoomEducator.room_id == sala.id)).all()
     educadores = []
@@ -76,25 +81,10 @@ def listar_alumnos_de_sala(
     db: Session = Depends(get_db),
 ) -> list[ChildOut]:
     """Lista todos los alumnos asignados a una sala, con filtro opcional de asistencia."""
-    query = select(Child).where(Child.room_id == roomId)
+    if db.get(Room, roomId) is None:
+        raise ApiError(404, f"No existe la sala con id {roomId}", "sala_no_encontrada")
+    alumnos = db.scalars(select(Child).where(Child.room_id == roomId).order_by(Child.full_name)).all()
+    resultado = fichas(alumnos, db)
     if isPresent is not None:
-        query = query.where(Child.is_present == isPresent)
-
-    alumnos = db.scalars(query).all()
-    return [
-        ChildOut(
-            id=a.id,
-            fullName=a.full_name,
-            shortName=a.short_name,
-            ageText=a.age_text,
-            roomText=a.room_id,
-            groupText=a.group_text,
-            statusText=a.status_text,
-            isPresent=a.is_present,
-            arrivalTime=a.arrival_time,
-            allergyAlert=a.allergy_alert,
-            avatarInitials=a.avatar_initials,
-            avatarBgColor=a.avatar_bg_color,
-        )
-        for a in alumnos
-    ]
+        resultado = [f for f in resultado if f.isPresent == isPresent]
+    return resultado

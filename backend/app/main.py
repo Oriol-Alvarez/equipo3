@@ -34,7 +34,7 @@ from .routers import (
     weekly_summaries,
     ws_notifications,
 )
-from .seed import seed_database, seed_modulos_heber
+from .seed import seed_database, seed_modulos_heber, seed_salas_adicionales
 
 
 @asynccontextmanager
@@ -46,6 +46,7 @@ async def lifespan(_: FastAPI):
     with SessionLocal() as db:
         seed_database(db)
         seed_modulos_heber(db)
+        seed_salas_adicionales(db)
 
     yield
 

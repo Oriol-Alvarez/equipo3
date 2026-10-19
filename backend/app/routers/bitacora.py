@@ -8,9 +8,13 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..acceso import exigir_alumno_visible
 from ..db import get_db
+from ..notificaciones_push import familias_del_nino, notificar
 from ..deps import Identidad, requiere_educadora, usuario_actual
 from ..errors import ApiError
+from ..horario import hoy
+from ..resumenes import historial_diario
 from ..models import Activity, AttendanceRecord, BitacoraMessage, Child, TimelineEvent
 from ..schemas import (
     BitacoraDaySummary,
@@ -38,7 +42,7 @@ def _parse_time_minutes(t: str | None) -> int:
 
 def _parse_item_timestamp(d: str | None, t: str | None) -> float:
     time_clean = (t or "00:00").strip().upper().replace(".", "").replace("A M", "AM").replace("P M", "PM")
-    date_clean = (d or "12/10/2026").strip()
+    date_clean = (d or hoy().strftime("%d/%m/%Y")).strip()
 
     for date_fmt in ("%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y"):
         for time_fmt in ("%I:%M %p", "%H:%M", "%I:%M%p"):
@@ -61,10 +65,11 @@ def _parse_item_timestamp(d: str | None, t: str | None) -> float:
 def obtener_linea_de_tiempo(
     childId: str,
     date: str | None = None,
-    _: Identidad = Depends(usuario_actual),
+    quien: Identidad = Depends(usuario_actual),
     db: Session = Depends(get_db),
 ) -> list[TimelineItemOut]:
     """Devuelve la cronología del día para el alumno combinando eventos, chats y actividades pedagógicas."""
+    exigir_alumno_visible(quien, childId, db)
     items: list[TimelineItemOut] = []
 
     # 1. Asistencia como chips de inicio/salida
@@ -125,7 +130,7 @@ def obtener_linea_de_tiempo(
     # 4. Mensajes relevantes en bitácora
     mensajes = db.scalars(select(BitacoraMessage).where(BitacoraMessage.child_id == childId)).all()
     for m in mensajes:
-        fecha_msg = getattr(m, "date", None) or (m.created_at.strftime("%d/%m/%Y") if m.created_at else "12/10/2026")
+        fecha_msg = getattr(m, "date", None) or (m.created_at.strftime("%d/%m/%Y") if m.created_at else hoy().strftime("%d/%m/%Y"))
         if date and fecha_msg != date:
             continue
         items.append(
@@ -135,7 +140,7 @@ def obtener_linea_de_tiempo(
                 time=m.time,
                 date=fecha_msg,
                 message=m.message,
-                isOutgoing=m.sender_id == _.id,
+                isOutgoing=m.sender_id == quien.id,
                 fileUri=m.file_uri,
                 fileName=m.file_name,
                 fileMimeType=m.file_mime_type,
@@ -149,41 +154,12 @@ def obtener_linea_de_tiempo(
 @router.get("/children/{childId}/bitacoras", response_model=list[BitacoraDaySummary])
 def historial_bitacoras(
     childId: str,
-    _: Identidad = Depends(usuario_actual),
+    quien: Identidad = Depends(usuario_actual),
     db: Session = Depends(get_db),
 ) -> list[BitacoraDaySummary]:
-    """Obtiene el historial de bitácoras por fecha agrupando ingreso, egreso y actividades."""
-    actividades = db.scalars(select(Activity).where(Activity.child_id == childId)).all()
-    actividades_dict: list[dict[str, Any]] = [
-        {
-            "id": a.id,
-            "time": a.time,
-            "title": a.title,
-            "category": a.category,
-            "portion": a.portion_option or "MEDIO",
-            "description": a.description,
-        }
-        for a in actividades
-    ]
-
-    return [
-        BitacoraDaySummary(
-            date="12/10/2026",
-            dayLabel="Hoy, 12 Oct",
-            isToday=True,
-            ingreso={
-                "time": "08:15 AM",
-                "delivererName": "María López (Madre)",
-                "receiverName": "Laura Gómez (Educadora)",
-                "physicalCondition": "Buen estado general.",
-                "hasSymptoms": False,
-                "symptomsDetail": "",
-                "observations": "Llegó contento y descansado.",
-            },
-            egreso=None,
-            activities=actividades_dict,
-        )
-    ]
+    """Historial de los últimos días: ingreso, egreso y actividades tomados de los registros reales."""
+    exigir_alumno_visible(quien, childId, db)
+    return [BitacoraDaySummary(**dia) for dia in historial_diario(db, childId)]
 
 
 @router.post("/children/{childId}/activities", response_model=NewActivityResponse, status_code=201)
@@ -199,7 +175,7 @@ def registrar_actividad(
         raise ApiError(404, f"No existe el alumno con id {childId}")
 
     act_id = f"act_{uuid.uuid4().hex[:8]}"
-    fecha_actividad = body.date or "12/10/2026"
+    fecha_actividad = body.date or hoy().strftime("%d/%m/%Y")
     actividad = Activity(
         id=act_id,
         child_id=childId,
@@ -217,6 +193,8 @@ def registrar_actividad(
     )
     db.add(actividad)
     db.commit()
+    notificar(db, familias_del_nino(db, childId), f"Nueva actividad de {alumno.short_name}",
+              f"{body.category}: {body.description}", {"tipo": "actividad", "childId": childId})
 
     portion_label = body.portionOption or "Completo"
     timeline_item = TimelineItemOut(
@@ -229,7 +207,7 @@ def registrar_actividad(
         description=body.description,
     )
 
-    from .ws_notifications import ws_manager
+    from .ws_notifications import familias_de, personal_y_usuarios, ws_manager
     ws_manager.broadcast_sync(
         "chat:bitacora:activity",
         {
@@ -237,6 +215,7 @@ def registrar_actividad(
             "chatId": childId,
             "activity": timeline_item.model_dump(),
         },
+        personal_y_usuarios(familias_de(db, {childId})),
     )
 
     return NewActivityResponse(id=act_id, status="CREADA", timelineItem=timeline_item)
@@ -250,11 +229,14 @@ def registrar_evento_rapido(
     db: Session = Depends(get_db),
 ) -> TimelineItemOut:
     """Registra un evento rápido (chip) en la línea de tiempo del menor."""
+    if db.get(Child, childId) is None:
+        raise ApiError(404, f"No existe el alumno con id {childId}", "alumno_inexistente")
     ev_id = f"chip_{uuid.uuid4().hex[:8]}"
+    fecha_evento = body.date or hoy().strftime("%d/%m/%Y")
     evento = TimelineEvent(
         id=ev_id,
         child_id=childId,
-        date="12/10/2026",
+        date=fecha_evento,
         time=body.time,
         text=body.text,
         icon_type=body.iconType,
@@ -266,12 +248,12 @@ def registrar_evento_rapido(
         type="EVENT_CHIP",
         id=ev_id,
         time=body.time,
-        date="12/10/2026",
+        date=fecha_evento,
         text=body.text,
         iconType=body.iconType,
     )
 
-    from .ws_notifications import ws_manager
+    from .ws_notifications import familias_de, personal_y_usuarios, ws_manager
     ws_manager.broadcast_sync(
         "chat:bitacora:event",
         {
@@ -279,6 +261,7 @@ def registrar_evento_rapido(
             "chatId": childId,
             "event": item_chip.model_dump(),
         },
+        personal_y_usuarios(familias_de(db, {childId})),
     )
 
     return item_chip

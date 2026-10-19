@@ -1,17 +1,19 @@
 """Módulo 7: Mensajería de Personal y Chat Global (/staff, /chats)"""
 
-import time
 import uuid
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
+from ..horario import ahora
+from ..lecturas import clave_personal, marcar_leido, momento_utc, no_leidos_personal
 from ..deps import Identidad, requiere_educadora
 from ..errors import ApiError
 from ..models import StaffMember, WorkerChat, WorkerChatMessage
 from ..schemas import (
+    CreateWorkerGroupRequest,
     SendGlobalMessageRequest,
     SendWorkerMessageRequest,
     StaffGlobalChatOut,
@@ -45,7 +47,7 @@ def listar_personal(
 
 @router.get("/chats/workers", response_model=list[WorkerChatOut])
 def listar_chats_trabajadores(
-    _: Identidad = Depends(requiere_educadora),
+    quien: Identidad = Depends(requiere_educadora),
     db: Session = Depends(get_db),
 ) -> list[WorkerChatOut]:
     """Lista las conversaciones activas entre educadoras y dirección."""
@@ -57,7 +59,7 @@ def listar_chats_trabajadores(
             subtitle=c.subtitle,
             lastMessage=c.last_message,
             lastMessageTime=c.last_message_time,
-            unreadCount=c.unread_count,
+            unreadCount=no_leidos_personal(db, quien.id, c.id),
             isGlobal=c.is_global,
             isGroup=c.is_group,
             avatarInitials=c.avatar_initials,
@@ -65,6 +67,44 @@ def listar_chats_trabajadores(
         )
         for c in chats
     ]
+
+
+@router.post("/chats/workers", response_model=WorkerChatOut, status_code=201)
+def crear_grupo_personal(
+    body: CreateWorkerGroupRequest,
+    quien: Identidad = Depends(requiere_educadora),
+    db: Session = Depends(get_db),
+) -> WorkerChatOut:
+    """Crea un grupo de conversación del personal (lo ve todo el personal)."""
+    titulo = body.title.strip()
+    if not titulo:
+        raise ApiError(422, "Escribe un nombre para el grupo", "titulo_vacio")
+    miembros = len(set(body.memberIds) | {quien.id})
+    chat = WorkerChat(
+        id=f"wgroup_{uuid.uuid4().hex[:10]}",
+        title=titulo,
+        subtitle=f"{miembros} miembros • Grupo de personal",
+        is_global=False,
+        is_group=True,
+        avatar_initials=titulo[:2].upper(),
+        avatar_bg_color=0xFF00897B,
+        last_message=f"Grupo creado por {quien.display_name}",
+        last_message_time=ahora().strftime("%I:%M %p"),
+    )
+    db.add(chat)
+    db.commit()
+    return WorkerChatOut(
+        id=chat.id,
+        title=chat.title,
+        subtitle=chat.subtitle,
+        lastMessage=chat.last_message,
+        lastMessageTime=chat.last_message_time,
+        unreadCount=0,
+        isGlobal=False,
+        isGroup=True,
+        avatarInitials=chat.avatar_initials,
+        avatarBgColor=chat.avatar_bg_color,
+    )
 
 
 @router.get("/chats/workers/{chatId}/messages", response_model=list[WorkerChatMessageOut])
@@ -100,9 +140,10 @@ def enviar_mensaje_trabajador(
     if chat is None:
         raise ApiError(404, f"No existe el chat con id {chatId}")
 
-    hora_actual = body.time or time.strftime("%I:%M %p")
+    hora_actual = body.time or ahora().strftime("%I:%M %p")
     msg_id = f"wm_{uuid.uuid4().hex[:8]}"
     nuevo_msg = WorkerChatMessage(
+        created_at=momento_utc(),
         id=msg_id,
         chat_id=chatId,
         sender_id=quien.id,
@@ -121,7 +162,7 @@ def enviar_mensaje_trabajador(
     chat.last_message_time = hora_actual
     db.commit()
 
-    from .ws_notifications import ws_manager
+    from .ws_notifications import solo_personal, ws_manager
     ws_manager.broadcast_sync(
         "chat:message:new",
         {
@@ -139,6 +180,7 @@ def enviar_mensaje_trabajador(
                 "fileMimeType": body.fileMimeType,
             },
         },
+        solo_personal(),
     )
 
     return WorkerChatMessageOut(
@@ -175,7 +217,7 @@ def chat_global_personal(
     return StaffGlobalChatOut(
         id="global_staff_chat",
         title="Chat Global de Trabajadores",
-        membersCount=18,
+        membersCount=db.scalar(select(func.count()).select_from(StaffMember)) or 0,
         messages=msgs_out,
     )
 
@@ -187,9 +229,10 @@ def enviar_chat_global_personal(
     db: Session = Depends(get_db),
 ) -> WorkerChatMessageOut:
     """Publica un mensaje en el canal global de trabajadores."""
-    hora_actual = body.time or time.strftime("%I:%M %p")
+    hora_actual = body.time or ahora().strftime("%I:%M %p")
     msg_id = f"gm_{uuid.uuid4().hex[:8]}"
     nuevo_msg = WorkerChatMessage(
+        created_at=momento_utc(),
         id=msg_id,
         chat_id="global_staff_chat",
         sender_id=quien.id,
@@ -201,7 +244,7 @@ def enviar_chat_global_personal(
     db.add(nuevo_msg)
     db.commit()
 
-    from .ws_notifications import ws_manager
+    from .ws_notifications import solo_personal, ws_manager
     ws_manager.broadcast_sync(
         "chat:message:new",
         {
@@ -216,6 +259,7 @@ def enviar_chat_global_personal(
                 "isOutgoing": False,
             },
         },
+        solo_personal(),
     )
 
     return WorkerChatMessageOut(
@@ -226,3 +270,15 @@ def enviar_chat_global_personal(
         time=hora_actual,
         isOutgoing=True,
     )
+
+
+@router.put("/chats/workers/{chatId}/read", status_code=204)
+def marcar_chat_trabajador_leido(
+    chatId: str,
+    quien: Identidad = Depends(requiere_educadora),
+    db: Session = Depends(get_db),
+) -> None:
+    """Marca como leídos los mensajes de un chat del personal (incluido el global) para el usuario actual."""
+    if db.get(WorkerChat, chatId) is None:
+        raise ApiError(404, f"No existe el chat con id {chatId}", "chat_inexistente")
+    marcar_leido(db, quien.id, clave_personal(chatId))

@@ -97,6 +97,8 @@ class ChildOut(BaseModel):
     allergyAlert: str | None = None
     avatarInitials: str = "MG"
     avatarBgColor: int = 4294948685
+    birthDate: str = ""  # dd/MM/yyyy, para los avisos de cumpleaños
+    roomId: str = ""
 
 
 class ChildFullProfileOut(BaseModel):
@@ -246,6 +248,7 @@ class QuickEventRequest(BaseModel):
     time: str
     text: str
     iconType: str  # entry, mood, nap, etc.
+    date: str | None = None  # dd/MM/yyyy; si no viene, la fecha de hoy
 
 
 class BitacoraDaySummary(BaseModel):
@@ -278,6 +281,18 @@ class WeeklySummaryOut(BaseModel):
     napHighlights: str
     pedagogicalHighlights: list[str] = []
     healthAndSafetySummary: str
+    weekEnd: str | None = None
+    isReadByParent: bool = False
+    readTimestampText: str | None = None
+    parentReaction: str | None = None
+
+
+class WeeklySummaryFeedbackRequest(BaseModel):
+    """Respuesta de la familia a un resumen semanal. Los campos ausentes no se modifican."""
+
+    isRead: bool | None = None
+    # Cadena vacía = quitar la reacción
+    reaction: str | None = Field(default=None, max_length=16)
 
 
 # ---------------------------------------------------------------------------
@@ -313,6 +328,11 @@ class WorkerChatMessageOut(BaseModel):
     message: str
     time: str
     isOutgoing: bool
+
+
+class CreateWorkerGroupRequest(BaseModel):
+    title: str = Field(..., min_length=1, max_length=80)
+    memberIds: list[str] = []
 
 
 class SendWorkerMessageRequest(BaseModel):

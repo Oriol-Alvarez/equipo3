@@ -476,3 +476,45 @@ def seed_modulos_heber(db: Session) -> None:
                 )
 
     db.commit()
+
+
+# Alumnos de las salas 2B y 3C. Antes esas salas no tenían niños y la app mostraba
+# los de la Sala 1A al entrar a cualquiera de ellas.
+ALUMNOS_OTRAS_SALAS = [
+    ("emilia_ramos", "Emilia Ramos Cruz", "Emilia R.", "2 años y 4 meses", "sala_2b", "ER", 4294940672),
+    ("diego_herrera", "Diego Herrera Soto", "Diego H.", "2 años y 7 meses", "sala_2b", "DH", 4280391411),
+    ("valentina_ruiz", "Valentina Ruiz Mora", "Valentina R.", "2 años y 1 mes", "sala_2b", "VR", 4293467747),
+    ("santiago_flores", "Santiago Flores Vega", "Santiago F.", "3 años", "sala_3c", "SF", 4283215696),
+    ("regina_navarro", "Regina Navarro Díaz", "Regina N.", "2 años y 11 meses", "sala_3c", "RN", 4294198070),
+    ("leonardo_castro", "Leonardo Castro Paz", "Leonardo C.", "3 años y 2 meses", "sala_3c", "LC", 4284513675),
+]
+
+
+def seed_salas_adicionales(db: Session) -> None:
+    """Agrega los alumnos de las salas 2B y 3C si aún no existen (también en bases ya creadas)."""
+    if db.get(Room, "sala_2b") is None or db.get(Room, "sala_3c") is None:
+        return
+    agregados = False
+    for child_id, nombre, corto, edad, sala, iniciales, color in ALUMNOS_OTRAS_SALAS:
+        if db.get(Child, child_id) is not None:
+            continue
+        db.add(
+            Child(
+                id=child_id,
+                full_name=nombre,
+                short_name=corto,
+                age_text=edad,
+                room_id=sala,
+                group_text=f"Grupo {'Sala 2B' if sala == 'sala_2b' else 'Sala 3C'}",
+                status_text="No ha ingresado",
+                is_present=False,
+                arrival_time=None,
+                allergy_alert=None,
+                avatar_initials=iniciales,
+                avatar_bg_color=color,
+            )
+        )
+        db.add(ChildProfile(child_id=child_id))
+        agregados = True
+    if agregados:
+        db.commit()

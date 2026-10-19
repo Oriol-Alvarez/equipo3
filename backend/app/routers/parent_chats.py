@@ -1,13 +1,16 @@
 """Módulo 8: Chat Bitácora Individual (Educadora <-> Familia)"""
 
-import time
 import uuid
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..acceso import es_personal, exigir_alumno_visible
 from ..db import get_db
+from ..notificaciones_push import familias_del_nino, notificar, personal_de_la_sala
+from ..lecturas import clave_bitacora, marcar_leido, momento_utc, no_leidos_bitacora
+from ..horario import ahora, hoy
 from ..deps import Identidad, requiere_educadora, usuario_actual
 from ..errors import ApiError
 from ..models import BitacoraMessage, Child, ChildParent, Usuario
@@ -23,7 +26,7 @@ router = APIRouter(tags=["parent-chats"])
 @router.get("/rooms/{roomId}/parent-chats", response_model=list[ParentChatSummaryOut])
 def listar_chats_familias_de_sala(
     roomId: str,
-    _: Identidad = Depends(requiere_educadora),
+    quien: Identidad = Depends(requiere_educadora),
     db: Session = Depends(get_db),
 ) -> list[ParentChatSummaryOut]:
     """Bandeja de conversaciones individuales con las familias de los menores de una sala."""
@@ -51,8 +54,8 @@ def listar_chats_familias_de_sala(
                 childName=a.full_name,
                 parentName=nombre_padre,
                 lastMessage=ultimo.message if ultimo else "Sin mensajes aún.",
-                lastMessageTime=ultimo.time if ultimo else "09:00 AM",
-                unreadCount=0,
+                lastMessageTime=ultimo.time if ultimo else "",
+                unreadCount=no_leidos_bitacora(db, quien.id, a.id),
             )
         )
     return resultado
@@ -65,6 +68,7 @@ def obtener_mensajes_chat_bitacora(
     db: Session = Depends(get_db),
 ) -> list[BitacoraMessageOut]:
     """Obtiene los mensajes del canal directo de comunicación diario sobre el menor."""
+    exigir_alumno_visible(quien, childId, db)
     mensajes = db.scalars(select(BitacoraMessage).where(BitacoraMessage.child_id == childId)).all()
     return [
         BitacoraMessageOut(
@@ -72,7 +76,7 @@ def obtener_mensajes_chat_bitacora(
             senderId=m.sender_id,
             senderName=m.sender_name,
             time=m.time,
-            date=m.created_at.strftime("%d/%m/%Y") if m.created_at else "12/10/2026",
+            date=m.created_at.strftime("%d/%m/%Y") if m.created_at else hoy().strftime("%d/%m/%Y"),
             message=m.message,
             isOutgoing=m.sender_id == quien.id,
             fileUri=m.file_uri,
@@ -89,14 +93,13 @@ def enviar_mensaje_chat_bitacora(
     db: Session = Depends(get_db),
 ) -> BitacoraMessageOut:
     """Envía un mensaje o fotografía en el chat directo de bitácora."""
-    alumno = db.get(Child, childId)
-    if alumno is None:
-        raise ApiError(404, f"No existe el alumno con id {childId}")
+    alumno = exigir_alumno_visible(quien, childId, db)
 
-    hora_actual = body.time or time.strftime("%I:%M %p")
-    fecha_actual = body.date or "12/10/2026"
+    hora_actual = body.time or ahora().strftime("%I:%M %p")
+    fecha_actual = body.date or hoy().strftime("%d/%m/%Y")
     msg_id = f"msg_{uuid.uuid4().hex[:8]}"
     nuevo_msg = BitacoraMessage(
+        created_at=momento_utc(),
         id=msg_id,
         child_id=childId,
         sender_id=quien.id,
@@ -111,7 +114,13 @@ def enviar_mensaje_chat_bitacora(
     db.add(nuevo_msg)
     db.commit()
 
-    from .ws_notifications import ws_manager
+    # Push: a la familia si escribe el personal; a la educadora de la sala si escribe la familia
+    destinatarios = familias_del_nino(db, childId) if es_personal(quien) else personal_de_la_sala(db, alumno.room_id)
+    notificar(db, destinatarios, f"Mensaje sobre {alumno.short_name}",
+              f"{quien.display_name}: {body.message or 'Archivo adjunto'}",
+              {"tipo": "bitacora", "childId": childId}, excepto=quien.id)
+
+    from .ws_notifications import familias_de, personal_y_usuarios, ws_manager
     msg_dict = {
         "id": msg_id,
         "childId": childId,
@@ -126,7 +135,11 @@ def enviar_mensaje_chat_bitacora(
         "fileMimeType": body.fileMimeType,
         "isOutgoing": False,
     }
-    ws_manager.broadcast_sync("chat:bitacora:new", {"childId": childId, "chatId": childId, "message": msg_dict})
+    ws_manager.broadcast_sync(
+        "chat:bitacora:new",
+        {"childId": childId, "chatId": childId, "message": msg_dict},
+        personal_y_usuarios(familias_de(db, {childId})),
+    )
 
     return BitacoraMessageOut(
         id=msg_id,
@@ -138,3 +151,14 @@ def enviar_mensaje_chat_bitacora(
         isOutgoing=True,
         fileUri=body.fileUri,
     )
+
+
+@router.put("/chats/bitacora/{childId}/read", status_code=204)
+def marcar_chat_bitacora_leido(
+    childId: str,
+    quien: Identidad = Depends(usuario_actual),
+    db: Session = Depends(get_db),
+) -> None:
+    """Marca como leídos los mensajes del chat de bitácora de este niño para el usuario actual."""
+    exigir_alumno_visible(quien, childId, db)
+    marcar_leido(db, quien.id, clave_bitacora(childId))

@@ -35,7 +35,7 @@ if not _postgres_disponible():
 from app.config import settings
 from app.db import Base, SessionLocal, engine
 from app.main import app
-from app.seed import seed_database, seed_modulos_heber
+from app.seed import seed_database, seed_modulos_heber, seed_salas_adicionales
 
 # Imagen PNG válida de 2x2 píxeles
 PNG_CHICO = base64.b64decode(
@@ -63,6 +63,7 @@ def setup_database():
     with SessionLocal() as db:
         seed_database(db)
         seed_modulos_heber(db)
+        seed_salas_adicionales(db)
     yield
 
 
@@ -71,6 +72,24 @@ def cliente() -> Iterator[TestClient]:
     """TestClient de FastAPI que simula peticiones HTTP a la aplicación en memoria."""
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture(autouse=True)
+def sin_limites_de_peticiones():
+    """Las pruebas inician sesión muchas veces seguidas desde la misma IP.
+
+    Se apaga el límite por IP de slowapi y se limpia el contador de intentos fallidos
+    para que cada prueba sea independiente. test_seguridad.py prueba el bloqueo por
+    cuenta de forma explícita.
+    """
+    from app.intentos_login import intentos_login
+    from app.rate_limit import limiter
+
+    limiter.enabled = False
+    intentos_login.reiniciar()
+    yield
+    intentos_login.reiniciar()
+    limiter.enabled = True
 
 
 @pytest.fixture

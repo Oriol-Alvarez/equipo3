@@ -1,6 +1,5 @@
 """Módulo 10: Avisos y Circulares Generales (/announcements)"""
 
-import time
 import uuid
 
 from fastapi import APIRouter, Depends
@@ -8,6 +7,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
+from ..notificaciones_push import notificar, todas_las_familias
+from ..horario import ahora
 from ..deps import Identidad, requiere_direccion, usuario_actual
 from ..errors import ApiError
 from ..models import Announcement, AnnouncementRead
@@ -89,7 +90,7 @@ def marcar_como_leido(
 @router.post("", response_model=AnnouncementOut, status_code=201)
 def publicar_aviso(
     body: CreateAnnouncementRequest,
-    _: Identidad = Depends(requiere_direccion),
+    quien: Identidad = Depends(requiere_direccion),
     db: Session = Depends(get_db),
 ) -> AnnouncementOut:
     """Publica un nuevo aviso general o circular (restringido a DIRECCION)."""
@@ -97,7 +98,7 @@ def publicar_aviso(
         raise ApiError(422, "El título y el contenido son obligatorios")
 
     nuevo_id = f"ann_{uuid.uuid4().hex[:8]}"
-    fecha_texto = time.strftime("Hoy, %I:%M %p")
+    fecha_texto = ahora().strftime("%d/%m/%Y %I:%M %p")
     aviso = Announcement(
         id=nuevo_id,
         title=body.title.strip(),
@@ -108,6 +109,8 @@ def publicar_aviso(
     )
     db.add(aviso)
     db.commit()
+    notificar(db, todas_las_familias(db), f"Aviso: {aviso.title}", aviso.summary or aviso.full_content,
+              {"tipo": "aviso", "id": aviso.id}, excepto=quien.id)
 
     return AnnouncementOut(
         id=aviso.id,

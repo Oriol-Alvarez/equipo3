@@ -12,6 +12,7 @@ from ..config import settings
 from ..db import get_db
 from ..deps import Identidad, usuario_actual
 from ..errors import ApiError
+from ..intentos_login import intentos_login
 from ..rate_limit import limiter
 from ..models import Sesion, Usuario
 from ..schemas import (
@@ -56,17 +57,34 @@ def emitir_sesion(db: Session, user: Usuario) -> tuple[str, str, int]:
 
 
 @router.post("/login", response_model=LoginResponse)
-@limiter.limit("5/minute")
+@limiter.limit("60/minute")
 def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
-    """Valida credenciales según el rol seleccionado y devuelve el token JWT y el perfil."""
-    user = db.scalar(select(Usuario).where(Usuario.email == body.email.strip().lower()))
+    """Valida credenciales según el rol seleccionado y devuelve el token JWT y el perfil.
+
+    Protección contra fuerza bruta: tras varios intentos fallidos se bloquea solo ese
+    correo por un minuto (ver intentos_login.py). El límite por IP es amplio porque,
+    detrás del túnel de Cloudflare, todos los usuarios comparten la misma IP.
+    """
+    email = body.email.strip().lower()
+    espera = intentos_login.segundos_bloqueado(email)
+    if espera:
+        raise ApiError(
+            429,
+            "Demasiados intentos fallidos",
+            "demasiados_intentos",
+            f"Espera {espera} segundos antes de volver a intentar con este correo.",
+        )
+
+    user = db.scalar(select(Usuario).where(Usuario.email == email))
     if user is None or not verify_password(body.password, user.password_hash):
+        intentos_login.registrar_fallo(email)
         raise ApiError(
             401,
             "Credenciales incorrectas",
             "credenciales_invalidas",
             "El correo o la contraseña no coinciden.",
         )
+    intentos_login.registrar_exito(email)
 
     # Validar coherencia del rol solicitado si se envía
     if body.role and user.role != body.role and user.role != "DIRECCION":
@@ -87,7 +105,7 @@ def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)) -
 
 
 @router.post("/register", response_model=LoginResponse, status_code=201)
-@limiter.limit("3/minute")
+@limiter.limit("20/minute")
 def register(request: Request, body: RegisterRequest, db: Session = Depends(get_db)) -> LoginResponse:
     """Registra una nueva cuenta de usuario (útil para pruebas y altas iniciales)."""
     email_limpio = body.email.strip().lower()

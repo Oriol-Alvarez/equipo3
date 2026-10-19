@@ -23,5 +23,9 @@ class Settings(BaseSettings):
     # Límite de tamaño para subidas multimedia (10 MB)
     media_max_bytes: int = 10 * 1024 * 1024
 
+    # Notificaciones push: ruta al JSON de la cuenta de servicio de Firebase.
+    # Vacío = no se mandan notificaciones (todo lo demás funciona igual).
+    firebase_credentials: str = ""
+
 
 settings = Settings()

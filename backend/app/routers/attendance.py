@@ -11,6 +11,7 @@ from .daily_logs import _registro
 from ..db import get_db
 from ..deps import Identidad, requiere_educadora, usuario_actual
 from ..errors import ApiError
+from ..resumenes import minutos_de
 from ..models import AttendanceRecord, Child
 from ..schemas import (
     AttendanceRecordOut,
@@ -20,6 +21,14 @@ from ..schemas import (
     IngresoLogData,
     IngresoRequest,
 )
+
+def _hora_24(hora: str) -> str:
+    """'8:15 AM' u '08:15' -> '08:15' (formato de la hoja oficial). Si no se entiende, 422."""
+    minutos = minutos_de(hora)
+    if minutos is None:
+        raise ApiError(422, f"Hora no válida: {hora}", "hora_invalida", "Usa el formato 08:15 o 08:15 AM.")
+    return f"{minutos // 60:02d}:{minutos % 60:02d}"
+
 
 router = APIRouter(prefix="/attendance", tags=["attendance"])
 
@@ -69,7 +78,7 @@ def registrar_ingreso(
     # Sincronización con la bitácora oficial (DailyLog)
     med_opt = body.medicationOption if body.medicationOption in {"SI", "NO", "NO_APLICA"} else "NO_APLICA"
     ingreso_log = IngresoLogData(
-        time=body.entryTime,
+        time=_hora_24(body.entryTime),
         assistantName=body.assistantName or "",
         deliveredBy=body.delivererName or "",
         receivedBy=body.receiverStaffName or "",
@@ -134,7 +143,7 @@ def registrar_egreso(
 
     # Sincronización con la bitácora oficial (DailyLog)
     egreso_log = EgresoLogData(
-        time=body.exitTime,
+        time=_hora_24(body.exitTime),
         goodPhysicalCondition=body.goodPhysicalCondition,
         injuries=body.injuryDetail or "",
         collectedBy=body.receiverTutorName or "",

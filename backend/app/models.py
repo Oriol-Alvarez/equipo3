@@ -9,6 +9,7 @@ from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, Strin
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
+from .horario import hoy
 
 
 class Usuario(Base):
@@ -190,6 +191,38 @@ class WeeklySummary(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class ChatRead(Base):
+    """Hasta cuándo leyó cada usuario cada conversación (para contar mensajes sin leer).
+
+    chat_key: "bitacora:<childId>" para el chat familia-educadora y "worker:<chatId>"
+    para los chats del personal (incluido el global).
+    """
+
+    __tablename__ = "chat_reads"
+
+    user_id: Mapped[str] = mapped_column(ForeignKey("usuarios.id", ondelete="CASCADE"), primary_key=True)
+    chat_key: Mapped[str] = mapped_column(String(100), primary_key=True)
+    last_read_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class WeeklySummaryFeedback(Base):
+    """Confirmación de lectura y reacción de un familiar a un resumen semanal.
+
+    El resumen se calcula con los registros diarios; aquí solo se guarda la respuesta
+    de la familia para esa semana (week_start = lunes en formato YYYY-MM-DD).
+    """
+
+    __tablename__ = "weekly_summary_feedback"
+
+    child_id: Mapped[str] = mapped_column(ForeignKey("children.id", ondelete="CASCADE"), primary_key=True)
+    week_start: Mapped[str] = mapped_column(String(10), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("usuarios.id", ondelete="CASCADE"), primary_key=True)
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    reaction: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
 class StaffMember(Base):
     __tablename__ = "staff_members"
 
@@ -241,7 +274,9 @@ class BitacoraMessage(Base):
     sender_id: Mapped[str] = mapped_column(ForeignKey("usuarios.id", ondelete="CASCADE"))
     sender_name: Mapped[str] = mapped_column(String(120))
     time: Mapped[str] = mapped_column(String(20))
-    date: Mapped[str] = mapped_column(String(20), default="12/10/2026", server_default="12/10/2026")
+    date: Mapped[str] = mapped_column(
+        String(20), default=lambda: hoy().strftime("%d/%m/%Y"), server_default="12/10/2026"
+    )
     message: Mapped[str] = mapped_column(Text)
     file_uri: Mapped[str | None] = mapped_column(String(255), nullable=True)
     file_name: Mapped[str | None] = mapped_column(String(120), nullable=True)

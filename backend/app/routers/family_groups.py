@@ -1,7 +1,7 @@
 """Módulo 9: Grupos Familiares (/family-groups)"""
 
 import uuid
-from datetime import datetime
+from ..lecturas import momento_utc
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from ..acceso import es_personal, hijos_de
 from ..db import get_db
+from ..notificaciones_push import notificar
 from ..deps import Identidad, requiere_educadora, usuario_actual
 from ..errors import ApiError
 from ..horario import hora_12h
@@ -230,7 +231,7 @@ def enviar_mensaje_grupo_familiar(
         attachment_uri=att_uri,
         attachment_name=att_name,
         attachment_mime_type=att_mime,
-        created_at=datetime.now(),
+        created_at=momento_utc(),
     )
     db.add(nuevo_msg)
 
@@ -238,8 +239,16 @@ def enviar_mensaje_grupo_familiar(
     grupo.last_message = body.text.strip() or (f"📎 {att_name}" if att_name else "📎 Archivo adjunto")
     grupo.last_message_time = hora_actual
     db.commit()
+    notificar(
+        db,
+        familias_de_grupo(db, groupId),
+        grupo.title,
+        f"{quien.display_name}: {body.text.strip() or 'Archivo adjunto'}",
+        {"tipo": "grupo", "groupId": groupId},
+        excepto=quien.id,
+    )
 
-    from .ws_notifications import ws_manager
+    from .ws_notifications import familias_de, personal_y_usuarios, ws_manager
     att_dict = body.attachment.model_dump() if body.attachment else None
     ws_manager.broadcast_sync(
         "group:message:new",
@@ -256,6 +265,12 @@ def enviar_mensaje_grupo_familiar(
                 "attachment": att_dict,
             },
         },
+        personal_y_usuarios(
+            familias_de(
+                db,
+                set(db.scalars(select(FamilyGroupMember.child_id).where(FamilyGroupMember.group_id == groupId)).all()),
+            )
+        ),
     )
 
     return FamilyGroupMessageOut(
@@ -266,3 +281,11 @@ def enviar_mensaje_grupo_familiar(
         time=hora_actual,
         attachment=body.attachment,
     )
+
+
+def familias_de_grupo(db: Session, group_id: str) -> set[str]:
+    """Familias de los niños que forman parte del grupo."""
+    ninos = db.scalars(select(FamilyGroupMember.child_id).where(FamilyGroupMember.group_id == group_id)).all()
+    if not ninos:
+        return set()
+    return set(db.scalars(select(ChildParent.parent_user_id).where(ChildParent.child_id.in_(ninos))).all())

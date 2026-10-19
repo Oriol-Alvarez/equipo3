@@ -5,7 +5,7 @@ El rol del autor sale del token (no lo manda la app), así una familia no puede 
 """
 
 import uuid
-from datetime import datetime
+from ..lecturas import momento_utc
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
@@ -102,7 +102,7 @@ def agregar_observacion(
         author_name=quien.display_name or ("Educadora" if es_personal(quien) else "Familia"),
         text=texto,
         time=fecha_y_hora_corta(),
-        created_at=datetime.now(),
+        created_at=momento_utc(),
     )
     db.add(obs)
     db.commit()
