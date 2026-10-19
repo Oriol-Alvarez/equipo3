@@ -4,6 +4,17 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+// URL del backend. Cada quien la define en su propio local.properties (no se sube a Git):
+//   sonrisas.apiUrl=https://algo.trycloudflare.com/api/v1/
+// Si no está definida, se usa el backend local visto desde el emulador de Android.
+val localProperties = java.util.Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+val sonrisasApiUrl: String = localProperties.getProperty("sonrisas.apiUrl")?.trim()
+    ?.takeIf { it.isNotEmpty() }
+    ?: "http://10.0.2.2:8000/api/v1/"
+
 android {
     namespace = "com.example.etapa1"
     compileSdk {
@@ -18,6 +29,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "API_BASE_URL", "\"$sonrisasApiUrl\"")
     }
 
     buildTypes {
@@ -33,6 +46,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

@@ -1,5 +1,6 @@
 package com.example.etapa1.data.remote
 
+import com.example.etapa1.BuildConfig
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -9,7 +10,8 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.concurrent.TimeUnit
 
 object NetworkClient {
-    const val DEFAULT_BASE_URL = "https://kitchen-become-dan-biz.trycloudflare.com/api/v1/"
+    // Viene de "sonrisas.apiUrl" en local.properties (ver app/build.gradle.kts).
+    val DEFAULT_BASE_URL: String = BuildConfig.API_BASE_URL
     var baseUrl: String = DEFAULT_BASE_URL
 
     val json: Json = Json {
