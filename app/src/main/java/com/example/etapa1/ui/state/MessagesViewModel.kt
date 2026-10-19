@@ -23,7 +23,9 @@ data class MessagesUiState(
     val globalChat: WorkerChat? = null,
     val searchQuery: String = "",
     val isSearchOpen: Boolean = false,
-    val conexionEstado: EstadoConexion = EstadoConexion.Desconectado
+    val conexionEstado: EstadoConexion = EstadoConexion.Desconectado,
+    val totalWorkersUnreadCount: Int = 0,
+    val totalParentsUnreadCount: Int = 0
 )
 
 private data class MessagesFilterState(
@@ -70,6 +72,9 @@ class MessagesViewModel(
             global.title.contains(query, ignoreCase = true) ||
             global.lastMessage.contains(query, ignoreCase = true)
 
+        val workersUnread = (global.unreadCount) + workerChats.sumOf { it.unreadCount }
+        val parentsUnread = parentChats.sumOf { it.unreadCount }
+
         MessagesUiState(
             selectedTab = filters.selectedTab,
             workerChats = filteredWorkers,
@@ -78,7 +83,9 @@ class MessagesViewModel(
             globalChat = if (showGlobal) global else null,
             searchQuery = filters.searchQuery,
             isSearchOpen = filters.isSearchOpen,
-            conexionEstado = conexion
+            conexionEstado = conexion,
+            totalWorkersUnreadCount = workersUnread,
+            totalParentsUnreadCount = parentsUnread
         )
     }.stateIn(
         scope = viewModelScope,
@@ -103,5 +110,13 @@ class MessagesViewModel(
 
     fun sendMessage(chatId: String, text: String) {
         messagesRepository.sendWorkerMessage(chatId, text)
+    }
+
+    fun markWorkerChatAsRead(chatId: String) {
+        messagesRepository.markWorkerChatAsRead(chatId)
+    }
+
+    fun markParentChatAsRead(childId: String) {
+        messagesRepository.markParentChatAsRead(childId)
     }
 }

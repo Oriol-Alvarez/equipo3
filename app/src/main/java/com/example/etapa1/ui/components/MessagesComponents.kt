@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,16 +32,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.NightlightRound
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material3.Button
@@ -730,6 +737,7 @@ fun WorkerChatConversationDialog(
 ) {
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+    var showShareActivityDialog by remember { mutableStateOf(false) }
 
     var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
     var selectedFileName by remember { mutableStateOf<String?>(null) }
@@ -860,6 +868,15 @@ fun WorkerChatConversationDialog(
                                     imageVector = Icons.Default.AttachFile,
                                     contentDescription = "Adjuntar archivo",
                                     tint = TextSecondary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+
+                            IconButton(onClick = { showShareActivityDialog = true }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.EventNote,
+                                    contentDescription = "Compartir actividad",
+                                    tint = BrandBlue,
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
@@ -1037,6 +1054,16 @@ fun WorkerChatConversationDialog(
             }
         }
     }
+
+    if (showShareActivityDialog) {
+        ShareGroupActivityDialog(
+            onDismiss = { showShareActivityDialog = false },
+            onSendActivity = { category, badge, description ->
+                val formatted = "[ACTIVIDAD]\nCategoría: $category\nDetalle: $badge\nObservaciones: $description"
+                onSendMessage(formatted, null, null, null)
+            }
+        )
+    }
 }
 
 /**
@@ -1126,12 +1153,17 @@ private fun WorkerChatMessageBubble(
                         }
                     }
                     if (msg.message.isNotBlank()) {
-                        Text(
-                            text = msg.message,
-                            fontSize = 13.5.sp,
-                            color = Color.White,
-                            lineHeight = 18.sp
-                        )
+                        val actData = remember(msg.message) { parseGroupActivityMessage(msg.message) }
+                        if (actData != null) {
+                            GroupActivityCardBubble(actData, isOutgoing = true)
+                        } else {
+                            Text(
+                                text = msg.message,
+                                fontSize = 13.5.sp,
+                                color = Color.White,
+                                lineHeight = 18.sp
+                            )
+                        }
                     }
                 }
             }
@@ -1248,12 +1280,17 @@ private fun WorkerChatMessageBubble(
                                 }
                             }
                             if (msg.message.isNotBlank()) {
-                                Text(
-                                    text = msg.message,
-                                    fontSize = 13.5.sp,
-                                    color = TextPrimary,
-                                    lineHeight = 18.sp
-                                )
+                                val actData = remember(msg.message) { parseGroupActivityMessage(msg.message) }
+                                if (actData != null) {
+                                    GroupActivityCardBubble(actData, isOutgoing = false)
+                                } else {
+                                    Text(
+                                        text = msg.message,
+                                        fontSize = 13.5.sp,
+                                        color = TextPrimary,
+                                        lineHeight = 18.sp
+                                    )
+                                }
                             }
                         }
                     }
@@ -1342,12 +1379,17 @@ private fun WorkerChatMessageBubble(
                             }
                         }
                         if (msg.message.isNotBlank()) {
-                            Text(
-                                text = msg.message,
-                                fontSize = 13.5.sp,
-                                color = TextPrimary,
-                                lineHeight = 18.sp
-                            )
+                            val actData = remember(msg.message) { parseGroupActivityMessage(msg.message) }
+                            if (actData != null) {
+                                GroupActivityCardBubble(actData, isOutgoing = false)
+                            } else {
+                                Text(
+                                    text = msg.message,
+                                    fontSize = 13.5.sp,
+                                    color = TextPrimary,
+                                    lineHeight = 18.sp
+                                )
+                            }
                         }
                     }
                 }
@@ -1376,3 +1418,335 @@ private fun getWorkerSenderInfo(senderId: String, senderName: String): Pair<Stri
     val color = colors[kotlin.math.abs(senderName.hashCode()) % colors.size]
     return Pair(initials, color)
 }
+
+/**
+ * Parsea un mensaje estructurado de actividad para grupos o chats.
+ */
+fun parseGroupActivityMessage(raw: String): Triple<String, String, String>? {
+    if (!raw.startsWith("[ACTIVIDAD]")) return null
+    var cat = "Actividad"
+    var badge = ""
+    var desc = ""
+    val lines = raw.lines()
+    for (line in lines) {
+        val trimmed = line.trim()
+        when {
+            trimmed.startsWith("Categoría:") -> cat = trimmed.removePrefix("Categoría:").trim()
+            trimmed.startsWith("Detalle:") -> badge = trimmed.removePrefix("Detalle:").trim()
+            trimmed.startsWith("Observaciones:") -> desc = trimmed.removePrefix("Observaciones:").trim()
+        }
+    }
+    if (desc.isEmpty() && lines.size > 1) {
+        desc = lines.filter { !it.startsWith("[ACTIVIDAD]") && !it.startsWith("Categoría:") && !it.startsWith("Detalle:") }
+            .joinToString("\n").trim()
+    }
+    return Triple(cat, badge, desc)
+}
+
+/**
+ * Tarjeta visual estilizada de actividad renderizada dentro de la burbuja del chat grupal.
+ */
+@Composable
+fun GroupActivityCardBubble(
+    activityData: Triple<String, String, String>,
+    isOutgoing: Boolean
+) {
+    val (category, badge, desc) = activityData
+    val (catIcon, catColor) = when (category) {
+        "Alimentación" -> Pair(Icons.Default.Restaurant, Color(0xFFE65100))
+        "Descanso", "Siesta" -> Pair(Icons.Default.NightlightRound, Color(0xFF5E35B1))
+        "Funciones Excretoras", "Excretoras" -> Pair(Icons.Default.Wc, Color(0xFF0288D1))
+        "Estado de Ánimo", "Ánimo" -> Pair(Icons.Default.Face, Color(0xFF00897B))
+        "Salud" -> Pair(Icons.Default.LocalHospital, Color(0xFFC2185B))
+        else -> Pair(Icons.AutoMirrored.Filled.EventNote, Color(0xFF1E88E5))
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Surface(
+            shape = RoundedCornerShape(10.dp),
+            color = if (isOutgoing) Color.White.copy(alpha = 0.22f) else BrandBlueContainer,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 6.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = catIcon,
+                    contentDescription = null,
+                    tint = if (isOutgoing) Color.White else catColor,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = category,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isOutgoing) Color.White else catColor
+                )
+                if (badge.isNotBlank()) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "• $badge",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (isOutgoing) Color.White.copy(alpha = 0.9f) else TextSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+        if (desc.isNotBlank()) {
+            Text(
+                text = desc,
+                fontSize = 13.5.sp,
+                color = if (isOutgoing) Color.White else TextPrimary,
+                lineHeight = 18.sp
+            )
+        }
+    }
+}
+
+/**
+ * Diálogo interactivo para compartir una actividad directamente en cualquier grupo familiar o de personal.
+ */
+@Composable
+fun ShareGroupActivityDialog(
+    onDismiss: () -> Unit,
+    onSendActivity: (category: String, badge: String, description: String) -> Unit
+) {
+    val categories = listOf(
+        "Alimentación" to Icons.Default.Restaurant,
+        "Descanso" to Icons.Default.NightlightRound,
+        "Ánimo" to Icons.Default.Face,
+        "Excretoras" to Icons.Default.Wc,
+        "Pedagógica" to Icons.AutoMirrored.Filled.EventNote,
+        "Salud" to Icons.Default.LocalHospital
+    )
+    var selectedCat by remember { mutableStateOf("Alimentación") }
+    var badgeText by remember { mutableStateOf("Consumo: TODO") }
+    var descText by remember { mutableStateOf("") }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .clip(RoundedCornerShape(20.dp)),
+            color = CardBackground,
+            shadowElevation = 8.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Compartir Actividad",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Cerrar",
+                            tint = TextSecondary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "CATEGORÍA",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextMuted,
+                    letterSpacing = 0.5.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    categories.take(3).forEach { (catName, icon) ->
+                        val isSelected = selectedCat == catName
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isSelected) BrandBlueContainer else AppBackground,
+                            border = BorderStroke(1.dp, if (isSelected) BrandBlue else BorderSubtle),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable {
+                                    selectedCat = catName
+                                    badgeText = when (catName) {
+                                        "Alimentación" -> "Consumo: TODO"
+                                        "Descanso" -> "60 min"
+                                        "Ánimo" -> "Feliz y participativo"
+                                        "Excretoras" -> "Control de esfínteres"
+                                        "Salud" -> "Salud óptima"
+                                        else -> "Actividad grupal"
+                                    }
+                                }
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = catName,
+                                    tint = if (isSelected) BrandBlue else TextSecondary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = catName,
+                                    fontSize = 10.5.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) BrandBlue else TextPrimary,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    categories.drop(3).forEach { (catName, icon) ->
+                        val isSelected = selectedCat == catName
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isSelected) BrandBlueContainer else AppBackground,
+                            border = BorderStroke(1.dp, if (isSelected) BrandBlue else BorderSubtle),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable {
+                                    selectedCat = catName
+                                    badgeText = when (catName) {
+                                        "Alimentación" -> "Consumo: TODO"
+                                        "Descanso" -> "60 min"
+                                        "Ánimo" -> "Feliz y participativo"
+                                        "Excretoras" -> "Control de esfínteres"
+                                        "Salud" -> "Salud óptima"
+                                        else -> "Actividad grupal"
+                                    }
+                                }
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = catName,
+                                    tint = if (isSelected) BrandBlue else TextSecondary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = catName,
+                                    fontSize = 10.5.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) BrandBlue else TextPrimary,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "RESUMEN / DETALLE RÁPIDO",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextMuted,
+                    letterSpacing = 0.5.sp
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                OutlinedTextField(
+                    value = badgeText,
+                    onValueChange = { badgeText = it },
+                    placeholder = { Text("Ej. Consumo: TODO, 60 min...", fontSize = 13.sp) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "DESCRIPCIÓN / OBSERVACIONES",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextMuted,
+                    letterSpacing = 0.5.sp
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                OutlinedTextField(
+                    value = descText,
+                    onValueChange = { descText = it },
+                    placeholder = { Text("Observaciones o notas para el grupo...", fontSize = 13.sp) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    maxLines = 4
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp),
+                        shape = RoundedCornerShape(22.dp)
+                    ) {
+                        Text("Cancelar", color = TextSecondary)
+                    }
+
+                    Button(
+                        onClick = {
+                            val badge = badgeText.ifBlank { "General" }
+                            val desc = descText.ifBlank { "Actividad registrada por la educadora." }
+                            onSendActivity(selectedCat, badge, desc)
+                            onDismiss()
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp),
+                        shape = RoundedCornerShape(22.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandBlue)
+                    ) {
+                        Text("Enviar al grupo", color = Color.White, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
+    }
+}
+

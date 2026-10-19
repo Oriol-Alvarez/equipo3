@@ -86,8 +86,8 @@ fun LoginScreen(
 fun LoginScreen(
     onLoginSuccess: (UserRole) -> Unit = {}
 ) {
-    var email by remember { mutableStateOf("correo@ejemplo.com") }
-    var password by remember { mutableStateOf("••••••••") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var hasError by remember { mutableStateOf(false) }
 
@@ -268,18 +268,6 @@ fun LoginContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Link Recuperar contraseña
-            Text(
-                text = "Recuperar contraseña",
-                fontSize = 13.sp,
-                color = BrandBlue,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier
-                    .clickable { /* Simulación de recuperación */ }
-                    .padding(4.dp)
-            )
         }
     }
 }

@@ -52,6 +52,8 @@ import androidx.core.content.FileProvider
 import java.io.File
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -119,7 +121,13 @@ fun ChatBitacoraScreen(
         onNewActivityClick = onNewActivityClick,
         onAttendanceClick = onAttendanceClick,
         onSendMessage = { text, uri, name, mime ->
-            viewModel.sendMessage(text, uri?.toString(), name, mime)
+            viewModel.sendMessage(
+                text = text,
+                fileUri = uri?.toString(),
+                fileName = name,
+                fileMimeType = mime,
+                senderRole = if (isWorkerRole) com.example.etapa1.model.UserRole.EDUCADORA else com.example.etapa1.model.UserRole.FAMILIAR
+            )
         }
     )
 }
@@ -182,25 +190,6 @@ fun ChatBitacoraScreen(
 
     Scaffold(
         containerColor = AppBackground,
-        floatingActionButton = {
-            if (isWorkerRole) {
-                FloatingActionButton(
-                    onClick = onNewActivityClick,
-                    containerColor = BrandBlue,
-                    contentColor = Color.White,
-                    shape = CircleShape,
-                    modifier = Modifier
-                        .size(52.dp)
-                        .padding(bottom = 4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Nueva Actividad",
-                        modifier = Modifier.size(26.dp)
-                    )
-                }
-            }
-        },
         bottomBar = {
             // Barra de entrada de mensajes
             Surface(
@@ -209,6 +198,32 @@ fun ChatBitacoraScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
+                    if (isWorkerRole) {
+                        Button(
+                            onClick = onNewActivityClick,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = BrandBlue,
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .height(44.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Añadir Actividad",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
                     if (selectedFileUri != null) {
                         Row(
                             modifier = Modifier
@@ -453,7 +468,7 @@ fun ChatBitacoraScreen(
                             TimelineChip(item)
                         }
                         is TimelineItem.ChatMessage -> {
-                            ChatMessageBubble(item)
+                            ChatMessageBubble(item, isWorkerRole)
                         }
                         is TimelineItem.ActivityCard -> {
                             ActivityTimelineCard(item)
@@ -660,11 +675,17 @@ private fun TimelineChip(chip: TimelineItem.EventChip) {
 }
 
 @Composable
-private fun ChatMessageBubble(msg: TimelineItem.ChatMessage) {
+private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boolean = true) {
+    val isOutgoing = if (msg.senderRole != null) {
+        if (isWorkerRole) msg.senderRole == com.example.etapa1.model.UserRole.EDUCADORA
+        else msg.senderRole == com.example.etapa1.model.UserRole.FAMILIAR
+    } else {
+        msg.isOutgoing
+    }
     val context = LocalContext.current
     Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (msg.isOutgoing) Alignment.End else Alignment.Start
+        horizontalAlignment = if (isOutgoing) Alignment.End else Alignment.Start
     ) {
         Text(
             text = msg.time,
@@ -683,13 +704,13 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage) {
                     RoundedCornerShape(
                         topStart = 16.dp,
                         topEnd = 16.dp,
-                        bottomStart = if (msg.isOutgoing) 16.dp else 4.dp,
-                        bottomEnd = if (msg.isOutgoing) 4.dp else 16.dp
+                        bottomStart = if (isOutgoing) 16.dp else 4.dp,
+                        bottomEnd = if (isOutgoing) 4.dp else 16.dp
                     )
                 )
-                .background(if (msg.isOutgoing) ChatOutgoingBubble else CardBackground)
+                .background(if (isOutgoing) ChatOutgoingBubble else CardBackground)
                 .border(
-                    width = if (msg.isOutgoing) 0.dp else 1.dp,
+                    width = if (isOutgoing) 0.dp else 1.dp,
                     color = BorderSubtle,
                     shape = RoundedCornerShape(16.dp)
                 )

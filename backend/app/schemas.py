@@ -230,6 +230,7 @@ class NewActivityRequest(BaseModel):
     napMinutes: int | None = None
     moodState: str | None = None
     excretoryFunction: str | None = None
+    date: str | None = None
 
 
 class NewActivityResponse(BaseModel):
@@ -316,6 +317,7 @@ class SendWorkerMessageRequest(BaseModel):
     fileUri: str | None = None
     fileName: str | None = None
     fileMimeType: str | None = None
+    time: str | None = None
 
 
 class StaffGlobalChatOut(BaseModel):
@@ -327,6 +329,7 @@ class StaffGlobalChatOut(BaseModel):
 
 class SendGlobalMessageRequest(BaseModel):
     message: str
+    time: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -357,6 +360,7 @@ class SendBitacoraMessageRequest(BaseModel):
     fileUri: str | None = None
     fileName: str | None = None
     fileMimeType: str | None = None
+    time: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -404,6 +408,7 @@ class FamilyGroupMessageOut(BaseModel):
 class SendFamilyGroupMessageRequest(BaseModel):
     text: str
     attachment: AttachmentData | None = None
+    time: str | None = None
 
 
 # ---------------------------------------------------------------------------

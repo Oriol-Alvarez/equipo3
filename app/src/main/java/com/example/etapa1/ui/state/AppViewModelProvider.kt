@@ -29,7 +29,12 @@ object AppViewModelProvider {
                 sonrisasApplication().container.chatConexion
             )
         }
-        initializer { NewActivityViewModel(sonrisasApplication().container.bitacoraRepository) }
+        initializer {
+            NewActivityViewModel(
+                sonrisasApplication().container.bitacoraRepository,
+                sonrisasApplication().container.familyGroupsRepository
+            )
+        }
         initializer {
             LostObjectsViewModel(
                 sonrisasApplication().container.lostObjectsRepository,

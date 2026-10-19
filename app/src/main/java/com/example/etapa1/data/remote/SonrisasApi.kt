@@ -199,5 +199,11 @@ interface SonrisasApi {
         @Path("childId") childId: String,
         @Query("date") date: String? = null
     ): Response<List<TimelineItemDto>>
+
+    @POST("children/{childId}/activities")
+    suspend fun createActivity(
+        @Path("childId") childId: String,
+        @Body request: CreateActivityDto
+    ): Response<NewActivityResponseDto>
 }
 

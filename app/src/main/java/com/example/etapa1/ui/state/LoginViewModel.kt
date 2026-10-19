@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.update
 
 data class LoginUiState(
     val selectedRole: UserRole = UserRole.EDUCADORA,
-    val email: String = "correo@ejemplo.com",
-    val password: String = "••••••••",
+    val email: String = "",
+    val password: String = "",
     val passwordVisible: Boolean = false,
     val hasError: Boolean = false,
     val isSuccess: Boolean = false

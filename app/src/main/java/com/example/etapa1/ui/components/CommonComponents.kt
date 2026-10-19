@@ -119,6 +119,7 @@ fun DaycareLogo(
 fun AppBottomBar(
     selectedTab: Int = 0,
     showMessagesTab: Boolean = true,
+    hasUnreadMessages: Boolean = false,
     onTabSelected: (Int) -> Unit = {}
 ) {
     Surface(
@@ -159,15 +160,17 @@ fun AppBottomBar(
                                 contentDescription = "Mensajes",
                                 tint = if (selectedTab == 1) BrandBlue else TextMuted
                             )
-                            // Notification dot
-                            Box(
-                                modifier = Modifier
-                                    .size(7.dp)
-                                    .align(Alignment.TopEnd)
-                                    .offset(x = 2.dp, y = (-2).dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFE53935))
-                            )
+                            if (hasUnreadMessages) {
+                                // Notification dot
+                                Box(
+                                    modifier = Modifier
+                                        .size(7.dp)
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = 2.dp, y = (-2).dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFE53935))
+                                )
+                            }
                         }
                     },
                     label = "Mensajes",

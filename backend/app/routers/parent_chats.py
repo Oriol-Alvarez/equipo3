@@ -92,7 +92,7 @@ def enviar_mensaje_chat_bitacora(
     if alumno is None:
         raise ApiError(404, f"No existe el alumno con id {childId}")
 
-    hora_actual = time.strftime("%I:%M %p")
+    hora_actual = body.time or time.strftime("%I:%M %p")
     msg_id = f"msg_{uuid.uuid4().hex[:8]}"
     nuevo_msg = BitacoraMessage(
         id=msg_id,
@@ -123,7 +123,6 @@ def enviar_mensaje_chat_bitacora(
         "isOutgoing": False,
     }
     ws_manager.broadcast_sync("chat:bitacora:new", {"childId": childId, "chatId": childId, "message": msg_dict})
-    ws_manager.broadcast_sync("chat:message:new", {"chatId": childId, "message": msg_dict})
 
     return BitacoraMessageOut(
         id=msg_id,

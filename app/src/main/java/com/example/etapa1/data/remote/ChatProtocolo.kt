@@ -33,6 +33,14 @@ sealed interface EventoServidor {
         val message: ChatMessagePayload
     ) : EventoServidor
 
+    /** Nueva actividad registrada en la bitácora del alumno. */
+    @Serializable
+    data class NuevaActividadBitacora(
+        val childId: String,
+        val chatId: String = "",
+        val activity: TimelineItemDto
+    ) : EventoServidor
+
     /** Nuevo mensaje en un grupo familiar institucional. */
     @Serializable
     data class NuevoMensajeGrupo(
@@ -121,6 +129,14 @@ object ChatProtocolo {
                         json.decodeFromJsonElement<EventoServidor.NuevoMensajeBitacora>(dataObj)
                     } else {
                         json.decodeFromJsonElement<EventoServidor.NuevoMensajeBitacora>(root)
+                    }
+                }
+
+                "chat:bitacora:activity" -> {
+                    if (dataObj is JsonObject) {
+                        json.decodeFromJsonElement<EventoServidor.NuevaActividadBitacora>(dataObj)
+                    } else {
+                        json.decodeFromJsonElement<EventoServidor.NuevaActividadBitacora>(root)
                     }
                 }
 

@@ -262,7 +262,7 @@ class NetworkMessagesRepositoryImpl(
                 )
             }
             RemoteSync.launch("Enviar mensaje a chat global") {
-                api.sendStaffGlobalMessage(SendWorkerMessageDto(message = text))
+                api.sendStaffGlobalMessage(SendWorkerMessageDto(message = text, time = hora))
             }
         } else {
             _workerChats.update { lista ->
@@ -277,11 +277,27 @@ class NetworkMessagesRepositoryImpl(
                 }
             }
             RemoteSync.launch("Enviar mensaje a chat trabajador $chatId") {
-                api.sendWorkerMessage(chatId, SendWorkerMessageDto(message = text))
+                api.sendWorkerMessage(chatId, SendWorkerMessageDto(message = text, time = hora))
             }
         }
     }
 
+    override fun markWorkerChatAsRead(chatId: String) {
+        if (chatId == _globalChat.value.id || chatId == "global_staff_chat") {
+            _globalChat.update { it.copy(unreadCount = 0) }
+        } else {
+            _workerChats.update { list ->
+                list.map { if (it.id == chatId) it.copy(unreadCount = 0) else it }
+            }
+        }
+    }
+
+    override fun markParentChatAsRead(childId: String) {
+        _parentChats.update { list ->
+            list.map { if (it.child.id == childId) it.copy(unreadCount = 0) else it }
+        }
+    }
+
     private fun horaActual(): String =
-        SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date())
+        SimpleDateFormat("hh:mm a", Locale.US).format(Date())
 }

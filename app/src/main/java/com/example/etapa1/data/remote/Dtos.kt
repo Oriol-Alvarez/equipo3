@@ -226,7 +226,8 @@ data class SendWorkerMessageDto(
     val message: String,
     val fileUri: String? = null,
     val fileName: String? = null,
-    val fileMimeType: String? = null
+    val fileMimeType: String? = null,
+    val time: String? = null
 )
 
 @Serializable
@@ -257,7 +258,8 @@ data class SendBitacoraMessageDto(
     val message: String,
     val fileUri: String? = null,
     val fileName: String? = null,
-    val fileMimeType: String? = null
+    val fileMimeType: String? = null,
+    val time: String? = null
 )
 
 @Serializable
@@ -275,5 +277,27 @@ data class TimelineItemDto(
     val category: String? = null,
     val portionLabel: String? = null,
     val description: String? = null
+)
+
+@Serializable
+data class CreateActivityDto(
+    val time: String,
+    val category: String,
+    val title: String,
+    val description: String,
+    val portionOption: String? = null,
+    val mealType: String? = null,
+    val consumptionOption: String? = null,
+    val napMinutes: Int? = null,
+    val moodState: String? = null,
+    val excretoryFunction: String? = null,
+    val date: String? = null
+)
+
+@Serializable
+data class NewActivityResponseDto(
+    val id: String,
+    val status: String = "CREADA",
+    val timelineItem: TimelineItemDto
 )
 

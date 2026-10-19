@@ -109,7 +109,8 @@ sealed interface TimelineItem {
         val isOutgoing: Boolean,
         val fileUri: String? = null,
         val fileName: String? = null,
-        val fileMimeType: String? = null
+        val fileMimeType: String? = null,
+        val senderRole: UserRole? = null
     ) : TimelineItem
 
     data class ActivityCard(
@@ -931,7 +932,7 @@ object MockDataRepository {
             parentName = "María López (Mamá)",
             lastMessage = "Mateo disfrutó mucho su comida de hoy y pidió un poco más de fruta.",
             lastMessageTime = "01:50 PM",
-            unreadCount = 0
+            unreadCount = 1
         ),
         ParentChatSummary(
             child = childrenSala1A[1],

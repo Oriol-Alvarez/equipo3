@@ -1,6 +1,7 @@
 """Módulo 5: Bitácora Diaria, Línea de Tiempo y Actividades (/children/{id}/...)"""
 
 import uuid
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends
@@ -20,6 +21,19 @@ from ..schemas import (
 )
 
 router = APIRouter(tags=["bitacora"])
+
+
+def _parse_time_minutes(t: str | None) -> int:
+    if not t:
+        return 9999
+    s = t.strip().upper().replace(".", "").replace("A M", "AM").replace("P M", "PM")
+    for fmt in ("%I:%M %p", "%H:%M", "%I:%M%p"):
+        try:
+            dt = datetime.strptime(s, fmt)
+            return dt.hour * 60 + dt.minute
+        except ValueError:
+            pass
+    return 9999
 
 
 @router.get("/children/{childId}/timeline", response_model=list[TimelineItemOut])
@@ -106,6 +120,7 @@ def obtener_linea_de_tiempo(
             )
         )
 
+    items.sort(key=lambda it: _parse_time_minutes(it.time))
     return items
 
 
@@ -162,10 +177,11 @@ def registrar_actividad(
         raise ApiError(404, f"No existe el alumno con id {childId}")
 
     act_id = f"act_{uuid.uuid4().hex[:8]}"
+    fecha_actividad = body.date or "12/10/2026"
     actividad = Activity(
         id=act_id,
         child_id=childId,
-        date="12/10/2026",
+        date=fecha_actividad,
         time=body.time,
         category=body.category,
         meal_type=body.mealType,
@@ -188,6 +204,16 @@ def registrar_actividad(
         category=body.category,
         portionLabel=portion_label,
         description=body.description,
+    )
+
+    from .ws_notifications import ws_manager
+    ws_manager.broadcast_sync(
+        "chat:bitacora:activity",
+        {
+            "childId": childId,
+            "chatId": childId,
+            "activity": timeline_item.model_dump(),
+        },
     )
 
     return NewActivityResponse(id=act_id, status="CREADA", timelineItem=timeline_item)
@@ -213,10 +239,22 @@ def registrar_evento_rapido(
     db.add(evento)
     db.commit()
 
-    return TimelineItemOut(
+    item_chip = TimelineItemOut(
         type="EVENT_CHIP",
         id=ev_id,
         time=body.time,
         text=body.text,
         iconType=body.iconType,
     )
+
+    from .ws_notifications import ws_manager
+    ws_manager.broadcast_sync(
+        "chat:bitacora:event",
+        {
+            "childId": childId,
+            "chatId": childId,
+            "event": item_chip.model_dump(),
+        },
+    )
+
+    return item_chip

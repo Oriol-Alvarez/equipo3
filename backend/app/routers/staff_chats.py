@@ -100,7 +100,7 @@ def enviar_mensaje_trabajador(
     if chat is None:
         raise ApiError(404, f"No existe el chat con id {chatId}")
 
-    hora_actual = time.strftime("%I:%M %p")
+    hora_actual = body.time or time.strftime("%I:%M %p")
     msg_id = f"wm_{uuid.uuid4().hex[:8]}"
     nuevo_msg = WorkerChatMessage(
         id=msg_id,
@@ -187,7 +187,7 @@ def enviar_chat_global_personal(
     db: Session = Depends(get_db),
 ) -> WorkerChatMessageOut:
     """Publica un mensaje en el canal global de trabajadores."""
-    hora_actual = time.strftime("%I:%M %p")
+    hora_actual = body.time or time.strftime("%I:%M %p")
     msg_id = f"gm_{uuid.uuid4().hex[:8]}"
     nuevo_msg = WorkerChatMessage(
         id=msg_id,
