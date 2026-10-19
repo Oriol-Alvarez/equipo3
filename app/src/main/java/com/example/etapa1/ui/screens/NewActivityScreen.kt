@@ -52,6 +52,11 @@ import com.example.etapa1.ui.theme.BrandBlue
 import com.example.etapa1.ui.theme.CardBackground
 import com.example.etapa1.ui.theme.TextPrimary
 import com.example.etapa1.ui.theme.TextSecondary
+import com.example.etapa1.ui.theme.BorderSubtle
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.theme.Etapa1Theme
 import com.example.etapa1.model.MockDataRepository
@@ -63,15 +68,15 @@ fun NewActivityScreen(
     viewModel: NewActivityViewModel,
     child: Child,
     onBack: () -> Unit,
-    onSubmitActivity: (category: ActivityCategory, summaryBadge: String, description: String) -> Unit = { _, _, _ -> }
+    onSubmitActivity: (category: ActivityCategory, summaryBadge: String, description: String, shareWithFamilyGroups: Boolean) -> Unit = { _, _, _, _ -> }
 ) {
     NewActivityScreen(
         child = child,
         onBack = onBack,
-        onSubmitActivity = { cat, badge, desc ->
+        onSubmitActivity = { cat, badge, desc, shareWithGroups ->
             val currentTime = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
-            viewModel.saveActivity(currentTime, cat.label, badge, desc)
-            onSubmitActivity(cat, badge, desc)
+            viewModel.saveActivity(currentTime, cat.label, badge, desc, child.id, shareWithGroups)
+            onSubmitActivity(cat, badge, desc, shareWithGroups)
         }
     )
 }
@@ -80,9 +85,10 @@ fun NewActivityScreen(
 fun NewActivityScreen(
     child: Child,
     onBack: () -> Unit,
-    onSubmitActivity: (category: ActivityCategory, summaryBadge: String, description: String) -> Unit
+    onSubmitActivity: (category: ActivityCategory, summaryBadge: String, description: String, shareWithFamilyGroups: Boolean) -> Unit
 ) {
     var selectedCategory by remember { mutableStateOf(ActivityCategory.ALIMENTACION) }
+    var shareWithFamilyGroups by remember { mutableStateOf(false) }
 
     // Estado 1: Alimentación
     var desayunoOption by remember { mutableStateOf(FoodConsumptionOption.TODO) }
@@ -405,7 +411,7 @@ fun NewActivityScreen(
                             }
                         }
 
-                        onSubmitActivity(selectedCategory, summaryBadge, description)
+                        onSubmitActivity(selectedCategory, summaryBadge, description, shareWithFamilyGroups)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -429,6 +435,44 @@ fun NewActivityScreen(
                     )
                 }
 
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Opción para compartir en grupos familiares
+                Surface(
+                    color = CardBackground,
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, BorderSubtle),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { shareWithFamilyGroups = !shareWithFamilyGroups }
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = shareWithFamilyGroups,
+                            onCheckedChange = { shareWithFamilyGroups = it },
+                            colors = CheckboxDefaults.colors(checkedColor = BrandBlue)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Compartir también en grupos familiares",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextPrimary
+                            )
+                            Text(
+                                text = "Enviar esta actividad al grupo institucional de ${child.shortName}",
+                                fontSize = 11.5.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(20.dp))
             }
         }
@@ -442,7 +486,7 @@ fun NewActivityScreenPreview() {
         NewActivityScreen(
             child = MockDataRepository.mateoGarcia,
             onBack = {},
-            onSubmitActivity = { _, _, _ -> }
+            onSubmitActivity = { _, _, _, _ -> }
         )
     }
 }

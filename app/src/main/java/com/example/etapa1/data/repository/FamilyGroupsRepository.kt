@@ -1,5 +1,6 @@
 package com.example.etapa1.data.repository
 
+import com.example.etapa1.model.FamilyGroupCandidate
 import com.example.etapa1.model.FamilyGroupChat
 import com.example.etapa1.model.GroupParticipant
 import com.example.etapa1.model.MessageAttachment
@@ -29,4 +30,16 @@ interface FamilyGroupsRepository {
         text: String,
         attachment: MessageAttachment? = null
     ): Boolean
+
+    /**
+     * Quién tiene la sesión iniciada según el servidor (id y nombre reales). La versión en memoria
+     * devuelve null y la pantalla usa los participantes de ejemplo.
+     */
+    fun currentParticipant(): GroupParticipant? = null
+
+    /** Familias que se pueden agregar a un grupo según el servidor; null en la versión en memoria. */
+    val serverCandidates: StateFlow<List<FamilyGroupCandidate>>? get() = null
+
+    /** Vuelve a cargar los grupos del servidor. En la versión en memoria no hace nada. */
+    fun refresh() {}
 }

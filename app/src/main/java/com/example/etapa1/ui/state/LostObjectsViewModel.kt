@@ -6,6 +6,7 @@ import com.example.etapa1.data.repository.AuthRepository
 import com.example.etapa1.data.repository.LostObjectsRepository
 import com.example.etapa1.model.LostItem
 import com.example.etapa1.model.UserRole
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -31,9 +32,11 @@ private data class LostFilterState(
 
 class LostObjectsViewModel(
     private val lostObjectsRepository: LostObjectsRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    coroutineScope: CoroutineScope? = null
 ) : ViewModel() {
 
+    private val scope = coroutineScope ?: viewModelScope
     private val _filterState = MutableStateFlow(LostFilterState())
 
     val uiState: StateFlow<LostObjectsUiState> = combine(
@@ -69,8 +72,8 @@ class LostObjectsViewModel(
             filteredItems = filtered
         )
     }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        scope = scope,
+        started = if (coroutineScope != null) SharingStarted.Eagerly else SharingStarted.WhileSubscribed(5000),
         initialValue = LostObjectsUiState()
     )
 
@@ -93,5 +96,9 @@ class LostObjectsViewModel(
 
     fun claimItem(itemId: String) {
         lostObjectsRepository.claimLostItem(itemId)
+    }
+
+    fun deleteItem(itemId: String) {
+        lostObjectsRepository.deleteLostItem(itemId)
     }
 }

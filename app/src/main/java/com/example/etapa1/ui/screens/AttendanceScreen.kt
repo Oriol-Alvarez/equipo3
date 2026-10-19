@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AssignmentTurnedIn
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -100,6 +99,8 @@ fun AttendanceScreen(
 ) {
     val selectedChild = initialChild ?: children.firstOrNull() ?: MockDataRepository.mateoGarcia
     var activeTab by remember { mutableIntStateOf(0) } // 0 = Ingreso, 1 = Egreso
+    var ingresoStep by remember { mutableIntStateOf(0) }
+    var egresoStep by remember { mutableIntStateOf(0) }
     var showValidationDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var successDialogMessage by remember { mutableStateOf("") }
@@ -149,6 +150,47 @@ fun AttendanceScreen(
         (egresoState.goodPhysicalCondition || egresoState.injuryDetail.isNotBlank())
 
     val isFormValid = if (activeTab == 0) isIngresoValid else isEgresoValid
+
+    val handleSave: () -> Unit = {
+        val isIngreso = activeTab == 0
+        if (!isFormValid) {
+            showErrors = true
+            showValidationDialog = true
+            if (isIngreso) {
+                if (attendanceDate.isBlank() || ingresoState.assistantName.isBlank() || ingresoState.entryTime.isBlank()) {
+                    ingresoStep = 0
+                } else if (ingresoState.hasSymptoms && ingresoState.symptomsDetail.isBlank()) {
+                    ingresoStep = 3
+                } else if (!ingresoState.goodPhysicalCondition && ingresoState.injuryDetail.isBlank()) {
+                    ingresoStep = 6
+                } else if (ingresoState.delivererName.isBlank() || !ingresoState.hasDelivererSignature) {
+                    ingresoStep = 8
+                } else if (ingresoState.receiverStaffName.isBlank() || !ingresoState.hasReceiverStaffSignature) {
+                    ingresoStep = 9
+                }
+            } else {
+                if (!egresoState.goodPhysicalCondition && egresoState.injuryDetail.isBlank()) {
+                    egresoStep = 0
+                } else if (egresoState.exitTime.isBlank()) {
+                    egresoStep = 1
+                } else if (egresoState.receiverTutorName.isBlank() || !egresoState.hasReceiverTutorSignature) {
+                    egresoStep = 5
+                } else if (egresoState.delivererStaffName.isBlank() || !egresoState.hasDelivererStaffSignature) {
+                    egresoStep = 6
+                }
+            }
+        } else {
+            val timeStr = if (isIngreso) "${ingresoState.entryTime} AM" else "${egresoState.exitTime} PM"
+            val notes = if (isIngreso) ingresoState.observations else egresoState.observations
+            onSaveAttendance(selectedChild, isIngreso, timeStr, notes)
+            successDialogMessage = if (isIngreso) {
+                "Se registró exitosamente el Ingreso de ${selectedChild.fullName} a las ${ingresoState.entryTime} hrs."
+            } else {
+                "Se registró exitosamente el Egreso de ${selectedChild.fullName} a las ${egresoState.exitTime} hrs."
+            }
+            showSuccessDialog = true
+        }
+    }
 
     Scaffold(containerColor = AppBackground) { paddingValues ->
         Column(
@@ -264,58 +306,22 @@ fun AttendanceScreen(
                     }
                 }
 
-                // Formularios modulares
+                // Formularios modulares interactivos paso a paso
                 if (activeTab == 0) {
                     IngresoFormSection(
                         attendanceDate = attendanceDate,
                         selectedDayIndex = selectedDayIndex,
-                        state = ingresoState
+                        state = ingresoState,
+                        currentStep = ingresoStep,
+                        onStepChange = { ingresoStep = it },
+                        onSave = handleSave
                     )
                 } else {
                     EgresoFormSection(
-                        state = egresoState
-                    )
-                }
-
-                // Botón principal
-                Button(
-                    onClick = {
-                        val isIngreso = activeTab == 0
-                        if (!isFormValid) {
-                            showErrors = true
-                            showValidationDialog = true
-                            return@Button
-                        }
-                        val timeStr = if (isIngreso) "${ingresoState.entryTime} AM" else "${egresoState.exitTime} PM"
-                        val notes = if (isIngreso) ingresoState.observations else egresoState.observations
-                        onSaveAttendance(selectedChild, isIngreso, timeStr, notes)
-                        successDialogMessage = if (isIngreso) {
-                            "Se registró exitosamente el Ingreso de ${selectedChild.fullName} a las ${ingresoState.entryTime} hrs."
-                        } else {
-                            "Se registró exitosamente el Egreso de ${selectedChild.fullName} a las ${egresoState.exitTime} hrs."
-                        }
-                        showSuccessDialog = true
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(25.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = BrandBlue,
-                        contentColor = Color.White
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.AssignmentTurnedIn,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (activeTab == 0) "Guardar Registro de Ingreso" else "Guardar Registro de Egreso",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold
+                        state = egresoState,
+                        currentStep = egresoStep,
+                        onStepChange = { egresoStep = it },
+                        onSave = handleSave
                     )
                 }
 

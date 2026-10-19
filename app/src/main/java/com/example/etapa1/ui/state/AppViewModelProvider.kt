@@ -23,8 +23,18 @@ object AppViewModelProvider {
                 sonrisasApplication().container.dailyLogRepository
             )
         }
-        initializer { ChatBitacoraViewModel(sonrisasApplication().container.bitacoraRepository) }
-        initializer { NewActivityViewModel(sonrisasApplication().container.bitacoraRepository) }
+        initializer {
+            ChatBitacoraViewModel(
+                sonrisasApplication().container.bitacoraRepository,
+                sonrisasApplication().container.chatConexion
+            )
+        }
+        initializer {
+            NewActivityViewModel(
+                sonrisasApplication().container.bitacoraRepository,
+                sonrisasApplication().container.familyGroupsRepository
+            )
+        }
         initializer {
             LostObjectsViewModel(
                 sonrisasApplication().container.lostObjectsRepository,
@@ -33,7 +43,12 @@ object AppViewModelProvider {
         }
         initializer { PublishLostObjectViewModel(sonrisasApplication().container.lostObjectsRepository) }
         initializer { SuggestionsViewModel(sonrisasApplication().container.suggestionsRepository) }
-        initializer { MessagesViewModel(sonrisasApplication().container.messagesRepository) }
+        initializer {
+            MessagesViewModel(
+                sonrisasApplication().container.messagesRepository,
+                sonrisasApplication().container.chatConexion
+            )
+        }
         initializer { ParentChildSelectionViewModel(sonrisasApplication().container.childRepository) }
         initializer { ParentHomeViewModel(sonrisasApplication().container.childRepository) }
         initializer { ParentSuggestionsViewModel(sonrisasApplication().container.suggestionsRepository) }

@@ -84,6 +84,8 @@ fun MessagesScreen(
         onSearchQueryChange = viewModel::onSearchQueryChanged,
         onToggleSearch = viewModel::toggleSearch,
         onSendMessage = viewModel::sendMessage,
+        onMarkWorkerChatAsRead = viewModel::markWorkerChatAsRead,
+        onMarkParentChatAsRead = viewModel::markParentChatAsRead,
         onNavigateToHome = onNavigateToHome,
         onNavigateToChildChat = onNavigateToChildChat,
         onNavigateToMore = onNavigateToMore,
@@ -116,6 +118,8 @@ fun MessagesScreen(
         onSearchQueryChange = {},
         onToggleSearch = {},
         onSendMessage = { _, _ -> },
+        onMarkWorkerChatAsRead = {},
+        onMarkParentChatAsRead = {},
         onNavigateToHome = onNavigateToHome,
         onNavigateToChildChat = onNavigateToChildChat,
         onNavigateToMore = onNavigateToMore
@@ -129,6 +133,8 @@ fun MessagesContent(
     onSearchQueryChange: (String) -> Unit,
     onToggleSearch: () -> Unit,
     onSendMessage: (chatId: String, text: String) -> Unit,
+    onMarkWorkerChatAsRead: (chatId: String) -> Unit = {},
+    onMarkParentChatAsRead: (childId: String) -> Unit = {},
     onNavigateToHome: () -> Unit,
     onNavigateToChildChat: (Child) -> Unit,
     onNavigateToMore: () -> Unit,
@@ -150,7 +156,21 @@ fun MessagesContent(
     var activeWorkerChat by remember { mutableStateOf<WorkerChat?>(null) }
     val workerChats = remember(uiState.workerChats) { mutableStateListOf<WorkerChat>().apply { addAll(uiState.workerChats) } }
     var globalChat by remember(uiState.globalChat) { mutableStateOf(uiState.globalChat ?: MockDataRepository.initialGlobalWorkerChat) }
-    val parentChats = uiState.parentChats
+    val parentChats = remember(uiState.parentChats) { mutableStateListOf<ParentChatSummary>().apply { addAll(uiState.parentChats) } }
+
+    LaunchedEffect(uiState.workerChats) {
+        workerChats.clear()
+        workerChats.addAll(uiState.workerChats)
+    }
+
+    LaunchedEffect(uiState.globalChat) {
+        uiState.globalChat?.let { globalChat = it }
+    }
+
+    LaunchedEffect(uiState.parentChats) {
+        parentChats.clear()
+        parentChats.addAll(uiState.parentChats)
+    }
     var showCreateFamilyGroupDialog by rememberSaveable { mutableStateOf(false) }
     var activeFamilyGroupId by rememberSaveable { mutableStateOf<String?>(null) }
     val visibleFamilyGroups = FamilyGroupsPresenter.filterByQuery(familyGroups, uiState.searchQuery)
@@ -171,13 +191,19 @@ fun MessagesContent(
                     .padding(horizontal = 14.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "Mensajes",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = BrandBlue,
-                    textAlign = TextAlign.Center
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Mensajes",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = BrandBlue,
+                        textAlign = TextAlign.Center
+                    )
+                    com.example.etapa1.ui.components.ChipConexion(estado = uiState.conexionEstado)
+                }
 
                 // Botón Crear Grupo (arriba izquierda): de trabajadores o de familias según el modo
                 IconButton(
@@ -237,7 +263,7 @@ fun MessagesContent(
                 MessagesModeSwitch(
                     selectedMode = selectedMode,
                     onModeChange = onModeSelect,
-                    workersUnreadCount = (uiState.globalChat?.unreadCount ?: 0) + workerChats.sumOf { it.unreadCount },
+                    workersUnreadCount = globalChat.unreadCount + workerChats.sumOf { it.unreadCount },
                     parentsUnreadCount = parentChats.sumOf { it.unreadCount }
                 )
             }
@@ -254,13 +280,16 @@ fun MessagesContent(
                 when (selectedMode) {
                     MessagesMode.TRABAJADORES -> {
                         // 1. Chat Global de Trabajadores
-                        uiState.globalChat?.let { gChat ->
-                            item(key = "pinned_global_chat") {
-                                PinnedGlobalWorkerChatCard(
-                                    chat = gChat,
-                                    onClick = { activeWorkerChat = gChat }
-                                )
-                            }
+                        item(key = "pinned_global_chat") {
+                            PinnedGlobalWorkerChatCard(
+                                chat = globalChat,
+                                onClick = {
+                                    val readChat = globalChat.copy(unreadCount = 0)
+                                    globalChat = readChat
+                                    activeWorkerChat = readChat
+                                    onMarkWorkerChatAsRead(readChat.id)
+                                }
+                            )
                         }
 
                         // Subtítulo de sección
@@ -279,7 +308,15 @@ fun MessagesContent(
                         items(workerChats, key = { it.id }) { chat ->
                             WorkerChatItem(
                                 chat = chat,
-                                onClick = { activeWorkerChat = chat }
+                                onClick = {
+                                    val readChat = chat.copy(unreadCount = 0)
+                                    val idx = workerChats.indexOfFirst { it.id == chat.id }
+                                    if (idx >= 0) {
+                                        workerChats[idx] = readChat
+                                    }
+                                    activeWorkerChat = readChat
+                                    onMarkWorkerChatAsRead(chat.id)
+                                }
                             )
                         }
                     }
@@ -339,7 +376,14 @@ fun MessagesContent(
                         items(parentChats, key = { it.child.id }) { chatSummary ->
                             ParentChatItem(
                                 chatSummary = chatSummary,
-                                onClick = { onNavigateToChildChat(chatSummary.child) }
+                                onClick = {
+                                    val idx = parentChats.indexOfFirst { it.child.id == chatSummary.child.id }
+                                    if (idx >= 0) {
+                                        parentChats[idx] = chatSummary.copy(unreadCount = 0)
+                                    }
+                                    onMarkParentChatAsRead(chatSummary.child.id)
+                                    onNavigateToChildChat(chatSummary.child)
+                                }
                             )
                         }
                     }
@@ -387,7 +431,19 @@ fun MessagesContent(
     activeWorkerChat?.let { currentChat ->
         WorkerChatConversationDialog(
             chat = currentChat,
-            onDismiss = { activeWorkerChat = null },
+            onDismiss = {
+                val readChat = currentChat.copy(unreadCount = 0)
+                if (currentChat.isGlobal) {
+                    globalChat = readChat
+                } else {
+                    val idx = workerChats.indexOfFirst { it.id == currentChat.id }
+                    if (idx >= 0) {
+                        workerChats[idx] = readChat
+                    }
+                }
+                onMarkWorkerChatAsRead(currentChat.id)
+                activeWorkerChat = null
+            },
             onSendMessage = { newText, uri, name, mime ->
                 val newMsg = WorkerChatMessage(
                     id = "msg_${System.currentTimeMillis()}",

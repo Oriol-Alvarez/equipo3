@@ -1,15 +1,19 @@
 package com.example.etapa1.ui.state
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.etapa1.data.repository.ChildRepository
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.ChildFullProfile
 import com.example.etapa1.model.DailyBitacora
+import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.WeeklySummary
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -25,10 +29,13 @@ data class ParentHomeUiState(
 
 class ParentHomeViewModel(
     private val childRepository: ChildRepository,
-    initialChild: Child? = null
+    initialChild: Child? = null,
+    coroutineScope: CoroutineScope? = null
 ) : ViewModel() {
 
-    private val defaultChild = initialChild ?: childRepository.parentChildren.value.first()
+    private val defaultChild = (initialChild?.let { childRepository.getChildById(it.id) ?: it })
+        ?: childRepository.parentChildren.value.firstOrNull()
+        ?: MockDataRepository.mateoGarcia
     private val defaultWeeklySummaries = childRepository.getWeeklySummariesForChild(defaultChild)
 
     private val _uiState = MutableStateFlow(
@@ -43,15 +50,48 @@ class ParentHomeViewModel(
     )
     val uiState: StateFlow<ParentHomeUiState> = _uiState.asStateFlow()
 
+    init {
+        childRepository.refresh()
+        val launchScope = coroutineScope ?: try {
+            viewModelScope
+        } catch (_: Throwable) {
+            null
+        }
+        try {
+            launchScope?.launch {
+                childRepository.parentChildren.collect { childrenList ->
+                    if (childrenList.isNotEmpty()) {
+                        _uiState.update { current ->
+                            val updatedSelected = childrenList.find { it.id == current.selectedChild.id }
+                                ?: childrenList.first()
+                            current.copy(
+                                selectedChild = updatedSelected,
+                                allChildren = childrenList,
+                                fullProfile = childRepository.getChildFullProfile(updatedSelected),
+                                dailyBitacoras = childRepository.getDailyBitacorasForChild(updatedSelected),
+                                weeklySummaries = childRepository.getWeeklySummariesForChild(updatedSelected),
+                                weeklySummary = childRepository.getWeeklySummariesForChild(updatedSelected).firstOrNull()
+                                    ?: childRepository.getWeeklySummaryForChild(updatedSelected)
+                            )
+                        }
+                    }
+                }
+            }
+        } catch (_: Throwable) {
+            // Ignorar en tests unitarios sin Dispatchers.Main
+        }
+    }
+
     fun selectChild(child: Child) {
-        val summaries = childRepository.getWeeklySummariesForChild(child)
+        val resolvedChild = childRepository.getChildById(child.id) ?: child
+        val summaries = childRepository.getWeeklySummariesForChild(resolvedChild)
         _uiState.update {
             it.copy(
-                selectedChild = child,
-                fullProfile = childRepository.getChildFullProfile(child),
-                dailyBitacoras = childRepository.getDailyBitacorasForChild(child),
+                selectedChild = resolvedChild,
+                fullProfile = childRepository.getChildFullProfile(resolvedChild),
+                dailyBitacoras = childRepository.getDailyBitacorasForChild(resolvedChild),
                 weeklySummaries = summaries,
-                weeklySummary = summaries.firstOrNull() ?: childRepository.getWeeklySummaryForChild(child)
+                weeklySummary = summaries.firstOrNull() ?: childRepository.getWeeklySummaryForChild(resolvedChild)
             )
         }
     }
@@ -62,6 +102,7 @@ class ParentHomeViewModel(
         medicalNotes: String,
         habitsAndPedagogicalNotes: String,
         emergencyPhone: String,
+        emergencyPhoneRelation: String = "Tutor legal",
         authorizedPickups: List<String>,
         medicalCertificateUri: String?,
         medicalCertificateName: String?,
@@ -75,6 +116,7 @@ class ParentHomeViewModel(
             medicalNotes = medicalNotes.trim(),
             generalNotes = habitsAndPedagogicalNotes.trim(),
             emergencyPhone = emergencyPhone.trim(),
+            emergencyPhoneRelation = emergencyPhoneRelation.trim(),
             authorizedPickups = authorizedPickups,
             medicalCertificateUri = medicalCertificateUri,
             medicalCertificateName = medicalCertificateName,

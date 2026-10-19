@@ -154,6 +154,7 @@ fun SuggestionsContent(
     onNavigateToHome: () -> Unit
 ) {
     var respondingSuggestion by remember { mutableStateOf<ParentSuggestion?>(null) }
+    var markingAsAttendedSuggestion by remember { mutableStateOf<ParentSuggestion?>(null) }
 
     Scaffold(
         containerColor = AppBackground,
@@ -340,7 +341,8 @@ fun SuggestionsContent(
                     items(uiState.filteredSuggestions, key = { it.id }) { suggestion ->
                         SuggestionItemCard(
                             suggestion = suggestion,
-                            onRespondClick = { respondingSuggestion = suggestion }
+                            onRespondClick = { respondingSuggestion = suggestion },
+                            onMarkAsAttendedClick = { markingAsAttendedSuggestion = suggestion }
                         )
                     }
 
@@ -360,6 +362,18 @@ fun SuggestionsContent(
             onSubmitResponse = { responseText, newStatus ->
                 onRespondSuggestion(suggestion.id, responseText, newStatus)
                 respondingSuggestion = null
+            }
+        )
+    }
+
+    // Modal para marcar sugerencia como atendida
+    markingAsAttendedSuggestion?.let { suggestion ->
+        MarkAsAttendedDialog(
+            suggestion = suggestion,
+            onDismiss = { markingAsAttendedSuggestion = null },
+            onConfirm = { finalResponse ->
+                onRespondSuggestion(suggestion.id, finalResponse, SuggestionStatus.ATENDIDA)
+                markingAsAttendedSuggestion = null
             }
         )
     }
@@ -420,7 +434,8 @@ private fun MetricChip(
 @Composable
 private fun SuggestionItemCard(
     suggestion: ParentSuggestion,
-    onRespondClick: () -> Unit
+    onRespondClick: () -> Unit,
+    onMarkAsAttendedClick: () -> Unit
 ) {
     val initials = suggestion.parentName
         .split(" ")
@@ -574,28 +589,35 @@ private fun SuggestionItemCard(
             // Sección de Respuesta (si ya fue respondida)
             if (suggestion.response != null) {
                 Spacer(modifier = Modifier.height(12.dp))
+                val isAttended = suggestion.status == SuggestionStatus.ATENDIDA
+                val cardBg = if (isAttended) Color(0xFFF0FDF4) else Color(0xFFE1F5FE)
+                val cardBorder = if (isAttended) Color(0xFFDCFCE7) else Color(0xFFB3E5FC)
+                val headerColor = if (isAttended) StatusPresentGreen else Color(0xFF0288D1)
+                val headerIcon = if (isAttended) Icons.Default.CheckCircle else Icons.Default.HourglassTop
+                val headerText = if (isAttended) "Respuesta y Resolución" else "Respuesta (En proceso)"
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFF0FDF4))
-                        .border(1.dp, Color(0xFFDCFCE7), RoundedCornerShape(12.dp))
+                        .background(cardBg)
+                        .border(1.dp, cardBorder, RoundedCornerShape(12.dp))
                         .padding(12.dp)
                 ) {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                imageVector = Icons.Default.CheckCircle,
+                                imageVector = headerIcon,
                                 contentDescription = null,
-                                tint = StatusPresentGreen,
+                                tint = headerColor,
                                 modifier = Modifier.size(15.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Respuesta del Centro",
+                                text = headerText,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = StatusPresentGreen
+                                color = headerColor
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))
@@ -613,33 +635,90 @@ private fun SuggestionItemCard(
                         )
                     }
                 }
-            } else {
-                // Botón para responder
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    OutlinedButton(
-                        onClick = onRespondClick,
-                        shape = RoundedCornerShape(20.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = BrandBlue
-                        ),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBlue)
+            }
+
+            // Acciones para el trabajador según el estado de la sugerencia
+            when (suggestion.status) {
+                SuggestionStatus.EN_REVISION -> {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Reply,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Responder",
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        OutlinedButton(
+                            onClick = onRespondClick,
+                            shape = RoundedCornerShape(20.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = BrandBlue
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, BrandBlue)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Reply,
+                                contentDescription = null,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Actualizar",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        Button(
+                            onClick = onMarkAsAttendedClick,
+                            shape = RoundedCornerShape(20.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF2E7D32),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = "Marcar como Atendida",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
+                }
+                SuggestionStatus.PENDIENTE -> {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        OutlinedButton(
+                            onClick = onRespondClick,
+                            shape = RoundedCornerShape(20.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = BrandBlue
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, BrandBlue)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Reply,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Responder",
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+                SuggestionStatus.ATENDIDA -> {
+                    // Ya está finalizada y resuelta
                 }
             }
         }
@@ -655,8 +734,8 @@ private fun RespondSuggestionDialog(
     onDismiss: () -> Unit,
     onSubmitResponse: (responseText: String, newStatus: SuggestionStatus) -> Unit
 ) {
-    var responseText by remember { mutableStateOf("") }
-    var targetStatus by remember { mutableStateOf(SuggestionStatus.ATENDIDA) }
+    var responseText by remember { mutableStateOf(suggestion.response ?: "") }
+    var targetStatus by remember { mutableStateOf(if (suggestion.status == SuggestionStatus.EN_REVISION) SuggestionStatus.ATENDIDA else SuggestionStatus.ATENDIDA) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -676,7 +755,7 @@ private fun RespondSuggestionDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Responder Sugerencia",
+                        text = if (suggestion.status == SuggestionStatus.EN_REVISION) "Actualizar Respuesta" else "Responder Sugerencia",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = BrandBlue
@@ -817,6 +896,193 @@ private fun RespondSuggestionDialog(
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Diálogo modal para marcar directamente una sugerencia en proceso como atendida
+ */
+@Composable
+private fun MarkAsAttendedDialog(
+    suggestion: ParentSuggestion,
+    onDismiss: () -> Unit,
+    onConfirm: (finalResponse: String) -> Unit
+) {
+    var finalNote by remember { mutableStateOf("") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = CardBackground,
+            shadowElevation = 8.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = Color(0xFF2E7D32),
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Marcar como Atendida",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = BrandBlue
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Cerrar",
+                            tint = TextMuted
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Resumen de la sugerencia
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(AppBackground)
+                        .padding(10.dp)
+                ) {
+                    Column {
+                        Text(
+                            text = "${suggestion.parentName} (${suggestion.childName})",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = suggestion.subject,
+                            fontSize = 11.5.sp,
+                            color = TextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                if (!suggestion.response.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = "Respuesta actual en proceso:",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextSecondary
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = suggestion.response,
+                        fontSize = 11.5.sp,
+                        color = TextMuted,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "Nota de resolución final para la familia (opcional):",
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = TextPrimary
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                OutlinedTextField(
+                    value = finalNote,
+                    onValueChange = { finalNote = it },
+                    placeholder = {
+                        Text(
+                            text = "Añade un comentario de cierre o déjalo vacío para mantener la respuesta actual...",
+                            fontSize = 12.sp,
+                            color = TextMuted
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(95.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = AppBackground,
+                        unfocusedContainerColor = AppBackground,
+                        focusedBorderColor = BrandBlue,
+                        unfocusedBorderColor = BorderSubtle
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
+                    ) {
+                        Text("Cancelar", color = TextSecondary, fontSize = 13.sp)
+                    }
+
+                    Button(
+                        onClick = {
+                            val resolvedText = if (finalNote.isNotBlank()) {
+                                if (!suggestion.response.isNullOrBlank()) {
+                                    "${suggestion.response}\n\nResolución: ${finalNote.trim()}"
+                                } else {
+                                    finalNote.trim()
+                                }
+                            } else {
+                                suggestion.response ?: "Sugerencia atendida y resuelta por el centro escolar."
+                            }
+                            onConfirm(resolvedText)
+                        },
+                        modifier = Modifier.weight(1.3f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF2E7D32),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Confirmar Atendida",
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

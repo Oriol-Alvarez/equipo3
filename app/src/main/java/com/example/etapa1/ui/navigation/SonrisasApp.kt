@@ -38,9 +38,20 @@ fun SonrisasApp() {
         }
 
         is SesionEstado.Activa -> {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val app = context.applicationContext as? com.example.etapa1.SonrisasApplication
+
+            androidx.compose.runtime.LaunchedEffect(actual.sesion) {
+                app?.container?.asegurarConexionChat()
+                app?.container?.childRepository?.refresh()
+            }
+
             SonrisasNavHost(
                 sesion = actual.sesion,
-                onSalir = sesionViewModel::salir
+                onSalir = {
+                    app?.container?.desconectarChat()
+                    sesionViewModel.salir()
+                }
             )
         }
     }

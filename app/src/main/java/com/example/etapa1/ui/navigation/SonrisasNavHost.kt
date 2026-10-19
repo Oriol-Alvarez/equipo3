@@ -38,6 +38,10 @@ fun SonrisasNavHost(
     val announcementsViewModel: AnnouncementsViewModel = viewModel(factory = AppViewModelProvider.Factory)
     val unreadAnnouncementsCount by announcementsViewModel.unreadCount.collectAsState()
 
+    val messagesViewModel: MessagesViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val messagesUiState by messagesViewModel.uiState.collectAsState()
+    val totalUnreadMessages = messagesUiState.totalWorkersUnreadCount + messagesUiState.totalParentsUnreadCount
+
     var selectedRoom by remember { mutableStateOf(MockDataRepository.rooms.first()) }
     var selectedChild by remember { mutableStateOf(MockDataRepository.mateoGarcia) }
     var selectedParentChild by remember { mutableStateOf(MockDataRepository.mateoGarcia) }
@@ -84,6 +88,8 @@ fun SonrisasNavHost(
                 AppBottomBar(
                     selectedTab = selectedBottomTab,
                     showMessagesTab = isEducadora,
+                    hasUnreadMessages = totalUnreadMessages > 0,
+                    unreadMessagesCount = totalUnreadMessages,
                     onTabSelected = { tab -> navigateToTab(currentTabs[tab]) }
                 )
             }
@@ -169,6 +175,10 @@ fun SonrisasNavHost(
 
             composable(Route.CHAT_BITACORA) {
                 val vm: ChatBitacoraViewModel = viewModel(factory = AppViewModelProvider.Factory)
+                LaunchedEffect(selectedChild.id) {
+                    messagesViewModel.markParentChatAsRead(selectedChild.id)
+                    vm.recargar(selectedChild.id)
+                }
                 ChatBitacoraScreen(
                     viewModel = vm,
                     child = selectedChild,
@@ -189,19 +199,19 @@ fun SonrisasNavHost(
                     viewModel = vm,
                     child = selectedChild,
                     onBack = { nav.popBackStack() },
-                    onSubmitActivity = { _, _, _ -> nav.popBackStack() }
+                    onSubmitActivity = { _, _, _, _ -> nav.popBackStack() }
                 )
             }
 
             composable(Route.MESSAGES) {
-                val vm: MessagesViewModel = viewModel(factory = AppViewModelProvider.Factory)
                 val familyGroupsVm: FamilyGroupsViewModel = viewModel(factory = AppViewModelProvider.Factory)
                 MessagesScreen(
-                    viewModel = vm,
+                    viewModel = messagesViewModel,
                     familyGroupsViewModel = familyGroupsVm,
                     onNavigateToHome = navigateToHome,
                     onNavigateToChildChat = { child ->
                         selectedChild = child
+                        messagesViewModel.markParentChatAsRead(child.id)
                         nav.navigate(Route.CHAT_BITACORA)
                     },
                     onNavigateToMore = { nav.navigate(Route.MORE_MENU) }
@@ -296,11 +306,14 @@ fun SonrisasNavHost(
                 LaunchedEffect(selectedParentChild.id) {
                     vm.selectChild(selectedParentChild)
                 }
+                val childUnreadChat = messagesUiState.parentChats.find { it.child.id == selectedParentChild.id }?.unreadCount ?: 0
                 ParentHomeScreen(
                     viewModel = vm,
                     unreadAnnouncementsCount = unreadAnnouncementsCount,
+                    unreadMessagesCount = childUnreadChat,
                     onNavigateToChat = { child ->
                         selectedChild = child
+                        messagesViewModel.markParentChatAsRead(child.id)
                         nav.navigate(Route.CHAT_BITACORA)
                     },
                     onNavigateToChildDetail = { child ->

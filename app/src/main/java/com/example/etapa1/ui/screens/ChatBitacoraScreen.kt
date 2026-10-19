@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,6 +53,8 @@ import androidx.core.content.FileProvider
 import java.io.File
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -107,17 +110,25 @@ fun ChatBitacoraScreen(
     onAttendanceClick: () -> Unit = {}
 ) {
     val timelineItems by viewModel.timelineItems.collectAsState()
+    val conexionEstado by viewModel.conexionEstado.collectAsState()
 
     ChatBitacoraScreen(
         child = child,
         timelineItems = timelineItems,
+        conexionEstado = conexionEstado,
         isWorkerRole = isWorkerRole,
         onBack = onBack,
         onChildInfoClick = onChildInfoClick,
         onNewActivityClick = onNewActivityClick,
         onAttendanceClick = onAttendanceClick,
         onSendMessage = { text, uri, name, mime ->
-            viewModel.sendMessage(text, uri?.toString(), name, mime)
+            viewModel.sendMessage(
+                text = text,
+                fileUri = uri?.toString(),
+                fileName = name,
+                fileMimeType = mime,
+                senderRole = if (isWorkerRole) com.example.etapa1.model.UserRole.EDUCADORA else com.example.etapa1.model.UserRole.FAMILIAR
+            )
         }
     )
 }
@@ -126,6 +137,7 @@ fun ChatBitacoraScreen(
 fun ChatBitacoraScreen(
     child: Child,
     timelineItems: List<TimelineItem>,
+    conexionEstado: com.example.etapa1.domain.EstadoConexion = com.example.etapa1.domain.EstadoConexion.Conectado,
     isWorkerRole: Boolean = true,
     onBack: () -> Unit,
     onChildInfoClick: () -> Unit = {},
@@ -179,25 +191,6 @@ fun ChatBitacoraScreen(
 
     Scaffold(
         containerColor = AppBackground,
-        floatingActionButton = {
-            if (isWorkerRole) {
-                FloatingActionButton(
-                    onClick = onNewActivityClick,
-                    containerColor = BrandBlue,
-                    contentColor = Color.White,
-                    shape = CircleShape,
-                    modifier = Modifier
-                        .size(52.dp)
-                        .padding(bottom = 4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Nueva Actividad",
-                        modifier = Modifier.size(26.dp)
-                    )
-                }
-            }
-        },
         bottomBar = {
             // Barra de entrada de mensajes
             Surface(
@@ -206,6 +199,32 @@ fun ChatBitacoraScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
+                    if (isWorkerRole) {
+                        Button(
+                            onClick = onNewActivityClick,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = BrandBlue,
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .height(44.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Añadir Actividad",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
                     if (selectedFileUri != null) {
                         Row(
                             modifier = Modifier
@@ -383,12 +402,18 @@ fun ChatBitacoraScreen(
                             Spacer(modifier = Modifier.width(10.dp))
 
                             Column {
-                                Text(
-                                    text = child.shortName,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextPrimary
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = child.shortName,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary
+                                    )
+                                    com.example.etapa1.ui.components.ChipConexion(estado = conexionEstado)
+                                }
                                 Text(
                                     text = "${child.ageText} • ${child.roomText}",
                                     fontSize = 12.sp,
@@ -409,10 +434,17 @@ fun ChatBitacoraScreen(
                                 )
                             }
                         }
-                        IconButton(onClick = { showCallDialog = true }) {
+                        IconButton(onClick = {
+                            if (isWorkerRole) {
+                                showCallDialog = true
+                            } else {
+                                val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:+34912334455"))
+                                context.startActivity(intent)
+                            }
+                        }) {
                             Icon(
                                 imageVector = Icons.Default.Phone,
-                                contentDescription = "Llamar",
+                                contentDescription = if (isWorkerRole) "Llamar a familiares" else "Llamar al centro",
                                 tint = AlertRed,
                                 modifier = Modifier.size(22.dp)
                             )
@@ -438,16 +470,29 @@ fun ChatBitacoraScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 contentPadding = PaddingValues(top = 10.dp, bottom = 20.dp)
             ) {
-                items(timelineItems, key = { it.id }) { item ->
-                    when (item) {
-                        is TimelineItem.EventChip -> {
-                            TimelineChip(item)
+                itemsIndexed(timelineItems, key = { _, item -> item.id }) { index, item ->
+                    val showDateHeader = if (index == 0) {
+                        item.date.isNotBlank()
+                    } else {
+                        item.date.isNotBlank() && item.date != timelineItems[index - 1].date
+                    }
+
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        if (showDateHeader) {
+                            DateHeaderChip(dateStr = item.date)
+                            Spacer(modifier = Modifier.height(10.dp))
                         }
-                        is TimelineItem.ChatMessage -> {
-                            ChatMessageBubble(item)
-                        }
-                        is TimelineItem.ActivityCard -> {
-                            ActivityTimelineCard(item)
+
+                        when (item) {
+                            is TimelineItem.EventChip -> {
+                                TimelineChip(item)
+                            }
+                            is TimelineItem.ChatMessage -> {
+                                ChatMessageBubble(item, isWorkerRole)
+                            }
+                            is TimelineItem.ActivityCard -> {
+                                ActivityTimelineCard(item)
+                            }
                         }
                     }
                 }
@@ -490,31 +535,71 @@ fun ParentCallDialog(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                // Madre
-                if (childProfile.motherName.isNotBlank() && childProfile.motherPhone.isNotBlank()) {
+                var hasContacts = false
+
+                // Contacto de Emergencia guardado en el perfil del menor
+                if (childProfile.emergencyPhone.isNotBlank()) {
+                    hasContacts = true
                     ContactRow(
-                        name = childProfile.motherName,
-                        phone = childProfile.motherPhone,
-                        relation = "Madre",
+                        name = "Contacto de Emergencia",
+                        phone = childProfile.emergencyPhone,
+                        relation = childProfile.emergencyPhoneRelation.ifBlank { "Emergencia" },
                         onCall = {
-                            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${childProfile.motherPhone.replace(" ", "")}"))
+                            val intent = Intent(
+                                Intent.ACTION_DIAL,
+                                Uri.parse("tel:${childProfile.emergencyPhone.replace(" ", "")}")
+                            )
                             context.startActivity(intent)
                         }
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                // Madre
+                if (childProfile.motherName.isNotBlank() && childProfile.motherPhone.isNotBlank()) {
+                    if (hasContacts) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                    hasContacts = true
+                    ContactRow(
+                        name = childProfile.motherName,
+                        phone = childProfile.motherPhone,
+                        relation = "Madre",
+                        onCall = {
+                            val intent = Intent(
+                                Intent.ACTION_DIAL,
+                                Uri.parse("tel:${childProfile.motherPhone.replace(" ", "")}")
+                            )
+                            context.startActivity(intent)
+                        }
+                    )
+                }
 
                 // Padre
                 if (childProfile.fatherName.isNotBlank() && childProfile.fatherPhone.isNotBlank()) {
+                    if (hasContacts) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                    hasContacts = true
                     ContactRow(
                         name = childProfile.fatherName,
                         phone = childProfile.fatherPhone,
                         relation = "Padre",
                         onCall = {
-                            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${childProfile.fatherPhone.replace(" ", "")}"))
+                            val intent = Intent(
+                                Intent.ACTION_DIAL,
+                                Uri.parse("tel:${childProfile.fatherPhone.replace(" ", "")}")
+                            )
                             context.startActivity(intent)
                         }
+                    )
+                }
+
+                if (!hasContacts) {
+                    Text(
+                        text = "No hay teléfonos de contacto guardados en el perfil del niño.",
+                        fontSize = 13.sp,
+                        color = TextSecondary,
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
 
@@ -594,6 +679,49 @@ fun ContactRow(name: String, phone: String, relation: String, onCall: () -> Unit
 }
 
 @Composable
+private fun DateHeaderChip(dateStr: String) {
+    val displayDate = remember(dateStr) {
+        try {
+            val today = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.US).format(java.util.Date())
+            if (dateStr == today) {
+                "Hoy"
+            } else {
+                val parsed = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.US).parse(dateStr)
+                if (parsed != null) {
+                    val outFormat = java.text.SimpleDateFormat("d 'de' MMMM, yyyy", java.util.Locale("es", "ES"))
+                    outFormat.format(parsed)
+                } else {
+                    dateStr
+                }
+            }
+        } catch (_: Exception) {
+            dateStr
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = Color(0xFFE8EEF5),
+            shadowElevation = 0.dp
+        ) {
+            Text(
+                text = displayDate,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = BrandBlue,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+            )
+        }
+    }
+}
+
+@Composable
 private fun TimelineChip(chip: TimelineItem.EventChip) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -651,11 +779,17 @@ private fun TimelineChip(chip: TimelineItem.EventChip) {
 }
 
 @Composable
-private fun ChatMessageBubble(msg: TimelineItem.ChatMessage) {
+private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boolean = true) {
+    val isOutgoing = if (msg.senderRole != null) {
+        if (isWorkerRole) msg.senderRole == com.example.etapa1.model.UserRole.EDUCADORA
+        else msg.senderRole == com.example.etapa1.model.UserRole.FAMILIAR
+    } else {
+        msg.isOutgoing
+    }
     val context = LocalContext.current
     Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (msg.isOutgoing) Alignment.End else Alignment.Start
+        horizontalAlignment = if (isOutgoing) Alignment.End else Alignment.Start
     ) {
         Text(
             text = msg.time,
@@ -674,13 +808,13 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage) {
                     RoundedCornerShape(
                         topStart = 16.dp,
                         topEnd = 16.dp,
-                        bottomStart = if (msg.isOutgoing) 16.dp else 4.dp,
-                        bottomEnd = if (msg.isOutgoing) 4.dp else 16.dp
+                        bottomStart = if (isOutgoing) 16.dp else 4.dp,
+                        bottomEnd = if (isOutgoing) 4.dp else 16.dp
                     )
                 )
-                .background(if (msg.isOutgoing) ChatOutgoingBubble else CardBackground)
+                .background(if (isOutgoing) ChatOutgoingBubble else CardBackground)
                 .border(
-                    width = if (msg.isOutgoing) 0.dp else 1.dp,
+                    width = if (isOutgoing) 0.dp else 1.dp,
                     color = BorderSubtle,
                     shape = RoundedCornerShape(16.dp)
                 )

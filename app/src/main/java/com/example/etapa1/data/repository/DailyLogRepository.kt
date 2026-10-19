@@ -48,4 +48,7 @@ interface DailyLogRepository {
         time: String,
         observations: String = ""
     ): Result<DailyLog>
+
+    /** Vuelve a cargar los datos del servidor. En la versión en memoria no hace nada. */
+    fun refresh() {}
 }

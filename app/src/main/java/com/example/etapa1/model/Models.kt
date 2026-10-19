@@ -94,12 +94,15 @@ data class AttendanceRecord(
 sealed interface TimelineItem {
     val id: String
     val time: String
+    val date: String
+        get() = ""
 
     data class EventChip(
         override val id: String,
         override val time: String,
         val text: String,
-        val iconType: String // "entry", "mood", "nap"
+        val iconType: String, // "entry", "mood", "nap"
+        override val date: String = ""
     ) : TimelineItem
 
     data class ChatMessage(
@@ -109,7 +112,9 @@ sealed interface TimelineItem {
         val isOutgoing: Boolean,
         val fileUri: String? = null,
         val fileName: String? = null,
-        val fileMimeType: String? = null
+        val fileMimeType: String? = null,
+        val senderRole: UserRole? = null,
+        override val date: String = ""
     ) : TimelineItem
 
     data class ActivityCard(
@@ -117,7 +122,8 @@ sealed interface TimelineItem {
         override val time: String,
         val category: String,
         val portionLabel: String,
-        val description: String
+        val description: String,
+        override val date: String = ""
     ) : TimelineItem
 }
 
@@ -382,24 +388,28 @@ object MockDataRepository {
         TimelineItem.EventChip(
             id = "chip_1",
             time = "08:15 AM",
+            date = "12/10/2026",
             text = "Ingreso: 08:15 AM",
             iconType = "entry"
         ),
         TimelineItem.EventChip(
             id = "chip_2",
             time = "10:15 AM",
+            date = "12/10/2026",
             text = "Estado: Feliz",
             iconType = "mood"
         ),
         TimelineItem.ChatMessage(
             id = "msg_1",
             time = "11:30 AM",
+            date = "12/10/2026",
             message = "¡Buenos días! Muchas gracias por el aviso, ¿cómo fue su noche?",
             isOutgoing = false
         ),
         TimelineItem.ActivityCard(
             id = "act_1",
             time = "12:20 PM",
+            date = "12/10/2026",
             category = "Alimentación",
             portionLabel = "Medio plato",
             description = "Rechazó el brócoli y le gustó mucho la sopa de verduras con pollo."
@@ -407,12 +417,14 @@ object MockDataRepository {
         TimelineItem.EventChip(
             id = "chip_3",
             time = "01:15 PM",
+            date = "12/10/2026",
             text = "Siesta: 45 min",
             iconType = "nap"
         ),
         TimelineItem.ChatMessage(
             id = "msg_2",
             time = "01:30 PM",
+            date = "12/10/2026",
             message = "Sí, tomó toda su leche. Ahora acaba de despertar de su siesta muy tranquilo.",
             isOutgoing = true
         )
@@ -449,54 +461,63 @@ object MockDataRepository {
         )
     )
 
+    private val _childProfiles = mutableMapOf<String, ChildFullProfile>()
+
     fun getChildFullProfile(child: Child): ChildFullProfile {
-        return ChildFullProfile(
-            child = child,
-            birthDate = when (child.id) {
-                "mateo_garcia" -> "14/04/2024"
-                "sofia_lopez" -> "18/06/2024"
-                "lucas_martinez" -> "02/02/2024"
-                "valentina_ruiz" -> "25/03/2024"
-                // Fechas aproximadas a la edad de cada ficha; se usan para los avisos de cumpleaños.
-                "lucia_garcia" -> "22/07/2025"
-                "santiago_gomez" -> "20/08/2024"
-                "camila_hernandez" -> "12/12/2024"
-                "diego_fernandez" -> "28/09/2024"
-                "isabella_torres" -> "05/11/2024"
-                "thiago_diaz" -> "15/07/2024"
-                "emma_morales" -> "14/02/2025"
-                "leo_navarro" -> "02/09/2024"
-                "mia_ramirez" -> "09/10/2024"
-                "gael_castro" -> "03/08/2024"
-                "lucia_vargas" -> "21/11/2024"
-                "bruno_benitez" -> "11/10/2024"
-                else -> "10/05/2024"
-            },
-            studentId = "EST-${child.id.take(4).uppercase()}-2026",
-            bloodType = when (child.id) {
-                "mateo_garcia" -> "O+"
-                "sofia_lopez" -> "A+"
-                "lucas_martinez" -> "B+"
-                else -> "O+"
-            },
-            pediatrician = "Dra. Sofía Morales",
-            pediatricianPhone = "+52 555 111 222",
-            emergencyPhone = "+52 555 333 444",
-            motherName = "María López Fernández",
-            motherPhone = "+52 555 123 456",
-            fatherName = "Carlos García Ramos",
-            fatherPhone = "+52 555 987 654",
-            authorizedPickups = listOf(
-                "Rosa Fernández (Abuela materna) - DNI ***4521",
-                "Elena García (Tía paterna) - DNI ***9812"
-            ),
-            medicalNotes = if (child.allergyAlert != null) {
-                "${child.allergyAlert}. Se requiere extremo cuidado en las meriendas y almuerzos. Botiquín de emergencia revisado."
-            } else {
-                "Sin alergias diagnosticadas. Cartilla de vacunación completa y verificada por el centro."
-            },
-            generalNotes = "Muy sociable y participativo. Se adapta muy bien a las rutinas de la sala y duerme tranquilo con su objeto de apego."
-        )
+        return _childProfiles.getOrPut(child.id) {
+            ChildFullProfile(
+                child = child,
+                birthDate = when (child.id) {
+                    "mateo_garcia" -> "14/04/2024"
+                    "sofia_lopez" -> "18/06/2024"
+                    "lucas_martinez" -> "02/02/2024"
+                    "valentina_ruiz" -> "25/03/2024"
+                    // Fechas aproximadas a la edad de cada ficha; se usan para los avisos de cumpleaños.
+                    "lucia_garcia" -> "22/07/2025"
+                    "santiago_gomez" -> "20/08/2024"
+                    "camila_hernandez" -> "12/12/2024"
+                    "diego_fernandez" -> "28/09/2024"
+                    "isabella_torres" -> "05/11/2024"
+                    "thiago_diaz" -> "15/07/2024"
+                    "emma_morales" -> "14/02/2025"
+                    "leo_navarro" -> "02/09/2024"
+                    "mia_ramirez" -> "09/10/2024"
+                    "gael_castro" -> "03/08/2024"
+                    "lucia_vargas" -> "21/11/2024"
+                    "bruno_benitez" -> "11/10/2024"
+                    else -> "10/05/2024"
+                },
+                studentId = "EST-${child.id.take(4).uppercase()}-2026",
+                bloodType = when (child.id) {
+                    "mateo_garcia" -> "O+"
+                    "sofia_lopez" -> "A+"
+                    "lucas_martinez" -> "B+"
+                    else -> "O+"
+                },
+                pediatrician = "Dra. Sofía Morales",
+                pediatricianPhone = "+52 555 111 222",
+                emergencyPhone = "+52 555 333 444",
+                emergencyPhoneRelation = "Abuela materna",
+                motherName = "María López Fernández",
+                motherPhone = "+52 555 123 456",
+                fatherName = "Carlos García Ramos",
+                fatherPhone = "+52 555 987 654",
+                authorizedPickups = listOf(
+                    "Rosa Fernández (Abuela materna) - DNI ***4521",
+                    "Elena García (Tía paterna) - DNI ***9812"
+                ),
+                medicalNotes = if (child.allergyAlert != null) {
+                    "${child.allergyAlert}. Se requiere extremo cuidado en las meriendas y almuerzos. Botiquín de emergencia revisado."
+                } else {
+                    "Sin alergias diagnosticadas. Cartilla de vacunación completa y verificada por el centro."
+                },
+                generalNotes = "Muy sociable y participativo. Se adapta muy bien a las rutinas de la sala y duerme tranquilo con su objeto de apego."
+            )
+        }
+    }
+
+    fun updateChildFullProfile(childId: String, profile: ChildFullProfile) {
+        _childProfiles[childId] = profile
     }
 
     fun getDailyBitacorasForChild(child: Child): List<DailyBitacora> {
@@ -931,7 +952,7 @@ object MockDataRepository {
             parentName = "María López (Mamá)",
             lastMessage = "Mateo disfrutó mucho su comida de hoy y pidió un poco más de fruta.",
             lastMessageTime = "01:50 PM",
-            unreadCount = 0
+            unreadCount = 1
         ),
         ParentChatSummary(
             child = childrenSala1A[1],
@@ -1245,6 +1266,7 @@ data class ChildFullProfile(
     val pediatrician: String = "Dra. Sofía Morales",
     val pediatricianPhone: String = "+34 555 111 222",
     val emergencyPhone: String = "+34 555 333 444",
+    val emergencyPhoneRelation: String = "Tutor legal",
     val motherName: String = "María López Fernández",
     val motherPhone: String = "+34 555 123 456",
     val fatherName: String = "Carlos García Ramos",

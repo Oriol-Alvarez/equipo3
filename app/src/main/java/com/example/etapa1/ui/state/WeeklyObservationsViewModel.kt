@@ -35,6 +35,11 @@ class WeeklyObservationsViewModel(
     private val draft = MutableStateFlow("")
     private val feedback = MutableStateFlow(Feedback())
 
+    init {
+        // Con backend trae los datos más recientes del servidor; en modo demo no hace nada.
+        repository.refresh()
+    }
+
     val uiState: StateFlow<WeeklyObservationsUiState> = combine(
         repository.observations,
         selection,

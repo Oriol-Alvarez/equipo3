@@ -2,7 +2,9 @@ package com.example.etapa1.ui.state
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.etapa1.data.remote.ChatConexion
 import com.example.etapa1.data.repository.MessagesRepository
+import com.example.etapa1.domain.EstadoConexion
 import com.example.etapa1.model.ParentChatSummary
 import com.example.etapa1.model.WorkerChat
 import com.example.etapa1.model.WorkerMember
@@ -20,7 +22,10 @@ data class MessagesUiState(
     val staffMembers: List<WorkerMember> = emptyList(),
     val globalChat: WorkerChat? = null,
     val searchQuery: String = "",
-    val isSearchOpen: Boolean = false
+    val isSearchOpen: Boolean = false,
+    val conexionEstado: EstadoConexion = EstadoConexion.Desconectado,
+    val totalWorkersUnreadCount: Int = 0,
+    val totalParentsUnreadCount: Int = 0
 )
 
 private data class MessagesFilterState(
@@ -29,19 +34,29 @@ private data class MessagesFilterState(
     val isSearchOpen: Boolean = false
 )
 
+private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
+
 class MessagesViewModel(
-    private val messagesRepository: MessagesRepository
+    private val messagesRepository: MessagesRepository,
+    private val chatConexion: ChatConexion? = null
 ) : ViewModel() {
 
     private val _filterState = MutableStateFlow(MessagesFilterState())
+    private val defaultEstado = MutableStateFlow<EstadoConexion>(EstadoConexion.Conectado)
+    private val estadoConexionFlow = chatConexion?.estado ?: defaultEstado
 
     val uiState: StateFlow<MessagesUiState> = combine(
-        messagesRepository.workerChats,
-        messagesRepository.parentChats,
-        messagesRepository.staffMembers,
-        messagesRepository.globalChat,
-        _filterState
-    ) { workerChats, parentChats, staff, global, filters ->
+        combine(
+            messagesRepository.workerChats,
+            messagesRepository.parentChats,
+            messagesRepository.staffMembers,
+            messagesRepository.globalChat
+        ) { workerChats, parentChats, staff, global ->
+            Quadruple(workerChats, parentChats, staff, global)
+        },
+        _filterState,
+        estadoConexionFlow
+    ) { (workerChats, parentChats, staff, global), filters, conexion ->
         val query = filters.searchQuery.trim()
         val filteredWorkers = if (query.isBlank()) workerChats else workerChats.filter {
             it.title.contains(query, ignoreCase = true) ||
@@ -57,6 +72,9 @@ class MessagesViewModel(
             global.title.contains(query, ignoreCase = true) ||
             global.lastMessage.contains(query, ignoreCase = true)
 
+        val workersUnread = (global.unreadCount) + workerChats.sumOf { it.unreadCount }
+        val parentsUnread = parentChats.sumOf { it.unreadCount }
+
         MessagesUiState(
             selectedTab = filters.selectedTab,
             workerChats = filteredWorkers,
@@ -64,7 +82,10 @@ class MessagesViewModel(
             staffMembers = staff,
             globalChat = if (showGlobal) global else null,
             searchQuery = filters.searchQuery,
-            isSearchOpen = filters.isSearchOpen
+            isSearchOpen = filters.isSearchOpen,
+            conexionEstado = conexion,
+            totalWorkersUnreadCount = workersUnread,
+            totalParentsUnreadCount = parentsUnread
         )
     }.stateIn(
         scope = viewModelScope,
@@ -89,5 +110,13 @@ class MessagesViewModel(
 
     fun sendMessage(chatId: String, text: String) {
         messagesRepository.sendWorkerMessage(chatId, text)
+    }
+
+    fun markWorkerChatAsRead(chatId: String) {
+        messagesRepository.markWorkerChatAsRead(chatId)
+    }
+
+    fun markParentChatAsRead(childId: String) {
+        messagesRepository.markParentChatAsRead(childId)
     }
 }

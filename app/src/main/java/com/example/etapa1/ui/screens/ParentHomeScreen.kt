@@ -107,6 +107,7 @@ import com.example.etapa1.ui.theme.TextSecondary
 fun ParentHomeScreen(
     viewModel: ParentHomeViewModel,
     unreadAnnouncementsCount: Int = 0,
+    unreadMessagesCount: Int = 0,
     onNavigateToChat: (Child) -> Unit,
     onNavigateToChildDetail: (Child) -> Unit,
     onNavigateToAnnouncements: () -> Unit,
@@ -133,6 +134,7 @@ fun ParentHomeScreen(
         weeklySummaries = uiState.weeklySummaries,
         weeklySummary = uiState.weeklySummary,
         unreadAnnouncementsCount = unreadAnnouncementsCount,
+        unreadMessagesCount = unreadMessagesCount,
         onNavigateToChat = { onNavigateToChat(uiState.selectedChild) },
         onNavigateToChildDetail = { onNavigateToChildDetail(uiState.selectedChild) },
         onNavigateToAnnouncements = onNavigateToAnnouncements,
@@ -154,13 +156,14 @@ fun ParentHomeScreen(
         },
         onToggleWeeklySummaryReadStatus = { summary -> viewModel.toggleWeeklySummaryReadStatus(summary) },
         onSetWeeklySummaryReaction = { summary, reaction -> viewModel.setWeeklySummaryReaction(summary, reaction) },
-        onUpdateProfile = { ped, pedPhone, medNotes, habits, emergPhone, pickups, uri, certName, certDate ->
+        onUpdateProfile = { ped, pedPhone, medNotes, habits, emergPhone, emergRelation, pickups, uri, certName, certDate ->
             viewModel.updateChildProfile(
                 pediatrician = ped,
                 pediatricianPhone = pedPhone,
                 medicalNotes = medNotes,
                 habitsAndPedagogicalNotes = habits,
                 emergencyPhone = emergPhone,
+                emergencyPhoneRelation = emergRelation,
                 authorizedPickups = pickups,
                 medicalCertificateUri = uri,
                 medicalCertificateName = certName,
@@ -179,6 +182,7 @@ fun ParentHomeScreen(
     weeklySummaries: List<WeeklySummary> = MockDataRepository.getWeeklySummariesForChild(child),
     weeklySummary: WeeklySummary = MockDataRepository.getWeeklySummaryForChild(child),
     unreadAnnouncementsCount: Int = 0,
+    unreadMessagesCount: Int = 0,
     onNavigateToChat: () -> Unit = {},
     onNavigateToChildDetail: () -> Unit = {},
     onNavigateToAnnouncements: () -> Unit = {},
@@ -200,11 +204,12 @@ fun ParentHomeScreen(
         medicalNotes: String,
         habitsAndPedagogicalNotes: String,
         emergencyPhone: String,
+        emergencyPhoneRelation: String,
         authorizedPickups: List<String>,
         medicalCertificateUri: String?,
         medicalCertificateName: String?,
         medicalCertificateDate: String?
-    ) -> Unit = { _, _, _, _, _, _, _, _, _ -> }
+    ) -> Unit = { _, _, _, _, _, _, _, _, _, _ -> }
 ) {
     var selectedTab by remember { mutableIntStateOf(0) } // 0 = Datos del Niño, 1 = Bitácora Diaria, 2 = Resumen Semanal
     var selectedDayIndex by remember { mutableIntStateOf(0) }
@@ -355,25 +360,39 @@ fun ParentHomeScreen(
                                     color = TextSecondary
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
+                                val isExited = !child.isPresent && (
+                                    child.statusText.contains("Retirado", ignoreCase = true) ||
+                                    child.statusText.contains("Egresado", ignoreCase = true)
+                                )
+                                val statusColor = when {
+                                    child.isPresent -> StatusPresentGreen
+                                    isExited -> BrandBlue
+                                    else -> StatusAbsentOrange
+                                }
+                                val statusLabel = when {
+                                    child.isPresent -> "En el aula hoy (Ingreso: ${child.arrivalTime ?: "08:15 AM"})"
+                                    isExited -> "Ya ha salido del centro (${child.statusText})"
+                                    else -> "No ha ingresado"
+                                }
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(10.dp))
-                                        .background(if (child.isPresent) StatusPresentGreen.copy(alpha = 0.12f) else StatusAbsentOrange.copy(alpha = 0.12f))
+                                        .background(statusColor.copy(alpha = 0.12f))
                                         .padding(horizontal = 8.dp, vertical = 3.dp)
                                 ) {
                                     Box(
                                         modifier = Modifier
                                             .size(7.dp)
                                             .clip(CircleShape)
-                                            .background(if (child.isPresent) StatusPresentGreen else StatusAbsentOrange)
+                                            .background(statusColor)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = if (child.isPresent) "En el aula hoy (Ingreso: ${child.arrivalTime ?: "08:15 AM"})" else "No ha ingresado",
+                                        text = statusLabel,
                                         fontSize = 11.5.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = if (child.isPresent) StatusPresentGreen else StatusAbsentOrange
+                                        color = statusColor
                                     )
                                 }
                             }
@@ -398,6 +417,7 @@ fun ParentHomeScreen(
                             QuickActionButton(
                                 icon = Icons.AutoMirrored.Filled.Chat,
                                 label = "Chat",
+                                badgeCount = unreadMessagesCount,
                                 modifier = Modifier.weight(1f),
                                 onClick = onNavigateToChat
                             )
@@ -558,13 +578,14 @@ fun ParentHomeScreen(
                 child = child,
                 fullProfile = fullProfile,
                 onDismiss = { showEditDialog = false },
-                onSave = { ped, pedPhone, medNotes, habits, emergPhone, pickups, certUri, certName, certDate ->
+                onSave = { ped, pedPhone, medNotes, habits, emergPhone, emergRelation, pickups, certUri, certName, certDate ->
                     onUpdateProfile(
                         ped,
                         pedPhone,
                         medNotes,
                         habits,
                         emergPhone,
+                        emergRelation,
                         pickups,
                         certUri,
                         certName,
@@ -582,6 +603,7 @@ private fun QuickActionButton(
     icon: ImageVector,
     label: String,
     modifier: Modifier = Modifier,
+    badgeCount: Int = 0,
     onClick: () -> Unit
 ) {
     Surface(
@@ -596,12 +618,29 @@ private fun QuickActionButton(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = BrandBlue,
-                modifier = Modifier.size(20.dp)
-            )
+            BadgedBox(
+                badge = {
+                    if (badgeCount > 0) {
+                        Badge(
+                            containerColor = AlertRed,
+                            contentColor = Color.White
+                        ) {
+                            Text(
+                                text = if (badgeCount > 99) "99+" else badgeCount.toString(),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = BrandBlue,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = label,

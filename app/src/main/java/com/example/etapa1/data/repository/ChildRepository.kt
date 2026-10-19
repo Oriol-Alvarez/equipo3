@@ -18,4 +18,5 @@ interface ChildRepository {
     fun markWeeklySummaryReadStatus(childId: String, weekRangeText: String, isRead: Boolean, timestampText: String? = null)
     fun setWeeklySummaryReaction(childId: String, weekRangeText: String, reaction: String?)
     fun getDailyBitacorasForChild(child: Child): List<DailyBitacora>
+    fun refresh()
 }

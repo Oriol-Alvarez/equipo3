@@ -19,4 +19,7 @@ interface WeeklyObservationsRepository {
         authorName: String,
         text: String
     ): Result<WeeklyObservation>
+
+    /** Vuelve a cargar los datos del servidor. En la versión en memoria no hace nada. */
+    fun refresh() {}
 }

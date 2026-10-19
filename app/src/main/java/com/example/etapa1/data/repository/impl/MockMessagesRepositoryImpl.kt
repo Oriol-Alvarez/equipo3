@@ -55,4 +55,20 @@ class MockMessagesRepositoryImpl : MessagesRepository {
             }
         }
     }
+
+    override fun markWorkerChatAsRead(chatId: String) {
+        if (chatId == _globalChat.value.id || chatId == "global_staff_chat") {
+            _globalChat.update { it.copy(unreadCount = 0) }
+        } else {
+            _workerChats.update { list ->
+                list.map { if (it.id == chatId) it.copy(unreadCount = 0) else it }
+            }
+        }
+    }
+
+    override fun markParentChatAsRead(childId: String) {
+        _parentChats.update { list ->
+            list.map { if (it.child.id == childId) it.copy(unreadCount = 0) else it }
+        }
+    }
 }

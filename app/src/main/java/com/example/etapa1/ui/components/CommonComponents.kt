@@ -9,11 +9,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
 import com.example.etapa1.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,6 +49,8 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -82,31 +83,13 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Logo de 'Sonrisas de Cristal' cargado desde el Image Asset logo (R.mipmap.logo)
+ * Logo de 'Sonrisas de Cristal'
  */
 @Composable
 fun DaycareLogo(
     modifier: Modifier = Modifier,
     size: Dp = 82.dp
 ) {
-    val context = LocalContext.current
-    val drawable = remember {
-        ContextCompat.getDrawable(context, R.mipmap.logo)
-    }
-    val painter = remember(drawable) {
-        if (drawable != null) {
-            val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else 300
-            val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else 300
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            val canvas = android.graphics.Canvas(bitmap)
-            drawable.setBounds(0, 0, width, height)
-            drawable.draw(canvas)
-            BitmapPainter(bitmap.asImageBitmap())
-        } else {
-            null
-        }
-    }
-
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -119,16 +102,14 @@ fun DaycareLogo(
                 .border(1.dp, Color(0xFFE0E7F1), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            if (painter != null) {
-                Image(
-                    painter = painter,
-                    contentDescription = "Logo Sonrisas de Cristal",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Fit
-                )
-            }
+            Image(
+                painter = painterResource(id = R.drawable.ic_daycare_logo),
+                contentDescription = "Logo Sonrisas de Cristal",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+                contentScale = ContentScale.Fit
+            )
         }
     }
 }
@@ -140,6 +121,8 @@ fun DaycareLogo(
 fun AppBottomBar(
     selectedTab: Int = 0,
     showMessagesTab: Boolean = true,
+    hasUnreadMessages: Boolean = false,
+    unreadMessagesCount: Int = 0,
     onTabSelected: (Int) -> Unit = {}
 ) {
     Surface(
@@ -171,23 +154,30 @@ fun AppBottomBar(
 
             // Tab 1 (opcional): Mensajes
             if (showMessagesTab) {
+                val effectiveCount = if (unreadMessagesCount > 0) unreadMessagesCount else if (hasUnreadMessages) 1 else 0
                 BottomNavItem(
                     modifier = Modifier.weight(1f),
                     icon = {
-                        Box(contentAlignment = Alignment.Center) {
+                        BadgedBox(
+                            badge = {
+                                if (effectiveCount > 0) {
+                                    Badge(
+                                        containerColor = AlertRed,
+                                        contentColor = Color.White
+                                    ) {
+                                        Text(
+                                            text = if (effectiveCount > 99) "99+" else effectiveCount.toString(),
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.MailOutline,
                                 contentDescription = "Mensajes",
                                 tint = if (selectedTab == 1) BrandBlue else TextMuted
-                            )
-                            // Notification dot
-                            Box(
-                                modifier = Modifier
-                                    .size(7.dp)
-                                    .align(Alignment.TopEnd)
-                                    .offset(x = 2.dp, y = (-2).dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFE53935))
                             )
                         }
                     },

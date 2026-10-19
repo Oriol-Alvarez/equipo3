@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -52,7 +51,6 @@ import com.example.etapa1.ui.theme.AlertRedBorder
 import com.example.etapa1.ui.theme.AppBackground
 import com.example.etapa1.ui.theme.BorderSubtle
 import com.example.etapa1.ui.theme.BrandBlue
-import com.example.etapa1.ui.theme.BrandBlueContainer
 import com.example.etapa1.ui.theme.CardBackground
 import com.example.etapa1.ui.theme.TextMuted
 import com.example.etapa1.ui.theme.TextPrimary
@@ -72,11 +70,9 @@ fun LoginScreen(
 
     LoginContent(
         uiState = uiState,
-        onRoleSelected = viewModel::onRoleSelected,
         onEmailChange = viewModel::onEmailChanged,
         onPasswordChange = viewModel::onPasswordChanged,
         onTogglePasswordVisibility = viewModel::onTogglePasswordVisibility,
-        onErrorToggle = viewModel::toggleError,
         onSubmitLogin = {
             val role = viewModel.submitLogin()
             if (role != null) {
@@ -90,32 +86,32 @@ fun LoginScreen(
 fun LoginScreen(
     onLoginSuccess: (UserRole) -> Unit = {}
 ) {
-    var selectedRole by remember { mutableStateOf(UserRole.EDUCADORA) }
-    var email by remember { mutableStateOf("correo@ejemplo.com") }
-    var password by remember { mutableStateOf("••••••••") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var hasError by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val state = com.example.etapa1.ui.state.LoginUiState(
-        selectedRole = selectedRole,
         email = email,
         password = password,
         passwordVisible = passwordVisible,
-        hasError = hasError
+        hasError = hasError,
+        errorMessage = errorMessage
     )
 
     LoginContent(
         uiState = state,
-        onRoleSelected = { selectedRole = it },
-        onEmailChange = { email = it; hasError = false },
-        onPasswordChange = { password = it; hasError = false },
+        onEmailChange = { email = it; hasError = false; errorMessage = null },
+        onPasswordChange = { password = it; hasError = false; errorMessage = null },
         onTogglePasswordVisibility = { passwordVisible = !passwordVisible },
-        onErrorToggle = { hasError = !hasError },
         onSubmitLogin = {
             if (email.isBlank() || password.isBlank()) {
                 hasError = true
+                errorMessage = "Por favor, introduce tu correo y contraseña."
             } else {
-                onLoginSuccess(selectedRole)
+                val role = if (email.contains("familiar", ignoreCase = true)) UserRole.FAMILIAR else UserRole.EDUCADORA
+                onLoginSuccess(role)
             }
         }
     )
@@ -124,11 +120,9 @@ fun LoginScreen(
 @Composable
 fun LoginContent(
     uiState: com.example.etapa1.ui.state.LoginUiState,
-    onRoleSelected: (UserRole) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onTogglePasswordVisibility: () -> Unit,
-    onErrorToggle: () -> Unit,
     onSubmitLogin: () -> Unit
 ) {
     Surface(
@@ -166,15 +160,7 @@ fun LoginContent(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(26.dp))
-
-            // Selector Educadora / Familiar
-            RoleToggle(
-                selectedRole = uiState.selectedRole,
-                onRoleSelected = onRoleSelected
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             // Campo Correo electrónico
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -245,6 +231,7 @@ fun LoginContent(
 
             // Banner de error (si está activo)
             if (uiState.hasError) {
+                val errorText = uiState.errorMessage ?: "Correo o contraseña incorrectos"
                 Spacer(modifier = Modifier.height(12.dp))
                 Box(
                     modifier = Modifier
@@ -252,14 +239,15 @@ fun LoginContent(
                         .clip(RoundedCornerShape(16.dp))
                         .background(AlertRedBg)
                         .border(1.dp, AlertRedBorder, RoundedCornerShape(16.dp))
-                        .padding(vertical = 8.dp, horizontal = 12.dp),
+                        .padding(vertical = 10.dp, horizontal = 14.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Correo o contraseña incorrectos",
+                        text = errorText,
                         color = AlertRed,
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center
                     )
                 }
             }
@@ -285,87 +273,6 @@ fun LoginContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Link Recuperar contraseña
-            Text(
-                text = "Recuperar contraseña",
-                fontSize = 13.sp,
-                color = BrandBlue,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier
-                    .clickable { /* Simulación de recuperación */ }
-                    .padding(4.dp)
-            )
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            // Switch sutil para probar estado de error vs normal
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = if (uiState.hasError) "Quitar error" else "Simular error de login",
-                    fontSize = 11.sp,
-                    color = TextMuted,
-                    modifier = Modifier
-                        .clickable { onErrorToggle() }
-                        .padding(6.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun RoleToggle(
-    selectedRole: UserRole,
-    onRoleSelected: (UserRole) -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(BrandBlueContainer)
-            .padding(4.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(if (selectedRole == UserRole.EDUCADORA) BrandBlue else Color.Transparent)
-                    .clickable { onRoleSelected(UserRole.EDUCADORA) }
-                    .padding(vertical = 9.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Educadora",
-                    color = if (selectedRole == UserRole.EDUCADORA) Color.White else BrandBlue,
-                    fontSize = 13.sp,
-                    fontWeight = if (selectedRole == UserRole.EDUCADORA) FontWeight.Bold else FontWeight.Medium
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(if (selectedRole == UserRole.FAMILIAR) BrandBlue else Color.Transparent)
-                    .clickable { onRoleSelected(UserRole.FAMILIAR) }
-                    .padding(vertical = 9.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Familiar",
-                    color = if (selectedRole == UserRole.FAMILIAR) Color.White else BrandBlue,
-                    fontSize = 13.sp,
-                    fontWeight = if (selectedRole == UserRole.FAMILIAR) FontWeight.Bold else FontWeight.Medium
-                )
-            }
         }
     }
 }

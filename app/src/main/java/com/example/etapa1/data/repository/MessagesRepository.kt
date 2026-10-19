@@ -11,4 +11,6 @@ interface MessagesRepository {
     val staffMembers: StateFlow<List<WorkerMember>>
     val globalChat: StateFlow<WorkerChat>
     fun sendWorkerMessage(chatId: String, text: String)
+    fun markWorkerChatAsRead(chatId: String)
+    fun markParentChatAsRead(childId: String)
 }

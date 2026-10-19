@@ -10,10 +10,12 @@ import com.example.etapa1.model.FamilyGroupsSampleData
 import com.example.etapa1.model.GroupViewer
 import com.example.etapa1.model.MessageAttachment
 import com.example.etapa1.model.WorkerChat
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 
 data class FamilyGroupsUiState(
@@ -34,12 +36,17 @@ class FamilyGroupsViewModel(
     private val viewer = MutableStateFlow<GroupViewer?>(null)
     private val errorMessage = MutableStateFlow<String?>(null)
 
+    // Con backend, las familias para crear grupos vienen del servidor; en modo demo, de los chats de ejemplo.
+    private val serverCandidates: Flow<List<FamilyGroupCandidate>?> =
+        familyGroupsRepository.serverCandidates ?: flowOf(null)
+
     val uiState: StateFlow<FamilyGroupsUiState> = combine(
         familyGroupsRepository.groups,
         messagesRepository.parentChats,
+        serverCandidates,
         viewer,
         errorMessage
-    ) { groups, parentChats, currentViewer, error ->
+    ) { groups, parentChats, fromServer, currentViewer, error ->
         if (currentViewer == null) {
             FamilyGroupsUiState()
         } else {
@@ -49,7 +56,7 @@ class FamilyGroupsViewModel(
                 viewer = currentViewer,
                 groups = FamilyGroupsPresenter.groupsVisibleTo(groups, currentViewer)
                     .map { FamilyGroupsPresenter.toChat(it, currentViewer, childrenById) },
-                candidates = FamilyGroupsPresenter.candidatesFrom(parentChats),
+                candidates = fromServer ?: FamilyGroupsPresenter.candidatesFrom(parentChats),
                 canCreateGroups = FamilyGroupsPresenter.canCreateGroups(currentViewer),
                 errorMessage = error
             )
@@ -60,13 +67,19 @@ class FamilyGroupsViewModel(
         initialValue = FamilyGroupsUiState()
     )
 
+    init {
+        familyGroupsRepository.refresh()
+    }
+
     fun useEducatorViewer() {
-        viewer.value = GroupViewer.Educadora(FamilyGroupsSampleData.EDUCADORA)
+        viewer.value = GroupViewer.Educadora(
+            familyGroupsRepository.currentParticipant() ?: FamilyGroupsSampleData.EDUCADORA
+        )
     }
 
     fun useFamilyViewer() {
         viewer.value = GroupViewer.Familia(
-            participant = FamilyGroupsSampleData.FAMILIA_GARCIA,
+            participant = familyGroupsRepository.currentParticipant() ?: FamilyGroupsSampleData.FAMILIA_GARCIA,
             childIds = childRepository.parentChildren.value.map { it.id }
         )
     }

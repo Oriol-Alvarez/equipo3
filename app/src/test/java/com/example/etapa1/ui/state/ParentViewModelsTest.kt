@@ -112,6 +112,7 @@ class ParentViewModelsTest {
             medicalNotes = "Control de intolerancia a la lactosa superado. Sin medicación actual.",
             habitsAndPedagogicalNotes = "Le gusta dormir con música suave. Muy autónomo comiendo.",
             emergencyPhone = "+34 611 777 555",
+            emergencyPhoneRelation = "Abuela materna",
             authorizedPickups = newPickups,
             medicalCertificateUri = "content://media/external/file/101",
             medicalCertificateName = "Certificado_Pediatrico_2026.pdf",
@@ -125,6 +126,7 @@ class ParentViewModelsTest {
         assertEquals("Control de intolerancia a la lactosa superado. Sin medicación actual.", updatedProfile.medicalNotes)
         assertEquals("Le gusta dormir con música suave. Muy autónomo comiendo.", updatedProfile.generalNotes)
         assertEquals("+34 611 777 555", updatedProfile.emergencyPhone)
+        assertEquals("Abuela materna", updatedProfile.emergencyPhoneRelation)
         assertEquals(2, updatedProfile.authorizedPickups.size)
         assertEquals("Laura García (Tía) - DNI: 12345678A", updatedProfile.authorizedPickups[0])
         assertEquals("content://media/external/file/101", updatedProfile.medicalCertificateUri)
@@ -135,6 +137,52 @@ class ParentViewModelsTest {
         val repoProfile = childRepository.getChildFullProfile(child)
         assertEquals("Dr. Carlos Valdés", repoProfile.pediatrician)
         assertEquals("Certificado_Pediatrico_2026.pdf", repoProfile.medicalCertificateName)
+        assertEquals("+34 611 777 555", repoProfile.emergencyPhone)
+        assertEquals("Abuela materna", repoProfile.emergencyPhoneRelation)
         assertEquals(newPickups, repoProfile.authorizedPickups)
+    }
+
+    @Test
+    fun parentHomeViewModel_syncsAttendanceWhenEgresoMarked() {
+        val viewModel = ParentHomeViewModel(childRepository, initialChild = null, coroutineScope = testScope)
+        assertEquals("Mateo García", viewModel.uiState.value.selectedChild.fullName)
+        assertTrue(viewModel.uiState.value.selectedChild.isPresent)
+
+        // Registrar egreso del alumno
+        childRepository.updateChildAttendance(
+            childId = "mateo_garcia",
+            isPresent = false,
+            time = "15:00",
+            statusText = "15:00 • Retirado"
+        )
+
+        // Verificar que el repositorio actualizó parentChildren
+        val updatedRepoChild = childRepository.parentChildren.value.first { it.id == "mateo_garcia" }
+        assertFalse("El niño debe figurar como no presente en parentChildren", updatedRepoChild.isPresent)
+        assertEquals("15:00 • Retirado", updatedRepoChild.statusText)
+
+        // Verificar que el ViewModel observó y actualizó el estado UI
+        val stateChild = viewModel.uiState.value.selectedChild
+        assertFalse("El niño seleccionado en ParentHomeViewModel debe estar no presente", stateChild.isPresent)
+        assertEquals("15:00 • Retirado", stateChild.statusText)
+    }
+
+    @Test
+    fun parentChildSelectionViewModel_syncsAttendanceWhenEgresoMarked() {
+        val viewModel = ParentChildSelectionViewModel(childRepository)
+        val mateoInitial = viewModel.children.value.first { it.id == "mateo_garcia" }
+        assertTrue(mateoInitial.isPresent)
+
+        // Registrar egreso
+        childRepository.updateChildAttendance(
+            childId = "mateo_garcia",
+            isPresent = false,
+            time = "15:30",
+            statusText = "15:30 • Retirado"
+        )
+
+        val mateoUpdated = viewModel.children.value.first { it.id == "mateo_garcia" }
+        assertFalse(mateoUpdated.isPresent)
+        assertEquals("15:30 • Retirado", mateoUpdated.statusText)
     }
 }

@@ -6,6 +6,7 @@ import com.example.etapa1.data.repository.SuggestionsRepository
 import com.example.etapa1.model.ParentSuggestion
 import com.example.etapa1.model.SuggestionCategory
 import com.example.etapa1.model.SuggestionStatus
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -33,9 +34,11 @@ private data class SuggestionFilterState(
 )
 
 class SuggestionsViewModel(
-    private val suggestionsRepository: SuggestionsRepository
+    private val suggestionsRepository: SuggestionsRepository,
+    coroutineScope: CoroutineScope? = null
 ) : ViewModel() {
 
+    private val scope = coroutineScope ?: viewModelScope
     private val _filterState = MutableStateFlow(SuggestionFilterState())
 
     val uiState: StateFlow<SuggestionsUiState> = combine(
@@ -73,8 +76,8 @@ class SuggestionsViewModel(
             filteredSuggestions = filtered
         )
     }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        scope = scope,
+        started = SharingStarted.Eagerly,
         initialValue = SuggestionsUiState()
     )
 
