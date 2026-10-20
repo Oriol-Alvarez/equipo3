@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -37,15 +39,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.FamilyGroupCandidate
+import androidx.compose.ui.graphics.Color
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.ParentChatSummary
 import com.example.etapa1.model.WorkerChat
 import com.example.etapa1.model.WorkerChatMessage
+import com.example.etapa1.model.WorkerMember
+import com.example.etapa1.ui.components.ActiveChildSwitcher
 import com.example.etapa1.ui.components.CreateFamilyGroupDialog
 import com.example.etapa1.ui.components.CreateWorkerGroupDialog
 import com.example.etapa1.ui.components.MessagesMode
 import com.example.etapa1.ui.components.MessagesModeSwitch
 import com.example.etapa1.ui.components.MessagesSearchBar
+import com.example.etapa1.ui.components.NewChatCandidateItem
 import com.example.etapa1.ui.components.ParentChatItem
 import com.example.etapa1.ui.components.PinnedGlobalWorkerChatCard
 import com.example.etapa1.ui.components.WorkerChatConversationDialog
@@ -65,19 +71,32 @@ import androidx.compose.runtime.collectAsState
 fun MessagesScreen(
     viewModel: MessagesViewModel,
     familyGroupsViewModel: FamilyGroupsViewModel,
-    onNavigateToHome: () -> Unit,
+    isFamiliar: Boolean = false,
+    activeChild: Child? = null,
+    onSwitchChild: (() -> Unit)? = null,
+    onNavigateToHome: () -> Unit = {},
     onNavigateToChildChat: (Child) -> Unit,
-    onNavigateToMore: () -> Unit
+    onNavigateToWorkerChat: (WorkerChat) -> Unit = {},
+    onNavigateToMore: () -> Unit = {},
+    onBack: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val familyGroupsState by familyGroupsViewModel.uiState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        familyGroupsViewModel.useEducatorViewer()
+    LaunchedEffect(isFamiliar) {
+        viewModel.setWorkerRole(!isFamiliar)
+        viewModel.recargar()
+        if (isFamiliar) {
+            familyGroupsViewModel.useFamilyViewer(activeChild?.let { listOf(it.id) })
+        } else {
+            familyGroupsViewModel.useEducatorViewer()
+        }
     }
 
     MessagesContent(
         uiState = uiState,
+        activeChild = activeChild,
+        onSwitchChild = onSwitchChild,
         onModeSelect = { mode ->
             viewModel.onTabSelected(if (mode == MessagesMode.TRABAJADORES) 0 else 1)
         },
@@ -86,14 +105,19 @@ fun MessagesScreen(
         onSendMessage = viewModel::sendMessage,
         onMarkWorkerChatAsRead = viewModel::markWorkerChatAsRead,
         onMarkParentChatAsRead = viewModel::markParentChatAsRead,
+        onStartNewWorkerChat = viewModel::startNewWorkerChat,
+        onStartNewFamilyEducatorChat = viewModel::startNewFamilyEducatorChat,
+        onStartNewParentChat = viewModel::startNewParentChat,
         onNavigateToHome = onNavigateToHome,
         onNavigateToChildChat = onNavigateToChildChat,
+        onNavigateToWorkerChat = onNavigateToWorkerChat,
         onNavigateToMore = onNavigateToMore,
         familyGroups = familyGroupsState.groups,
         familyGroupCandidates = familyGroupsState.candidates,
         familyGroupError = familyGroupsState.errorMessage,
         onCreateFamilyGroup = familyGroupsViewModel::createGroup,
         onSendFamilyGroupMessage = familyGroupsViewModel::sendMessage,
+        onSendFamilyGroupActivity = familyGroupsViewModel::sendGroupActivity,
         onDismissFamilyGroupError = familyGroupsViewModel::clearError
     )
 }
@@ -129,14 +153,20 @@ fun MessagesScreen(
 @Composable
 fun MessagesContent(
     uiState: com.example.etapa1.ui.state.MessagesUiState,
+    activeChild: Child? = null,
+    onSwitchChild: (() -> Unit)? = null,
     onModeSelect: (MessagesMode) -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onToggleSearch: () -> Unit,
     onSendMessage: (chatId: String, text: String) -> Unit,
     onMarkWorkerChatAsRead: (chatId: String) -> Unit = {},
     onMarkParentChatAsRead: (childId: String) -> Unit = {},
+    onStartNewWorkerChat: (WorkerMember) -> WorkerChat = { WorkerChat(id = it.id, title = it.name, subtitle = it.role, lastMessage = "Sin mensajes aún.", lastMessageTime = "Ahora") },
+    onStartNewFamilyEducatorChat: (WorkerMember) -> WorkerChat = { WorkerChat(id = it.id, title = it.name, subtitle = it.role, lastMessage = "Sin mensajes aún.", lastMessageTime = "Ahora") },
+    onStartNewParentChat: (Child) -> ParentChatSummary = { ParentChatSummary(it, "Familiar Tutor", "Sin mensajes aún.", "Ahora", 0) },
     onNavigateToHome: () -> Unit,
     onNavigateToChildChat: (Child) -> Unit,
+    onNavigateToWorkerChat: (WorkerChat) -> Unit = {},
     onNavigateToMore: () -> Unit,
     familyGroups: List<WorkerChat> = emptyList(),
     familyGroupCandidates: List<FamilyGroupCandidate> = emptyList(),
@@ -149,11 +179,16 @@ fun MessagesContent(
         fileName: String?,
         fileMimeType: String?
     ) -> Unit = { _, _, _, _, _ -> },
+    onSendFamilyGroupActivity: (
+        groupId: String,
+        category: String,
+        badge: String,
+        description: String
+    ) -> Unit = { _, _, _, _ -> },
     onDismissFamilyGroupError: () -> Unit = {}
 ) {
     val selectedMode = if (uiState.selectedTab == 0) MessagesMode.TRABAJADORES else MessagesMode.FAMILIAS
     var showCreateGroupDialog by remember { mutableStateOf(false) }
-    var activeWorkerChat by remember { mutableStateOf<WorkerChat?>(null) }
     val workerChats = remember(uiState.workerChats) { mutableStateListOf<WorkerChat>().apply { addAll(uiState.workerChats) } }
     var globalChat by remember(uiState.globalChat) { mutableStateOf(uiState.globalChat ?: MockDataRepository.initialGlobalWorkerChat) }
     val parentChats = remember(uiState.parentChats) { mutableStateListOf<ParentChatSummary>().apply { addAll(uiState.parentChats) } }
@@ -172,8 +207,24 @@ fun MessagesContent(
         parentChats.addAll(uiState.parentChats)
     }
     var showCreateFamilyGroupDialog by rememberSaveable { mutableStateOf(false) }
-    var activeFamilyGroupId by rememberSaveable { mutableStateOf<String?>(null) }
     val visibleFamilyGroups = FamilyGroupsPresenter.filterByQuery(familyGroups, uiState.searchQuery)
+
+    val otherEducatorNames = remember(activeChild) {
+        if (activeChild != null) {
+            val otherChildren = MockDataRepository.parentChildren.filter { it.id != activeChild.id }
+            otherChildren.map { (it.educatorName ?: MockDataRepository.getEducatorForChild(it.id).name).lowercase() }.toSet()
+        } else {
+            emptySet()
+        }
+    }
+
+    val visibleStaffChats = if (!uiState.isWorkerRole && activeChild != null && uiState.searchQuery.isBlank()) {
+        workerChats.filter { chat ->
+            !otherEducatorNames.contains(chat.title.trim().lowercase())
+        }
+    } else {
+        workerChats
+    }
 
     Scaffold(
         containerColor = AppBackground,
@@ -185,61 +236,99 @@ fun MessagesContent(
                 .padding(paddingValues)
         ) {
             // Header Top Bar
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                // Botón arriba izquierda: Crear Grupo para trabajadora, o Buscar para familiar
+                Box(
+                    modifier = Modifier.widthIn(min = 40.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (uiState.isWorkerRole) {
+                        IconButton(
+                            onClick = {
+                                if (selectedMode == MessagesMode.TRABAJADORES) {
+                                    showCreateGroupDialog = true
+                                } else {
+                                    onDismissFamilyGroupError()
+                                    showCreateFamilyGroupDialog = true
+                                }
+                            },
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.GroupAdd,
+                                contentDescription = if (selectedMode == MessagesMode.TRABAJADORES) {
+                                    "Crear grupo de trabajadores"
+                                } else {
+                                    "Crear grupo con familias"
+                                },
+                                tint = BrandBlue,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    } else {
+                        IconButton(
+                            onClick = onToggleSearch,
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Buscar",
+                                tint = BrandBlue,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Centro: Título con estado de conexión
                 Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
                         text = "Mensajes",
-                        fontSize = 18.sp,
+                        fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
                         color = BrandBlue,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
+                    Spacer(modifier = Modifier.width(6.dp))
                     com.example.etapa1.ui.components.ChipConexion(estado = uiState.conexionEstado)
                 }
 
-                // Botón Crear Grupo (arriba izquierda): de trabajadores o de familias según el modo
-                IconButton(
-                    onClick = {
-                        if (selectedMode == MessagesMode.TRABAJADORES) {
-                            showCreateGroupDialog = true
-                        } else {
-                            onDismissFamilyGroupError()
-                            showCreateFamilyGroupDialog = true
+                // Botón arriba derecha: Buscar para trabajadora, o ActiveChildSwitcher para familiar
+                Box(
+                    modifier = Modifier.widthIn(min = 40.dp),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    if (uiState.isWorkerRole) {
+                        IconButton(
+                            onClick = onToggleSearch,
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Buscar",
+                                tint = BrandBlue,
+                                modifier = Modifier.size(22.dp)
+                            )
                         }
-                    },
-                    modifier = Modifier.align(Alignment.CenterStart)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.GroupAdd,
-                        contentDescription = if (selectedMode == MessagesMode.TRABAJADORES) {
-                            "Crear grupo de trabajadores"
-                        } else {
-                            "Crear grupo con familias"
-                        },
-                        tint = BrandBlue,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                // Botón Lupa / Búsqueda (arriba derecha)
-                IconButton(
-                    onClick = onToggleSearch,
-                    modifier = Modifier.align(Alignment.CenterEnd)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Buscar",
-                        tint = BrandBlue,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    } else if (activeChild != null && onSwitchChild != null) {
+                        ActiveChildSwitcher(
+                            child = activeChild,
+                            onSwitchClick = onSwitchChild
+                        )
+                    }
                 }
             }
 
@@ -259,12 +348,26 @@ fun MessagesContent(
                     )
                 }
 
+                val workersUnread = if (uiState.isWorkerRole) {
+                    (if (globalChat.isGlobal) globalChat.unreadCount else 0) + workerChats.sumOf { it.unreadCount }
+                } else {
+                    visibleStaffChats.sumOf { it.unreadCount }
+                }
+
+                val parentsUnread = if (uiState.isWorkerRole) {
+                    parentChats.sumOf { it.unreadCount }
+                } else {
+                    visibleFamilyGroups.sumOf { it.unreadCount }
+                }
+
                 // Switch / Segmented Control
                 MessagesModeSwitch(
                     selectedMode = selectedMode,
                     onModeChange = onModeSelect,
-                    workersUnreadCount = globalChat.unreadCount + workerChats.sumOf { it.unreadCount },
-                    parentsUnreadCount = parentChats.sumOf { it.unreadCount }
+                    workersUnreadCount = workersUnread,
+                    parentsUnreadCount = parentsUnread,
+                    workerTabLabel = if (uiState.isWorkerRole) "Personal" else "Educador",
+                    familyTabLabel = if (uiState.isWorkerRole) "Familias y Alumnos" else "Grupos"
                 )
             }
 
@@ -279,23 +382,127 @@ fun MessagesContent(
             ) {
                 when (selectedMode) {
                     MessagesMode.TRABAJADORES -> {
-                        // 1. Chat Global de Trabajadores
-                        item(key = "pinned_global_chat") {
-                            PinnedGlobalWorkerChatCard(
-                                chat = globalChat,
-                                onClick = {
-                                    val readChat = globalChat.copy(unreadCount = 0)
-                                    globalChat = readChat
-                                    activeWorkerChat = readChat
-                                    onMarkWorkerChatAsRead(readChat.id)
-                                }
-                            )
+                        // 1. Chat Global de Trabajadores (solo para personal)
+                        if (uiState.isWorkerRole) {
+                            item(key = "pinned_global_chat") {
+                                PinnedGlobalWorkerChatCard(
+                                    chat = globalChat,
+                                    onClick = {
+                                        val readChat = globalChat.copy(unreadCount = 0)
+                                        globalChat = readChat
+                                        onMarkWorkerChatAsRead(readChat.id)
+                                        onNavigateToWorkerChat(readChat)
+                                    }
+                                )
+                            }
+                        }
+
+                        // Sección: Contactos nuevos para iniciar chat cuando se busca
+                        if (uiState.isSearchOpen && uiState.availableStaffToChat.isNotEmpty()) {
+                            item(key = "new_staff_candidates_header") {
+                                Text(
+                                    text = if (uiState.isWorkerRole) "INICIAR NUEVO CHAT CON PERSONAL" else "INICIAR NUEVO CHAT CON EDUCADOR",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = BrandBlue,
+                                    letterSpacing = 0.5.sp,
+                                    modifier = Modifier.padding(top = 4.dp, bottom = 2.dp, start = 4.dp)
+                                )
+                            }
+                            items(uiState.availableStaffToChat, key = { "candidate_staff_${it.id}" }) { member ->
+                                NewChatCandidateItem(
+                                    title = member.name,
+                                    subtitle = member.role,
+                                    avatarInitials = member.avatarInitials,
+                                    avatarBgColor = Color(member.avatarBgColor),
+                                    badgeText = "Iniciar chat",
+                                    onClick = {
+                                        val educatorName = activeChild?.educatorName ?: MockDataRepository.getEducatorForChild(activeChild?.id ?: "").name
+                                        if (!uiState.isWorkerRole && activeChild != null &&
+                                            member.name.equals(educatorName, ignoreCase = true)) {
+                                            onNavigateToChildChat(activeChild)
+                                        } else {
+                                            val newChat = if (uiState.isWorkerRole) {
+                                                onStartNewWorkerChat(member)
+                                            } else {
+                                                onStartNewFamilyEducatorChat(member)
+                                            }
+                                            val idx = workerChats.indexOfFirst { it.id == newChat.id }
+                                            if (idx < 0) {
+                                                workerChats.add(0, newChat)
+                                            }
+                                            onNavigateToWorkerChat(newChat)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+
+                        // Si la educadora busca alumnos / familias desde esta pestaña (ej. Mateo)
+                        if (uiState.isWorkerRole && uiState.isSearchOpen && parentChats.isNotEmpty()) {
+                            item(key = "search_worker_parent_chats_header") {
+                                Text(
+                                    text = "CHATS CON FAMILIAS Y ALUMNOS (${parentChats.size})",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = BrandBlue,
+                                    letterSpacing = 0.5.sp,
+                                    modifier = Modifier.padding(top = 4.dp, bottom = 2.dp, start = 4.dp)
+                                )
+                            }
+                            items(parentChats, key = { "worker_search_parent_${it.child.id}" }) { chatSummary ->
+                                ParentChatItem(
+                                    chatSummary = chatSummary,
+                                    onClick = {
+                                        val idx = parentChats.indexOfFirst { it.child.id == chatSummary.child.id }
+                                        if (idx >= 0) {
+                                            parentChats[idx] = chatSummary.copy(unreadCount = 0)
+                                        }
+                                        onMarkParentChatAsRead(chatSummary.child.id)
+                                        onNavigateToChildChat(chatSummary.child)
+                                    }
+                                )
+                            }
+                        }
+
+                        if (uiState.isWorkerRole && uiState.isSearchOpen && uiState.availableChildrenToChat.isNotEmpty()) {
+                            item(key = "search_worker_new_parent_candidates_header") {
+                                Text(
+                                    text = "INICIAR NUEVO CHAT CON FAMILIA",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = BrandBlue,
+                                    letterSpacing = 0.5.sp,
+                                    modifier = Modifier.padding(top = 4.dp, bottom = 2.dp, start = 4.dp)
+                                )
+                            }
+                            items(uiState.availableChildrenToChat, key = { "worker_search_cand_child_${it.id}" }) { child ->
+                                NewChatCandidateItem(
+                                    title = "${child.fullName} (${child.roomText})",
+                                    subtitle = "Tutor legal • Iniciar conversación",
+                                    avatarInitials = child.shortName.take(2).uppercase(),
+                                    avatarBgColor = Color(0xFF1976D2),
+                                    badgeText = "Iniciar chat",
+                                    onClick = {
+                                        val newChatSummary = onStartNewParentChat(child)
+                                        val idx = parentChats.indexOfFirst { it.child.id == child.id }
+                                        if (idx < 0) {
+                                            parentChats.add(0, newChatSummary)
+                                        }
+                                        onNavigateToChildChat(child)
+                                    }
+                                )
+                            }
                         }
 
                         // Subtítulo de sección
                         item(key = "workers_section_header") {
                             Text(
-                                text = "CHATS DIRECTOS Y GRUPOS TRABAJADORES (${workerChats.size})",
+                                text = if (uiState.isWorkerRole) {
+                                    "CHATS DIRECTOS Y GRUPOS TRABAJADORES (${workerChats.size})"
+                                } else {
+                                    "CHATS CON EDUCADORES Y PERSONAL (${visibleStaffChats.size})"
+                                },
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TextMuted,
@@ -305,23 +512,138 @@ fun MessagesContent(
                         }
 
                         // 2. Lista de chats individuales y de grupos
-                        items(workerChats, key = { it.id }) { chat ->
+                        items(visibleStaffChats, key = { it.id }) { chat ->
                             WorkerChatItem(
                                 chat = chat,
                                 onClick = {
+                                    val educatorName = activeChild?.educatorName ?: MockDataRepository.getEducatorForChild(activeChild?.id ?: "").name
+                                    val isAssignedEducatorChat = !uiState.isWorkerRole && activeChild != null &&
+                                        (chat.title.equals(educatorName, ignoreCase = true) ||
+                                         (activeChild.id == "mateo_garcia" && chat.id == "fchat_1") ||
+                                         (activeChild.id == "lucia_garcia" && chat.id == "fchat_carlos"))
+
                                     val readChat = chat.copy(unreadCount = 0)
                                     val idx = workerChats.indexOfFirst { it.id == chat.id }
                                     if (idx >= 0) {
                                         workerChats[idx] = readChat
                                     }
-                                    activeWorkerChat = readChat
                                     onMarkWorkerChatAsRead(chat.id)
+
+                                    if (isAssignedEducatorChat) {
+                                        onNavigateToChildChat(activeChild)
+                                    } else {
+                                        onNavigateToWorkerChat(readChat)
+                                    }
                                 }
                             )
                         }
                     }
 
                     MessagesMode.FAMILIAS -> {
+                        // Si es familiar y busca personal/educador en esta pestaña, también mostrárselo
+                        if (!uiState.isWorkerRole && uiState.isSearchOpen && uiState.availableStaffToChat.isNotEmpty()) {
+                            item(key = "new_staff_candidates_family_header") {
+                                Text(
+                                    text = "INICIAR NUEVO CHAT CON EDUCADOR",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = BrandBlue,
+                                    letterSpacing = 0.5.sp,
+                                    modifier = Modifier.padding(top = 4.dp, bottom = 2.dp, start = 4.dp)
+                                )
+                            }
+                            items(uiState.availableStaffToChat, key = { "candidate_staff_fam_${it.id}" }) { member ->
+                                NewChatCandidateItem(
+                                    title = member.name,
+                                    subtitle = member.role,
+                                    avatarInitials = member.avatarInitials,
+                                    avatarBgColor = Color(member.avatarBgColor),
+                                    badgeText = "Iniciar chat",
+                                    onClick = {
+                                        val educatorName = activeChild?.educatorName ?: MockDataRepository.getEducatorForChild(activeChild?.id ?: "").name
+                                        if (!uiState.isWorkerRole && activeChild != null &&
+                                            member.name.equals(educatorName, ignoreCase = true)) {
+                                            onNavigateToChildChat(activeChild)
+                                        } else {
+                                            val newChat = onStartNewFamilyEducatorChat(member)
+                                            val idx = workerChats.indexOfFirst { it.id == newChat.id }
+                                            if (idx < 0) {
+                                                workerChats.add(0, newChat)
+                                            }
+                                            onNavigateToWorkerChat(newChat)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+
+                        // Si es educadora y busca familias que no están en la lista
+                        if (uiState.isWorkerRole && uiState.isSearchOpen && uiState.availableChildrenToChat.isNotEmpty()) {
+                            item(key = "new_parent_candidates_header") {
+                                Text(
+                                    text = "INICIAR NUEVO CHAT CON FAMILIA",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = BrandBlue,
+                                    letterSpacing = 0.5.sp,
+                                    modifier = Modifier.padding(top = 4.dp, bottom = 2.dp, start = 4.dp)
+                                )
+                            }
+                            items(uiState.availableChildrenToChat, key = { "candidate_child_${it.id}" }) { child ->
+                                NewChatCandidateItem(
+                                    title = "${child.fullName} (${child.roomText})",
+                                    subtitle = "Tutor legal • Iniciar conversación",
+                                    avatarInitials = child.shortName.take(2).uppercase(),
+                                    avatarBgColor = Color(0xFF1976D2),
+                                    badgeText = "Iniciar chat",
+                                    onClick = {
+                                        val newChatSummary = onStartNewParentChat(child)
+                                        val idx = parentChats.indexOfFirst { it.child.id == child.id }
+                                        if (idx < 0) {
+                                            parentChats.add(0, newChatSummary)
+                                        }
+                                        onNavigateToChildChat(child)
+                                    }
+                                )
+                            }
+                        }
+
+                        // Subtítulo de sección con indicador de sala (para personal con chats directos con familias y alumnos)
+                        if (uiState.isWorkerRole) {
+                            item(key = "parents_section_header") {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp, horizontal = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "CHATS DIRECTOS CON FAMILIAS Y ALUMNOS (${parentChats.size})",
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextMuted,
+                                        letterSpacing = 0.5.sp
+                                    )
+                                }
+                            }
+
+                            // Lista de chats con los padres y alumnos
+                            items(parentChats, key = { it.child.id }) { chatSummary ->
+                                ParentChatItem(
+                                    chatSummary = chatSummary,
+                                    onClick = {
+                                        val idx = parentChats.indexOfFirst { it.child.id == chatSummary.child.id }
+                                        if (idx >= 0) {
+                                            parentChats[idx] = chatSummary.copy(unreadCount = 0)
+                                        }
+                                        onMarkParentChatAsRead(chatSummary.child.id)
+                                        onNavigateToChildChat(chatSummary.child)
+                                    }
+                                )
+                            }
+                        }
+
                         // Grupos con familias creados por la educadora
                         item(key = "family_groups_section_header") {
                             Text(
@@ -330,14 +652,14 @@ fun MessagesContent(
                                 fontWeight = FontWeight.Bold,
                                 color = TextMuted,
                                 letterSpacing = 0.5.sp,
-                                modifier = Modifier.padding(top = 4.dp, bottom = 2.dp, start = 4.dp)
+                                modifier = Modifier.padding(top = 8.dp, bottom = 2.dp, start = 4.dp)
                             )
                         }
 
                         if (visibleFamilyGroups.isEmpty()) {
                             item(key = "family_groups_empty") {
                                 Text(
-                                    text = "Toca el botón de grupo arriba a la izquierda para crear uno.",
+                                    text = if (uiState.isWorkerRole) "Toca el botón de grupo arriba a la izquierda para crear uno." else "No perteneces a ningún grupo familiar por el momento.",
                                     fontSize = 12.5.sp,
                                     color = TextMuted,
                                     modifier = Modifier.padding(horizontal = 4.dp)
@@ -348,42 +670,7 @@ fun MessagesContent(
                         items(visibleFamilyGroups, key = { "family_group_${it.id}" }) { group ->
                             WorkerChatItem(
                                 chat = group,
-                                onClick = { activeFamilyGroupId = group.id }
-                            )
-                        }
-
-                        // Subtítulo de sección con indicador de sala
-                        item(key = "parents_section_header") {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp, horizontal = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "CHATS DIRECTOS CON FAMILIAS (${parentChats.size})",
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextMuted,
-                                    letterSpacing = 0.5.sp
-                                )
-
-                            }
-                        }
-
-                        // 3. Lista de chats con los padres
-                        items(parentChats, key = { it.child.id }) { chatSummary ->
-                            ParentChatItem(
-                                chatSummary = chatSummary,
-                                onClick = {
-                                    val idx = parentChats.indexOfFirst { it.child.id == chatSummary.child.id }
-                                    if (idx >= 0) {
-                                        parentChats[idx] = chatSummary.copy(unreadCount = 0)
-                                    }
-                                    onMarkParentChatAsRead(chatSummary.child.id)
-                                    onNavigateToChildChat(chatSummary.child)
-                                }
+                                onClick = { onNavigateToWorkerChat(group) }
                             )
                         }
                     }
@@ -427,58 +714,6 @@ fun MessagesContent(
         )
     }
 
-    // Conversación interactiva de chat de trabajadores
-    activeWorkerChat?.let { currentChat ->
-        WorkerChatConversationDialog(
-            chat = currentChat,
-            onDismiss = {
-                val readChat = currentChat.copy(unreadCount = 0)
-                if (currentChat.isGlobal) {
-                    globalChat = readChat
-                } else {
-                    val idx = workerChats.indexOfFirst { it.id == currentChat.id }
-                    if (idx >= 0) {
-                        workerChats[idx] = readChat
-                    }
-                }
-                onMarkWorkerChatAsRead(currentChat.id)
-                activeWorkerChat = null
-            },
-            onSendMessage = { newText, uri, name, mime ->
-                val newMsg = WorkerChatMessage(
-                    id = "msg_${System.currentTimeMillis()}",
-                    senderId = "me",
-                    senderName = "Yo",
-                    message = newText,
-                    time = "Ahora",
-                    isOutgoing = true,
-                    fileUri = uri?.toString(),
-                    fileName = name,
-                    fileMimeType = mime
-                )
-                val updatedMessages = currentChat.messages + newMsg
-                val updatedChat = currentChat.copy(
-                    messages = updatedMessages,
-                    lastMessage = if (newText.isNotBlank()) "Tú: $newText" else "Tú: [Archivo adjunto]",
-                    lastMessageTime = "Ahora",
-                    unreadCount = 0
-                )
-                if (currentChat.isGlobal) {
-                    globalChat = updatedChat
-                } else {
-                    val index = workerChats.indexOfFirst { it.id == currentChat.id }
-                    if (index >= 0) {
-                        workerChats[index] = updatedChat
-                    }
-                }
-                activeWorkerChat = updatedChat
-                if (newText.isNotBlank()) {
-                    onSendMessage(currentChat.id, newText)
-                }
-            }
-        )
-    }
-
     // Modal de creación de grupo con familias
     if (showCreateFamilyGroupDialog) {
         CreateFamilyGroupDialog(
@@ -489,18 +724,6 @@ fun MessagesContent(
                 if (onCreateFamilyGroup(title, childIds)) {
                     showCreateFamilyGroupDialog = false
                 }
-            }
-        )
-    }
-
-    // Conversación del grupo con familias (se busca por id para mostrar siempre la versión más reciente)
-    val activeFamilyGroup = familyGroups.find { it.id == activeFamilyGroupId }
-    if (activeFamilyGroup != null) {
-        WorkerChatConversationDialog(
-            chat = activeFamilyGroup,
-            onDismiss = { activeFamilyGroupId = null },
-            onSendMessage = { text, uri, name, mime ->
-                onSendFamilyGroupMessage(activeFamilyGroup.id, text, uri?.toString(), name, mime)
             }
         )
     }

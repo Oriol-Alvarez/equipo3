@@ -74,6 +74,11 @@ def mensajes_chat_trabajador(
     db: Session = Depends(get_db),
 ) -> list[WorkerChatMessageOut]:
     """Obtiene el historial de mensajes de un chat interno entre trabajadores."""
+    chat = db.get(WorkerChat, chatId)
+    if chat and chat.unread_count > 0:
+        chat.unread_count = 0
+        db.commit()
+
     mensajes = db.scalars(select(WorkerChatMessage).where(WorkerChatMessage.chat_id == chatId)).all()
     return [
         WorkerChatMessageOut(
@@ -151,6 +156,19 @@ def enviar_mensaje_trabajador(
     )
 
 
+@router.post("/chats/workers/{chatId}/read", status_code=204)
+def marcar_chat_trabajador_leido(
+    chatId: str,
+    _: Identidad = Depends(requiere_educadora),
+    db: Session = Depends(get_db),
+):
+    """Marca una conversación entre trabajadores como leída reseteando su contador de no leídos."""
+    chat = db.get(WorkerChat, chatId)
+    if chat and chat.unread_count > 0:
+        chat.unread_count = 0
+        db.commit()
+
+
 @router.get("/chats/staff-global/messages", response_model=StaffGlobalChatOut)
 def chat_global_personal(
     quien: Identidad = Depends(requiere_educadora),
@@ -158,6 +176,10 @@ def chat_global_personal(
 ) -> StaffGlobalChatOut:
     """Obtiene el canal global institucional donde participan todas las trabajadoras."""
     chat = db.get(WorkerChat, "global_staff_chat")
+    if chat and chat.unread_count > 0:
+        chat.unread_count = 0
+        db.commit()
+
     mensajes = db.scalars(select(WorkerChatMessage).where(WorkerChatMessage.chat_id == "global_staff_chat")).all() if chat else []
 
     msgs_out = [

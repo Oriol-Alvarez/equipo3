@@ -11,15 +11,72 @@ from .. import almacen
 from ..db import get_db
 from ..deps import Identidad, requiere_familiar, usuario_actual
 from ..errors import ApiError
-from ..models import Child, ChildParent, ChildProfile
+from ..models import Child, ChildParent, ChildProfile, Room, RoomEducator, StaffMember, Usuario
 from ..schemas import (
     ChildFullProfileOut,
     ChildOut,
     ChildProfileUpdate,
+    EducatorOut,
     MedicalCertificateOut,
 )
 
 router = APIRouter(tags=["children"])
+
+
+def resolver_sala_y_educadora(db: Session, room_id: str):
+    room = db.get(Room, room_id)
+    room_text = room.name if room else room_id
+
+    re = db.scalar(select(RoomEducator).where(RoomEducator.room_id == room_id).limit(1))
+    educator_name = None
+    educator_role = None
+    educator_initials = None
+    educator_color = None
+
+    if re:
+        staff = db.scalar(select(StaffMember).where(StaffMember.user_id == re.educator_id).limit(1))
+        if staff:
+            educator_name = staff.name
+            educator_role = re.role_title or staff.role
+            educator_initials = staff.avatar_initials
+            educator_color = staff.avatar_bg_color
+        else:
+            u = db.get(Usuario, re.educator_id)
+            if u:
+                educator_name = u.display_name.split(" (")[0].strip()
+                educator_role = re.role_title
+                educator_initials = "".join([part[0] for part in educator_name.split()[:2]]).upper() or "ED"
+                educator_color = 4278364369
+
+    if not educator_name:
+        educator_name = "Laura Gómez"
+        educator_role = "Educadora Titular"
+        educator_initials = "LG"
+        educator_color = 4278364369
+
+    return room_text, educator_name, educator_role, educator_initials, educator_color
+
+
+def mapear_child_out(db: Session, a: Child) -> ChildOut:
+    room_text, ed_name, ed_role, ed_initials, ed_color = resolver_sala_y_educadora(db, a.room_id)
+    return ChildOut(
+        id=a.id,
+        fullName=a.full_name,
+        shortName=a.short_name,
+        ageText=a.age_text,
+        roomText=room_text,
+        groupText=a.group_text,
+        statusText=a.status_text,
+        isPresent=a.is_present,
+        arrivalTime=a.arrival_time,
+        allergyAlert=a.allergy_alert,
+        avatarInitials=a.avatar_initials,
+        avatarBgColor=a.avatar_bg_color,
+        educatorName=ed_name,
+        educatorRole=ed_role,
+        educatorAvatarInitials=ed_initials,
+        educatorAvatarBgColor=ed_color,
+    )
 
 
 @router.get("/parents/me/children", response_model=list[ChildOut])
@@ -35,23 +92,7 @@ def listar_hijos_de_familiar(
     if not alumnos and quien.role == "DIRECCION":
         alumnos = db.scalars(select(Child)).all()
 
-    return [
-        ChildOut(
-            id=a.id,
-            fullName=a.full_name,
-            shortName=a.short_name,
-            ageText=a.age_text,
-            roomText=a.room_id,
-            groupText=a.group_text,
-            statusText=a.status_text,
-            isPresent=a.is_present,
-            arrivalTime=a.arrival_time,
-            allergyAlert=a.allergy_alert,
-            avatarInitials=a.avatar_initials,
-            avatarBgColor=a.avatar_bg_color,
-        )
-        for a in alumnos
-    ]
+    return [mapear_child_out(db, a) for a in alumnos]
 
 
 @router.get("/children/{childId}", response_model=ChildOut)
@@ -65,19 +106,32 @@ def obtener_alumno(
     if alumno is None:
         raise ApiError(404, f"No se encontró el alumno con id {childId}", "alumno_no_encontrado")
 
-    return ChildOut(
-        id=alumno.id,
-        fullName=alumno.full_name,
-        shortName=alumno.short_name,
-        ageText=alumno.age_text,
-        roomText=alumno.room_id,
-        groupText=alumno.group_text,
-        statusText=alumno.status_text,
-        isPresent=alumno.is_present,
-        arrivalTime=alumno.arrival_time,
-        allergyAlert=alumno.allergy_alert,
-        avatarInitials=alumno.avatar_initials,
-        avatarBgColor=alumno.avatar_bg_color,
+    return mapear_child_out(db, alumno)
+
+
+@router.get("/children/{childId}/educator", response_model=EducatorOut)
+def obtener_educador_de_alumno(
+    childId: str,
+    _: Identidad = Depends(usuario_actual),
+    db: Session = Depends(get_db),
+) -> EducatorOut:
+    """Devuelve el educador asignado a la sala del alumno."""
+    alumno = db.get(Child, childId)
+    if alumno is None:
+        raise ApiError(404, f"No se encontró el alumno con id {childId}", "alumno_no_encontrado")
+
+    room_text, ed_name, ed_role, ed_initials, ed_color = resolver_sala_y_educadora(db, alumno.room_id)
+    re = db.scalar(select(RoomEducator).where(RoomEducator.room_id == alumno.room_id).limit(1))
+    ed_id = re.educator_id if re else "usr_educadora_laura"
+
+    return EducatorOut(
+        id=ed_id,
+        name=ed_name,
+        role=ed_role,
+        avatarInitials=ed_initials,
+        avatarBgColor=ed_color,
+        roomId=alumno.room_id,
+        roomName=room_text,
     )
 
 

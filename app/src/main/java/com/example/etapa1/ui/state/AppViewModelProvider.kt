@@ -14,7 +14,12 @@ object AppViewModelProvider {
         initializer { LoginViewModel(sonrisasApplication().container.authRepository) }
         initializer { RoomSelectionViewModel(sonrisasApplication().container.roomRepository) }
         initializer { RoomDashboardViewModel(sonrisasApplication().container.childRepository) }
-        initializer { ChildDetailViewModel(sonrisasApplication().container.childRepository) }
+        initializer {
+            ChildDetailViewModel(
+                sonrisasApplication().container.childRepository,
+                sonrisasApplication().container.bitacoraRepository
+            )
+        }
         initializer {
             AttendanceViewModel(
                 sonrisasApplication().container.attendanceRepository,
@@ -26,7 +31,8 @@ object AppViewModelProvider {
         initializer {
             ChatBitacoraViewModel(
                 sonrisasApplication().container.bitacoraRepository,
-                sonrisasApplication().container.chatConexion
+                sonrisasApplication().container.chatConexion,
+                messagesRepository = sonrisasApplication().container.messagesRepository
             )
         }
         initializer {
@@ -57,7 +63,8 @@ object AppViewModelProvider {
             FamilyGroupsViewModel(
                 sonrisasApplication().container.familyGroupsRepository,
                 sonrisasApplication().container.messagesRepository,
-                sonrisasApplication().container.childRepository
+                sonrisasApplication().container.childRepository,
+                sonrisasApplication().container.bitacoraRepository
             )
         }
         initializer { WeeklyObservationsViewModel(sonrisasApplication().container.weeklyObservationsRepository) }
@@ -70,6 +77,7 @@ object AppViewModelProvider {
                 sonrisasApplication().container.logSheetExporter
             )
         }
+        initializer { AdminViewModel(sonrisasApplication().container.adminRepository) }
     }
 }
 

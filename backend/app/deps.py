@@ -60,9 +60,12 @@ def usuario_actual(credenciales: HTTPAuthorizationCredentials | None = Depends(_
     )
 
 
+ROLES_ADMIN = ("DIRECCION", "ADMINISTRADOR", "ADMIN")
+
+
 def requiere_educadora(quien: Identidad = Depends(usuario_actual)) -> Identidad:
-    """Requiere que el usuario tenga rol EDUCADORA o DIRECCION."""
-    if quien.role not in ("EDUCADORA", "DIRECCION"):
+    """Requiere que el usuario tenga rol EDUCADORA o DIRECCION/ADMIN."""
+    if quien.role not in ("EDUCADORA", *ROLES_ADMIN):
         raise ApiError(
             403,
             "Permiso denegado: solo el personal educativo o directivo puede realizar esta acción",
@@ -73,8 +76,8 @@ def requiere_educadora(quien: Identidad = Depends(usuario_actual)) -> Identidad:
 
 
 def requiere_familiar(quien: Identidad = Depends(usuario_actual)) -> Identidad:
-    """Requiere que el usuario tenga rol FAMILIAR o DIRECCION."""
-    if quien.role not in ("FAMILIAR", "DIRECCION"):
+    """Requiere que el usuario tenga rol FAMILIAR o DIRECCION/ADMIN."""
+    if quien.role not in ("FAMILIAR", *ROLES_ADMIN):
         raise ApiError(
             403,
             "Permiso denegado: esta acción está reservada para familiares",
@@ -85,8 +88,8 @@ def requiere_familiar(quien: Identidad = Depends(usuario_actual)) -> Identidad:
 
 
 def requiere_direccion(quien: Identidad = Depends(usuario_actual)) -> Identidad:
-    """Requiere rol administrativo DIRECCION."""
-    if quien.role != "DIRECCION":
+    """Requiere rol administrativo DIRECCION o ADMINISTRADOR."""
+    if quien.role not in ROLES_ADMIN:
         raise ApiError(
             403,
             "Permiso denegado: solo la dirección del centro puede realizar esta acción",
@@ -94,3 +97,4 @@ def requiere_direccion(quien: Identidad = Depends(usuario_actual)) -> Identidad:
             f'Tu rol actual es "{quien.role}". Se requiere "DIRECCION".',
         )
     return quien
+

@@ -111,7 +111,11 @@ class NetworkChildRepositoryImpl(
             arrivalTime = arrivalTime,
             allergyAlert = allergyAlert,
             avatarInitials = avatarInitials,
-            avatarBgColor = avatarBgColor
+            avatarBgColor = avatarBgColor,
+            educatorName = educatorName,
+            educatorRole = educatorRole,
+            educatorAvatarInitials = educatorAvatarInitials,
+            educatorAvatarBgColor = educatorAvatarBgColor
         )
     }
 }

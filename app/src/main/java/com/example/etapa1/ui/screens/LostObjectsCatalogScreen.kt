@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -59,9 +60,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.etapa1.model.Child
 import com.example.etapa1.model.LostItem
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.UserRole
+import com.example.etapa1.ui.components.ActiveChildSwitcher
 import com.example.etapa1.ui.components.ImagePlaceholderBox
 import com.example.etapa1.ui.theme.AlertRed
 import com.example.etapa1.ui.theme.AlertRedBg
@@ -85,6 +88,8 @@ import com.example.etapa1.ui.state.LostObjectsUiState
 @Composable
 fun LostObjectsCatalogScreen(
     viewModel: LostObjectsViewModel,
+    activeChild: Child? = null,
+    onSwitchChild: (() -> Unit)? = null,
     onBack: () -> Unit,
     onNavigateToPublish: () -> Unit,
     onNavigateToHome: () -> Unit,
@@ -94,6 +99,8 @@ fun LostObjectsCatalogScreen(
 
     LostObjectsCatalogContent(
         uiState = uiState,
+        activeChild = activeChild,
+        onSwitchChild = onSwitchChild,
         onCategorySelect = viewModel::selectCategory,
         onSearchQueryChange = viewModel::onSearchQueryChange,
         onToggleSearch = viewModel::toggleSearch,
@@ -111,6 +118,8 @@ fun LostObjectsCatalogScreen(
     items: List<LostItem>,
     userRole: UserRole = UserRole.EDUCADORA,
     isWorkerRole: Boolean = (userRole != UserRole.FAMILIAR),
+    activeChild: Child? = null,
+    onSwitchChild: (() -> Unit)? = null,
     onBack: () -> Unit,
     onNavigateToPublish: () -> Unit,
     onNavigateToHome: () -> Unit,
@@ -171,6 +180,8 @@ fun LostObjectsCatalogScreen(
 @Composable
 fun LostObjectsCatalogContent(
     uiState: LostObjectsUiState,
+    activeChild: Child? = null,
+    onSwitchChild: (() -> Unit)? = null,
     onCategorySelect: (String) -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onToggleSearch: () -> Unit,
@@ -193,30 +204,77 @@ fun LostObjectsCatalogContent(
                 .padding(paddingValues)
         ) {
             // Header Top Bar
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Objetos Perdidos",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = BrandBlue,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
+                if (activeChild != null && onSwitchChild != null) {
+                    Box(
+                        modifier = Modifier.widthIn(min = 40.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        IconButton(
+                            onClick = onToggleSearch,
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (uiState.isSearchOpen) Icons.Default.Close else Icons.Default.Search,
+                                contentDescription = "Buscar objeto perdido",
+                                tint = BrandBlue,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
 
-                IconButton(
-                    onClick = onToggleSearch,
-                    modifier = Modifier.align(Alignment.CenterEnd)
-                ) {
-                    Icon(
-                        imageVector = if (uiState.isSearchOpen) Icons.Default.Close else Icons.Default.Search,
-                        contentDescription = "Buscar objeto perdido",
-                        tint = BrandBlue,
-                        modifier = Modifier.size(22.dp)
+                    Text(
+                        text = "Objetos Perdidos",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = BrandBlue,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 6.dp)
                     )
+
+                    Box(
+                        modifier = Modifier.widthIn(min = 40.dp),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        ActiveChildSwitcher(
+                            child = activeChild,
+                            onSwitchClick = onSwitchChild
+                        )
+                    }
+                } else {
+                    Spacer(modifier = Modifier.width(40.dp))
+                    Text(
+                        text = "Objetos Perdidos",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = BrandBlue,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 6.dp)
+                    )
+                    IconButton(
+                        onClick = onToggleSearch,
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (uiState.isSearchOpen) Icons.Default.Close else Icons.Default.Search,
+                            contentDescription = "Buscar objeto perdido",
+                            tint = BrandBlue,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 }
             }
 

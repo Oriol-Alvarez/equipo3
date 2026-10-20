@@ -33,35 +33,58 @@ fun SonrisasNavHost(
     val nav = rememberNavController()
     val isFamiliar = sesion.isFamiliar
     val isEducadora = sesion.isEducadora
-    val startRoute = if (isFamiliar) Route.PARENT_CHILD_SELECTION else Route.ROOM_SELECTION
+    val isAdmin = sesion.isAdmin
+    val startRoute = when {
+        isAdmin -> Route.ADMIN_PANEL
+        isFamiliar -> Route.PARENT_CHILD_SELECTION
+        else -> Route.ROOM_SELECTION
+    }
 
     val announcementsViewModel: AnnouncementsViewModel = viewModel(factory = AppViewModelProvider.Factory)
     val unreadAnnouncementsCount by announcementsViewModel.unreadCount.collectAsState()
 
     val messagesViewModel: MessagesViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    LaunchedEffect(isFamiliar) {
+        messagesViewModel.setWorkerRole(!isFamiliar)
+    }
     val messagesUiState by messagesViewModel.uiState.collectAsState()
-    val totalUnreadMessages = messagesUiState.totalWorkersUnreadCount + messagesUiState.totalParentsUnreadCount
+    val totalUnreadMessages = if (isFamiliar) {
+        messagesUiState.familyChats.sumOf { it.unreadCount }
+    } else {
+        messagesUiState.totalWorkersUnreadCount + messagesUiState.totalParentsUnreadCount
+    }
 
     var selectedRoom by remember { mutableStateOf(MockDataRepository.rooms.first()) }
     var selectedChild by remember { mutableStateOf(MockDataRepository.mateoGarcia) }
     var selectedParentChild by remember { mutableStateOf(MockDataRepository.mateoGarcia) }
+    var selectedWorkerChat by remember { mutableStateOf<com.example.etapa1.model.WorkerChat?>(null) }
     var attendanceChild by remember { mutableStateOf<Child?>(null) }
+
+    val familyGroupsVm: FamilyGroupsViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    LaunchedEffect(isFamiliar, selectedParentChild.id) {
+        if (isFamiliar) {
+            familyGroupsVm.useFamilyViewer(listOf(selectedParentChild.id))
+        } else {
+            familyGroupsVm.useEducatorViewer()
+        }
+    }
+    val familyGroupsState by familyGroupsVm.uiState.collectAsState()
 
     val navBackStackEntry by nav.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: startRoute
 
-    val currentTabs = if (isFamiliar) {
-        listOf(Route.PARENT_HOME, Route.PARENT_SUGGESTIONS, Route.LOST_OBJECTS, Route.MORE_MENU)
-    } else {
-        listOf(Route.ROOM_SELECTION, Route.MESSAGES, Route.SUGGESTIONS, Route.LOST_OBJECTS, Route.MORE_MENU)
+    val currentTabs = when {
+        isAdmin -> emptyList()
+        isFamiliar -> listOf(Route.PARENT_HOME, Route.MESSAGES, Route.PARENT_SUGGESTIONS, Route.LOST_OBJECTS, Route.MORE_MENU)
+        else -> listOf(Route.ROOM_SELECTION, Route.MESSAGES, Route.SUGGESTIONS, Route.LOST_OBJECTS, Route.MORE_MENU)
     }
 
-    val showBottomBar = currentRoute in currentTabs ||
-        (isFamiliar && currentRoute == Route.PARENT_CHILD_SELECTION) ||
+    val showBottomBar = !isAdmin && (
+        currentRoute in currentTabs ||
         (isEducadora && currentRoute == Route.ROOM_DASHBOARD)
+    )
 
     val selectedBottomTab = when {
-        isFamiliar && currentRoute == Route.PARENT_CHILD_SELECTION -> 0
         isEducadora && currentRoute == Route.ROOM_DASHBOARD -> 0
         else -> currentTabs.indexOf(currentRoute).coerceAtLeast(0)
     }
@@ -87,7 +110,7 @@ fun SonrisasNavHost(
             if (showBottomBar) {
                 AppBottomBar(
                     selectedTab = selectedBottomTab,
-                    showMessagesTab = isEducadora,
+                    showMessagesTab = true,
                     hasUnreadMessages = totalUnreadMessages > 0,
                     unreadMessagesCount = totalUnreadMessages,
                     onTabSelected = { tab -> navigateToTab(currentTabs[tab]) }
@@ -126,6 +149,7 @@ fun SonrisasNavHost(
                     unreadAnnouncementsCount = unreadAnnouncementsCount,
                     onBack = { nav.popBackStack() },
                     onChildSelected = { child ->
+                        selectedWorkerChat = null
                         selectedChild = child
                         nav.navigate(Route.CHAT_BITACORA)
                     },
@@ -150,7 +174,16 @@ fun SonrisasNavHost(
                     viewModel = vm,
                     child = selectedChild,
                     onBack = { nav.popBackStack() },
-                    onNavigateToChat = { nav.navigate(Route.CHAT_BITACORA) },
+                    onNavigateToChat = {
+                        selectedWorkerChat = null
+                        val educatorName = selectedChild.educatorName ?: MockDataRepository.getEducatorForChild(selectedChild.id).name
+                        val familyChat = messagesUiState.familyChats.find { it.title.equals(educatorName, ignoreCase = true) }
+                        if (familyChat != null) {
+                            messagesViewModel.markWorkerChatAsRead(familyChat.id)
+                        }
+                        messagesViewModel.markParentChatAsRead(selectedChild.id)
+                        nav.navigate(Route.CHAT_BITACORA)
+                    },
                     onNavigateToAttendance = {
                         attendanceChild = selectedChild
                         nav.navigate(Route.ATTENDANCE)
@@ -174,44 +207,121 @@ fun SonrisasNavHost(
             }
 
             composable(Route.CHAT_BITACORA) {
-                val vm: ChatBitacoraViewModel = viewModel(factory = AppViewModelProvider.Factory)
-                LaunchedEffect(selectedChild.id) {
-                    messagesViewModel.markParentChatAsRead(selectedChild.id)
-                    vm.recargar(selectedChild.id)
-                }
-                ChatBitacoraScreen(
-                    viewModel = vm,
-                    child = selectedChild,
-                    isWorkerRole = isEducadora,
-                    onBack = { nav.popBackStack() },
-                    onChildInfoClick = { nav.navigate(Route.CHILD_DETAIL) },
-                    onNewActivityClick = { nav.navigate(Route.NEW_ACTIVITY) },
-                    onAttendanceClick = {
-                        attendanceChild = selectedChild
-                        nav.navigate(Route.ATTENDANCE)
+                androidx.compose.runtime.DisposableEffect(Unit) {
+                    onDispose {
+                        selectedWorkerChat = null
                     }
-                )
+                }
+
+                if (selectedWorkerChat != null) {
+                    val currentWorkerChat = selectedWorkerChat?.let { sel ->
+                        messagesUiState.workerChats.find { it.id == sel.id }
+                            ?: messagesUiState.familyChats.find { it.id == sel.id }
+                            ?: (if (messagesUiState.globalChat?.id == sel.id) messagesUiState.globalChat else null)
+                            ?: familyGroupsState.groups.find { it.id == sel.id }
+                            ?: sel
+                    }!!
+
+                    LaunchedEffect(currentWorkerChat.id) {
+                        messagesViewModel.markWorkerChatAsRead(currentWorkerChat.id)
+                    }
+
+                    val isGroup = currentWorkerChat.isGroup || currentWorkerChat.isGlobal
+                    val isFamilyGroup = familyGroupsState.groups.any { it.id == currentWorkerChat.id }
+
+                    ChatBitacoraScreen(
+                        workerChat = currentWorkerChat,
+                        child = null,
+                        isWorkerRole = isEducadora,
+                        canShareActivity = isEducadora && isGroup,
+                        onBack = {
+                            selectedWorkerChat = null
+                            nav.popBackStack()
+                        },
+                        onSendMessage = { text, uri, name, mime ->
+                            if (isFamilyGroup) {
+                                familyGroupsVm.sendMessage(
+                                    groupId = currentWorkerChat.id,
+                                    text = text,
+                                    fileUri = uri?.toString(),
+                                    fileName = name,
+                                    fileMimeType = mime
+                                )
+                            } else {
+                                messagesViewModel.sendMessage(currentWorkerChat.id, text)
+                            }
+                        },
+                        onSendActivity = if (isEducadora && isFamilyGroup) {
+                            { cat, badge, desc ->
+                                familyGroupsVm.sendGroupActivity(currentWorkerChat.id, cat, badge, desc)
+                            }
+                        } else null
+                    )
+                } else {
+                    val vm: ChatBitacoraViewModel = viewModel(factory = AppViewModelProvider.Factory)
+                    LaunchedEffect(selectedChild.id) {
+                        messagesViewModel.markParentChatAsRead(selectedChild.id)
+                        val educator = MockDataRepository.getEducatorForChild(selectedChild.id)
+                        val familyChat = messagesUiState.familyChats.find { it.title.equals(educator?.name, ignoreCase = true) }
+                        if (familyChat != null) {
+                            messagesViewModel.markWorkerChatAsRead(familyChat.id)
+                        }
+                        vm.recargar(selectedChild.id)
+                    }
+                    ChatBitacoraScreen(
+                        viewModel = vm,
+                        child = selectedChild,
+                        isWorkerRole = isEducadora,
+                        onBack = { nav.popBackStack() },
+                        onChildInfoClick = { nav.navigate(Route.CHILD_DETAIL) },
+                        onNewActivityClick = { nav.navigate(Route.NEW_ACTIVITY) },
+                        onAttendanceClick = {
+                            attendanceChild = selectedChild
+                            nav.navigate(Route.ATTENDANCE)
+                        }
+                    )
+                }
             }
 
             composable(Route.NEW_ACTIVITY) {
-                val vm: NewActivityViewModel = viewModel(factory = AppViewModelProvider.Factory)
-                NewActivityScreen(
-                    viewModel = vm,
-                    child = selectedChild,
-                    onBack = { nav.popBackStack() },
-                    onSubmitActivity = { _, _, _, _ -> nav.popBackStack() }
-                )
+                if (isFamiliar) {
+                    LaunchedEffect(Unit) { nav.popBackStack() }
+                } else {
+                    val vm: NewActivityViewModel = viewModel(factory = AppViewModelProvider.Factory)
+                    NewActivityScreen(
+                        viewModel = vm,
+                        child = selectedChild,
+                        onBack = { nav.popBackStack() },
+                        onSubmitActivity = { _, _, _, _ -> nav.popBackStack() }
+                    )
+                }
             }
 
             composable(Route.MESSAGES) {
-                val familyGroupsVm: FamilyGroupsViewModel = viewModel(factory = AppViewModelProvider.Factory)
+                LaunchedEffect(Unit) {
+                    messagesViewModel.recargar()
+                }
                 MessagesScreen(
                     viewModel = messagesViewModel,
                     familyGroupsViewModel = familyGroupsVm,
+                    isFamiliar = isFamiliar,
+                    activeChild = if (isFamiliar) selectedParentChild else null,
+                    onSwitchChild = { nav.navigate(Route.PARENT_CHILD_SELECTION) },
                     onNavigateToHome = navigateToHome,
                     onNavigateToChildChat = { child ->
+                        selectedWorkerChat = null
                         selectedChild = child
+                        selectedParentChild = child
                         messagesViewModel.markParentChatAsRead(child.id)
+                        val educator = MockDataRepository.getEducatorForChild(child.id)
+                        val familyChat = messagesUiState.familyChats.find { it.title.equals(educator?.name, ignoreCase = true) }
+                        if (familyChat != null) {
+                            messagesViewModel.markWorkerChatAsRead(familyChat.id)
+                        }
+                        nav.navigate(Route.CHAT_BITACORA)
+                    },
+                    onNavigateToWorkerChat = { chat ->
+                        selectedWorkerChat = chat
                         nav.navigate(Route.CHAT_BITACORA)
                     },
                     onNavigateToMore = { nav.navigate(Route.MORE_MENU) }
@@ -228,10 +338,13 @@ fun SonrisasNavHost(
 
             composable(Route.MORE_MENU) {
                 MoreMenuScreen(
+                    activeChild = if (isFamiliar) selectedParentChild else null,
+                    onSwitchChild = if (isFamiliar) { { nav.navigate(Route.PARENT_CHILD_SELECTION) } } else null,
                     onNavigateToLostObjects = { nav.navigate(Route.LOST_OBJECTS) },
                     onNavigateToHome = navigateToHome,
                     onNavigateToMessages = {
                         if (isFamiliar) {
+                            selectedWorkerChat = null
                             selectedChild = selectedParentChild
                             nav.navigate(Route.CHAT_BITACORA)
                         } else {
@@ -246,11 +359,14 @@ fun SonrisasNavHost(
                 val vm: LostObjectsViewModel = viewModel(factory = AppViewModelProvider.Factory)
                 LostObjectsCatalogScreen(
                     viewModel = vm,
+                    activeChild = if (isFamiliar) selectedParentChild else null,
+                    onSwitchChild = if (isFamiliar) { { nav.navigate(Route.PARENT_CHILD_SELECTION) } } else null,
                     onBack = { nav.popBackStack() },
                     onNavigateToPublish = { nav.navigate(Route.PUBLISH_LOST_OBJECT) },
                     onNavigateToHome = navigateToHome,
                     onNavigateToMessages = {
                         if (isFamiliar) {
+                            selectedWorkerChat = null
                             selectedChild = selectedParentChild
                             nav.navigate(Route.CHAT_BITACORA)
                         } else {
@@ -289,15 +405,20 @@ fun SonrisasNavHost(
 
             composable(Route.PARENT_CHILD_SELECTION) {
                 val vm: ParentChildSelectionViewModel = viewModel(factory = AppViewModelProvider.Factory)
+                val canGoBack = nav.previousBackStackEntry != null
                 ParentChildSelectionScreen(
                     viewModel = vm,
                     unreadAnnouncementsCount = unreadAnnouncementsCount,
                     onChildSelected = { child ->
                         selectedParentChild = child
                         selectedChild = child
-                        nav.navigate(Route.PARENT_HOME)
+                        nav.navigate(Route.PARENT_HOME) {
+                            popUpTo(Route.PARENT_CHILD_SELECTION) { inclusive = true }
+                            launchSingleTop = true
+                        }
                     },
-                    onNavigateToAnnouncements = { nav.navigate(Route.ANNOUNCEMENTS) }
+                    onNavigateToAnnouncements = { nav.navigate(Route.ANNOUNCEMENTS) },
+                    onBack = if (canGoBack) { { nav.popBackStack() } } else null
                 )
             }
 
@@ -306,14 +427,25 @@ fun SonrisasNavHost(
                 LaunchedEffect(selectedParentChild.id) {
                     vm.selectChild(selectedParentChild)
                 }
-                val childUnreadChat = messagesUiState.parentChats.find { it.child.id == selectedParentChild.id }?.unreadCount ?: 0
+                val educatorName = selectedParentChild.educatorName ?: MockDataRepository.getEducatorForChild(selectedParentChild.id).name
+                val childUnreadChat = if (isFamiliar) {
+                    messagesUiState.familyChats.find { it.title.equals(educatorName, ignoreCase = true) }?.unreadCount ?: 0
+                } else {
+                    messagesUiState.parentChats.find { it.child.id == selectedParentChild.id }?.unreadCount ?: 0
+                }
                 ParentHomeScreen(
                     viewModel = vm,
                     unreadAnnouncementsCount = unreadAnnouncementsCount,
                     unreadMessagesCount = childUnreadChat,
                     onNavigateToChat = { child ->
+                        selectedWorkerChat = null
                         selectedChild = child
                         messagesViewModel.markParentChatAsRead(child.id)
+                        val childEducatorName = child.educatorName ?: MockDataRepository.getEducatorForChild(child.id).name
+                        val familyChat = messagesUiState.familyChats.find { it.title.equals(childEducatorName, ignoreCase = true) }
+                        if (familyChat != null) {
+                            messagesViewModel.markWorkerChatAsRead(familyChat.id)
+                        }
                         nav.navigate(Route.CHAT_BITACORA)
                     },
                     onNavigateToChildDetail = { child ->
@@ -337,10 +469,14 @@ fun SonrisasNavHost(
             }
 
             composable(Route.PARENT_GROUPS) {
-                val vm: FamilyGroupsViewModel = viewModel(factory = AppViewModelProvider.Factory)
                 ParentGroupsScreen(
-                    viewModel = vm,
-                    onBack = { nav.popBackStack() }
+                    viewModel = familyGroupsVm,
+                    activeChildId = selectedParentChild.id,
+                    onBack = { nav.popBackStack() },
+                    onNavigateToWorkerChat = { group ->
+                        selectedWorkerChat = group
+                        nav.navigate(Route.CHAT_BITACORA)
+                    }
                 )
             }
 
@@ -348,7 +484,17 @@ fun SonrisasNavHost(
                 val vm: ParentSuggestionsViewModel = viewModel(factory = AppViewModelProvider.Factory)
                 ParentSuggestionsScreen(
                     viewModel = vm,
+                    activeChild = selectedParentChild,
+                    onSwitchChild = { nav.navigate(Route.PARENT_CHILD_SELECTION) },
                     onBack = { nav.popBackStack() }
+                )
+            }
+
+            composable(Route.ADMIN_PANEL) {
+                val vm: AdminViewModel = viewModel(factory = AppViewModelProvider.Factory)
+                AdminPanelScreen(
+                    viewModel = vm,
+                    onLogout = onSalir
                 )
             }
         }

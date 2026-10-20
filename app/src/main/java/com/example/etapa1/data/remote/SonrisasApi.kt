@@ -4,6 +4,7 @@ import retrofit2.Response
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.PATCH
@@ -40,6 +41,9 @@ interface SonrisasApi {
 
     @GET("children/{childId}")
     suspend fun getChild(@Path("childId") childId: String): Response<ChildDto>
+
+    @GET("children/{childId}/educator")
+    suspend fun getChildEducator(@Path("childId") childId: String): Response<EducatorDto>
 
     @POST("attendance/ingreso")
     suspend fun registrarIngreso(@Body request: IngresoDto): Response<AttendanceResponseDto>
@@ -181,6 +185,9 @@ interface SonrisasApi {
         @Body request: SendWorkerMessageDto
     ): Response<WorkerChatMessageDto>
 
+    @POST("chats/workers/{chatId}/read")
+    suspend fun markWorkerChatAsRead(@Path("chatId") chatId: String): Response<Unit>
+
     @GET("chats/staff-global/messages")
     suspend fun getStaffGlobalChat(): Response<StaffGlobalChatDto>
 
@@ -211,5 +218,91 @@ interface SonrisasApi {
         @Path("childId") childId: String,
         @Body request: CreateActivityDto
     ): Response<NewActivityResponseDto>
+
+    // ---------------------------------------------------------------- Gestión de Avisos
+    @POST("announcements")
+    suspend fun createAnnouncement(@Body request: CreateAnnouncementDto): Response<AnnouncementDto>
+
+    @PUT("announcements/{id}")
+    suspend fun updateAnnouncement(
+        @Path("id") id: String,
+        @Body request: UpdateAnnouncementDto
+    ): Response<AnnouncementDto>
+
+    @DELETE("announcements/{id}")
+    suspend fun deleteAnnouncement(@Path("id") id: String): Response<Unit>
+
+    // ---------------------------------------------------------------- Gestión de Objetos Perdidos
+    @POST("lost-objects")
+    suspend fun createLostObject(@Body request: CreateLostObjectDto): Response<LostItemDto>
+
+    @PUT("lost-objects/{id}")
+    suspend fun updateLostObject(
+        @Path("id") id: String,
+        @Body request: UpdateLostObjectDto
+    ): Response<LostItemDto>
+
+    @DELETE("lost-objects/{id}")
+    suspend fun deleteLostObject(@Path("id") id: String): Response<Unit>
+
+    // ---------------------------------------------------------------- Gestión de Sugerencias
+    @DELETE("suggestions/{id}")
+    suspend fun deleteSuggestion(@Path("id") id: String): Response<Unit>
+
+    // ---------------------------------------------------------------- Panel de Administración (/admin)
+    @GET("admin/users")
+    suspend fun getAdminUsers(
+        @Query("role") role: String? = null,
+        @Query("search") search: String? = null
+    ): Response<List<UserDto>>
+
+    @POST("admin/users")
+    suspend fun createAdminUser(@Body request: AdminUserCreateDto): Response<UserDto>
+
+    @PUT("admin/users/{id}")
+    suspend fun updateAdminUser(
+        @Path("id") id: String,
+        @Body request: AdminUserUpdateDto
+    ): Response<UserDto>
+
+    @DELETE("admin/users/{id}")
+    suspend fun deleteAdminUser(@Path("id") id: String): Response<Unit>
+
+    @GET("admin/logs")
+    suspend fun getAdminLogs(
+        @Query("category") category: String? = null,
+        @Query("search") search: String? = null
+    ): Response<List<AdminLogDto>>
+
+    @GET("admin/stats")
+    suspend fun getAdminStats(): Response<AdminStatsDto>
+
+    @GET("admin/children")
+    suspend fun getAdminAllChildren(): Response<List<AdminChildSummaryDto>>
+
+    @POST("admin/users/{userId}/children")
+    suspend fun createAndLinkChild(
+        @Path("userId") userId: String,
+        @Body request: AdminCreateChildDto
+    ): Response<AdminChildSummaryDto>
+
+    @POST("admin/users/{userId}/children/{childId}")
+    suspend fun linkChildToParent(
+        @Path("userId") userId: String,
+        @Path("childId") childId: String
+    ): Response<AdminChildSummaryDto>
+
+    @DELETE("admin/users/{userId}/children/{childId}")
+    suspend fun unlinkChildFromParent(
+        @Path("userId") userId: String,
+        @Path("childId") childId: String
+    ): Response<Unit>
+
+    @PUT("admin/children/{childId}")
+    suspend fun updateAdminChild(
+        @Path("childId") childId: String,
+        @Body request: AdminUpdateChildDto
+    ): Response<AdminChildSummaryDto>
 }
+
 

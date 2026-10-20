@@ -2,8 +2,91 @@ package com.example.etapa1.model
 
 enum class UserRole(val label: String) {
     EDUCADORA("Educadora"),
-    FAMILIAR("Familiar")
+    FAMILIAR("Familiar"),
+    ADMINISTRADOR("Administrador")
 }
+
+data class AdminChildSummary(
+    val id: String,
+    val fullName: String,
+    val shortName: String = "",
+    val ageText: String = "",
+    val roomText: String = "",
+    val groupText: String = "",
+    val isPresent: Boolean = false,
+    val statusText: String = "",
+    val arrivalTime: String? = null,
+    val allergyAlert: String? = null,
+    val avatarInitials: String = "MG",
+    val avatarBgColor: Long = 4294948685L,
+    val birthDate: String? = null,
+    val enrollmentDate: String? = null,
+    val studentId: String? = null,
+    val bloodType: String? = null,
+    val pediatrician: String? = null,
+    val pediatricianPhone: String? = null,
+    val emergencyPhone: String? = null,
+    val emergencyPhoneRelation: String? = null,
+    val motherName: String? = null,
+    val motherPhone: String? = null,
+    val fatherName: String? = null,
+    val fatherPhone: String? = null,
+    val authorizedPickups: List<String> = emptyList(),
+    val medicalNotes: String? = null,
+    val generalNotes: String? = null,
+    val habitsNotes: String? = null
+)
+
+data class AdminUser(
+    val id: String,
+    val email: String,
+    val displayName: String,
+    val role: String, // "EDUCADORA", "FAMILIAR", "DIRECCION"
+    val phone: String? = null,
+    val avatarUrl: String? = null,
+    val children: List<AdminChildSummary> = emptyList()
+)
+
+data class AdminLog(
+    val id: String,
+    val timestamp: String,
+    val category: String, // "ASISTENCIA", "ACTIVIDAD", "MENSAJE", "AVISO", "OBJETO", "SUGERENCIA"
+    val title: String,
+    val description: String,
+    val actorName: String,
+    val actorRole: String? = null,
+    val childName: String? = null,
+    val roomName: String? = null
+)
+
+data class AdminStats(
+    val totalChildren: Int = 0,
+    val presentCount: Int = 0,
+    val absentCount: Int = 0,
+    val attendanceRate: Float = 0f,
+    val totalEducators: Int = 0,
+    val totalFamilies: Int = 0,
+    val childrenFedCount: Int = 0,
+    val breakfastCount: Int = 0,
+    val lunchCount: Int = 0,
+    val snackCount: Int = 0,
+    val childrenNappedCount: Int = 0,
+    val totalNapMinutes: Int = 0,
+    val averageNapMinutes: Int = 0,
+    val ingresosCount: Int = 0,
+    val egresosCount: Int = 0,
+    val pendingPickupsCount: Int = 0,
+    val diaperChangesCount: Int = 0,
+    val incidentsCount: Int = 0,
+    val totalSuggestions: Int = 0,
+    val pendingSuggestions: Int = 0,
+    val attendedSuggestions: Int = 0,
+    val totalLostObjects: Int = 0,
+    val claimedLostObjects: Int = 0,
+    val unclaimedLostObjects: Int = 0,
+    val totalAnnouncements: Int = 0
+)
+
 
 data class Room(
     val id: String,
@@ -25,7 +108,11 @@ data class Child(
     val arrivalTime: String? = null,
     val allergyAlert: String? = null,
     val avatarInitials: String = "MG",
-    val avatarBgColor: Long = 0xFF64B5F6
+    val avatarBgColor: Long = 0xFF64B5F6,
+    val educatorName: String? = null,
+    val educatorRole: String? = null,
+    val educatorAvatarInitials: String? = null,
+    val educatorAvatarBgColor: Long? = null
 )
 
 data class LostItem(
@@ -164,7 +251,11 @@ object MockDataRepository {
         arrivalTime = "08:15 AM",
         allergyAlert = "Alergia a Nuez (No Certificado)",
         avatarInitials = "MG",
-        avatarBgColor = 0xFFFFB74D
+        avatarBgColor = 0xFFFFB74D,
+        educatorName = "Laura Gómez",
+        educatorRole = "Educadora Titular",
+        educatorAvatarInitials = "LG",
+        educatorAvatarBgColor = 0xFFE91E63
     )
 
     val luciaGarcia = Child(
@@ -179,7 +270,11 @@ object MockDataRepository {
         arrivalTime = "08:45 AM",
         allergyAlert = null,
         avatarInitials = "LG",
-        avatarBgColor = 0xFFF06292
+        avatarBgColor = 0xFFF06292,
+        educatorName = "Carlos Ruiz",
+        educatorRole = "Educador Lactantes",
+        educatorAvatarInitials = "CR",
+        educatorAvatarBgColor = 0xFF0288D1
     )
 
     val parentChildren: List<Child> = listOf(mateoGarcia, luciaGarcia)
@@ -404,7 +499,8 @@ object MockDataRepository {
             time = "11:30 AM",
             date = "12/10/2026",
             message = "¡Buenos días! Muchas gracias por el aviso, ¿cómo fue su noche?",
-            isOutgoing = false
+            isOutgoing = false,
+            senderRole = UserRole.FAMILIAR
         ),
         TimelineItem.ActivityCard(
             id = "act_1",
@@ -426,7 +522,56 @@ object MockDataRepository {
             time = "01:30 PM",
             date = "12/10/2026",
             message = "Sí, tomó toda su leche. Ahora acaba de despertar de su siesta muy tranquilo.",
-            isOutgoing = true
+            isOutgoing = true,
+            senderRole = UserRole.EDUCADORA
+        )
+    )
+
+    fun getInitialLuciaTimeline(): List<TimelineItem> = listOf(
+        TimelineItem.EventChip(
+            id = "lucia_chip_1",
+            time = "08:45 AM",
+            date = "12/10/2026",
+            text = "Ingreso: 08:45 AM",
+            iconType = "entry"
+        ),
+        TimelineItem.EventChip(
+            id = "lucia_chip_2",
+            time = "09:30 AM",
+            date = "12/10/2026",
+            text = "Estado: Tranquila y sonriente",
+            iconType = "mood"
+        ),
+        TimelineItem.ChatMessage(
+            id = "lucia_msg_1",
+            time = "10:15 AM",
+            date = "12/10/2026",
+            message = "¡Hola familia! Lucía ingresó muy contenta a Lactantes A. Tomó su toma matutina sin problemas.",
+            isOutgoing = false,
+            senderRole = UserRole.EDUCADORA
+        ),
+        TimelineItem.ActivityCard(
+            id = "lucia_act_1",
+            time = "10:30 AM",
+            date = "12/10/2026",
+            category = "Alimentación",
+            portionLabel = "Toma completa",
+            description = "Tomó 180ml de leche materna/fórmula tranquilamente."
+        ),
+        TimelineItem.EventChip(
+            id = "lucia_chip_3",
+            time = "11:15 AM",
+            date = "12/10/2026",
+            text = "Siesta: 1h 15 min",
+            iconType = "nap"
+        ),
+        TimelineItem.ChatMessage(
+            id = "lucia_msg_2",
+            time = "01:00 PM",
+            date = "12/10/2026",
+            message = "Descansó estupendamente en su cunita y ahora está jugando con sonajeros.",
+            isOutgoing = false,
+            senderRole = UserRole.EDUCADORA
         )
     )
 
@@ -521,10 +666,13 @@ object MockDataRepository {
     }
 
     fun getDailyBitacorasForChild(child: Child): List<DailyBitacora> {
+        val now = java.util.Calendar.getInstance()
+        val todayDate = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(now.time)
+        val todayLabel = java.text.SimpleDateFormat("'Hoy, 'd MMM", java.util.Locale("es", "ES")).format(now.time).replaceFirstChar { it.uppercase() }
         return listOf(
             DailyBitacora(
-                date = "29/09/2026",
-                dayLabel = "Hoy, 29 Sep",
+                date = todayDate,
+                dayLabel = todayLabel,
                 isToday = true,
                 ingreso = if (child.isPresent) {
                     DailyIngresoInfo(
@@ -788,6 +936,7 @@ object MockDataRepository {
     }
 
     val staffMembers = listOf(
+        WorkerMember("staff_educadora", "Laura Gómez", "Educadora Titular • Sala 1A", "LG", 0xFFE91E63, isOnline = true),
         WorkerMember("staff_1", "Laura Méndez", "Dirección General", "LM", 0xFF8E24AA, isOnline = true),
         WorkerMember("staff_2", "Carlos Ruiz", "Educador Lactantes", "CR", 0xFF0288D1, isOnline = true),
         WorkerMember("staff_3", "Dra. Elena Vega", "Servicio Médico / Pediatría", "EV", 0xFFD81B60, isOnline = false),
@@ -797,13 +946,20 @@ object MockDataRepository {
         WorkerMember("staff_7", "Sara Navarro", "Psicopedagoga", "SN", 0xFF3949AB, isOnline = true)
     )
 
+    fun getEducatorForChild(childId: String): WorkerMember {
+        return when (childId) {
+            luciaGarcia.id -> staffMembers.first { it.id == "staff_2" } // Carlos Ruiz (Educador Lactantes)
+            else -> staffMembers.first { it.id == "staff_educadora" } // Laura Gómez (Educadora Sala 1A)
+        }
+    }
+
     val initialGlobalWorkerChat = WorkerChat(
         id = "global_staff_chat",
         title = "Chat Global de Trabajadores",
         subtitle = "📌 Canal general del centro • 18 miembros",
         lastMessage = "Laura Méndez: Recordad registrar los partes de descanso y alimentación antes de las 14:30.",
         lastMessageTime = "12:45 PM",
-        unreadCount = 2,
+        unreadCount = 1,
         isGlobal = true,
         isGroup = true,
         membersCount = 18,
@@ -901,7 +1057,7 @@ object MockDataRepository {
         WorkerChat(
             id = "fchat_1",
             title = "Laura Gómez",
-            subtitle = "Educadora Principal • Sala 1A",
+            subtitle = "Educadora de Mateo • Sala 1A",
             lastMessage = "Laura Gómez: Mateo comió muy bien hoy y descansó toda su siesta.",
             lastMessageTime = "02:15 PM",
             unreadCount = 1,
@@ -915,15 +1071,31 @@ object MockDataRepository {
             )
         ),
         WorkerChat(
+            id = "fchat_carlos",
+            title = "Carlos Ruiz",
+            subtitle = "Educador de Lucía • Lactantes A",
+            lastMessage = "Carlos Ruiz: Descansó estupendamente en su cunita.",
+            lastMessageTime = "01:00 PM",
+            unreadCount = 0,
+            isGlobal = false,
+            isGroup = false,
+            avatarInitials = "CR",
+            avatarBgColor = 0xFF0288D1,
+            messages = listOf(
+                WorkerChatMessage("fm_c1", "staff_2", "Carlos Ruiz", "¡Hola familia! Lucía ingresó muy contenta a Lactantes A. Tomó su toma matutina sin problemas.", "10:15 AM"),
+                WorkerChatMessage("fm_c2", "staff_2", "Carlos Ruiz", "Descansó estupendamente en su cunita y ahora está jugando con sonajeros.", "01:00 PM")
+            )
+        ),
+        WorkerChat(
             id = "fchat_2",
-            title = "Dirección General",
-            subtitle = "Laura Méndez • En línea",
+            title = "Laura Méndez",
+            subtitle = "Dirección General • En línea",
             lastMessage = "Laura Méndez: Confirmada la recepción del documento de autorización.",
             lastMessageTime = "11:00 AM",
             unreadCount = 0,
             isGlobal = false,
             isGroup = false,
-            avatarInitials = "DG",
+            avatarInitials = "LM",
             avatarBgColor = 0xFF1565C0,
             messages = listOf(
                 WorkerChatMessage("fm_3", "staff_1", "Laura Méndez", "Confirmada la recepción del documento de autorización.", "11:00 AM")
@@ -931,17 +1103,17 @@ object MockDataRepository {
         ),
         WorkerChat(
             id = "fchat_3",
-            title = "Servicio Médico",
-            subtitle = "Dra. Elena Vega • Desconectada",
-            lastMessage = "Dra. Elena Vega: Todo en orden con la ficha médica de Mateo.",
+            title = "Dra. Elena Vega",
+            subtitle = "Servicio Médico • Pediatría",
+            lastMessage = "Dra. Elena Vega: Todo en orden con la ficha médica de Mateo y Lucía.",
             lastMessageTime = "Ayer",
             unreadCount = 0,
             isGlobal = false,
             isGroup = false,
-            avatarInitials = "SM",
+            avatarInitials = "EV",
             avatarBgColor = 0xFFD81B60,
             messages = listOf(
-                WorkerChatMessage("fm_4", "staff_3", "Dra. Elena Vega", "Todo en orden con la ficha médica de Mateo.", "Ayer")
+                WorkerChatMessage("fm_4", "staff_3", "Dra. Elena Vega", "Todo en orden con la ficha médica de Mateo y Lucía.", "Ayer")
             )
         )
     )
@@ -955,11 +1127,18 @@ object MockDataRepository {
             unreadCount = 1
         ),
         ParentChatSummary(
+            child = luciaGarcia,
+            parentName = "María López (Mamá)",
+            lastMessage = "Descansó estupendamente en su cunita y ahora está jugando con sonajeros.",
+            lastMessageTime = "01:00 PM",
+            unreadCount = 0
+        ),
+        ParentChatSummary(
             child = childrenSala1A[1],
             parentName = "Marcos Rossi (Papá)",
             lastMessage = "Siesta completa de 1h 15m. Se despertó de muy buen humor.",
             lastMessageTime = "01:15 PM",
-            unreadCount = 1
+            unreadCount = 0
         ),
         ParentChatSummary(
             child = childrenSala1A[2],
@@ -973,7 +1152,7 @@ object MockDataRepository {
             parentName = "Carmen Soto (Mamá)",
             lastMessage = "Actividad sensorial de pintura de dedos completada.",
             lastMessageTime = "11:45 AM",
-            unreadCount = 2
+            unreadCount = 0
         ),
         ParentChatSummary(
             child = childrenSala1A[4],
@@ -1032,6 +1211,8 @@ object MockDataRepository {
             unreadCount = 0
         )
     )
+
+    val sharedAnnouncements = kotlinx.coroutines.flow.MutableStateFlow<List<Announcement>>(getInitialAnnouncements())
 
     fun getInitialAnnouncements(): List<Announcement> = listOf(
         Announcement(

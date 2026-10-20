@@ -68,6 +68,9 @@ def obtener_sala(
     )
 
 
+from .children import mapear_child_out
+
+
 @router.get("/{roomId}/children", response_model=list[ChildOut])
 def listar_alumnos_de_sala(
     roomId: str,
@@ -81,20 +84,4 @@ def listar_alumnos_de_sala(
         query = query.where(Child.is_present == isPresent)
 
     alumnos = db.scalars(query).all()
-    return [
-        ChildOut(
-            id=a.id,
-            fullName=a.full_name,
-            shortName=a.short_name,
-            ageText=a.age_text,
-            roomText=a.room_id,
-            groupText=a.group_text,
-            statusText=a.status_text,
-            isPresent=a.is_present,
-            arrivalTime=a.arrival_time,
-            allergyAlert=a.allergy_alert,
-            avatarInitials=a.avatar_initials,
-            avatarBgColor=a.avatar_bg_color,
-        )
-        for a in alumnos
-    ]
+    return [mapear_child_out(db, a) for a in alumnos]

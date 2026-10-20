@@ -10,14 +10,47 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class MockBitacoraRepositoryImpl : BitacoraRepository {
-    private val _mateoTimeline = MutableStateFlow<List<TimelineItem>>(MockDataRepository.getInitialMateoTimeline())
-    override val mateoTimeline: StateFlow<List<TimelineItem>> = _mateoTimeline.asStateFlow()
+    private val timelines = mutableMapOf<String, MutableStateFlow<List<TimelineItem>>>(
+        "mateo_garcia" to MutableStateFlow(MockDataRepository.getInitialMateoTimeline()),
+        "lucia_garcia" to MutableStateFlow(MockDataRepository.getInitialLuciaTimeline())
+    )
+
+    override val mateoTimeline: StateFlow<List<TimelineItem>>
+        get() = getTimelineForChild("mateo_garcia")
+
+    override fun getTimelineForChild(childId: String): StateFlow<List<TimelineItem>> {
+        val flow = synchronized(timelines) {
+            timelines.getOrPut(childId) {
+                MutableStateFlow(
+                    if (childId == "lucia_garcia") MockDataRepository.getInitialLuciaTimeline()
+                    else emptyList()
+                )
+            }
+        }
+        return flow.asStateFlow()
+    }
 
     override fun recargar(childId: String) {
         // En modo mock conserva el estado acumulado en memoria
+        synchronized(timelines) {
+            timelines.getOrPut(childId) { MutableStateFlow(emptyList()) }
+        }
     }
 
     override fun addChatMessage(
+        text: String,
+        isOutgoing: Boolean,
+        fileUri: String?,
+        fileName: String?,
+        fileMimeType: String?,
+        senderRole: UserRole?,
+        date: String?
+    ) {
+        addChatMessageForChild("mateo_garcia", text, isOutgoing, fileUri, fileName, fileMimeType, senderRole, date)
+    }
+
+    override fun addChatMessageForChild(
+        childId: String,
         text: String,
         isOutgoing: Boolean,
         fileUri: String?,
@@ -39,10 +72,17 @@ class MockBitacoraRepositoryImpl : BitacoraRepository {
             fileMimeType = fileMimeType,
             senderRole = senderRole
         )
-        _mateoTimeline.update { (it + message).ordenadaCronologicamente() }
+        val flow = synchronized(timelines) {
+            timelines.getOrPut(childId) { MutableStateFlow(emptyList()) }
+        }
+        flow.update { (it + message).ordenadaCronologicamente() }
     }
 
     override fun addEventChip(time: String, text: String, iconType: String, date: String?) {
+        addEventChipForChild("mateo_garcia", time, text, iconType, date)
+    }
+
+    override fun addEventChipForChild(childId: String, time: String, text: String, iconType: String, date: String?) {
         val currentDate = date ?: "12/10/2026"
         val chip = TimelineItem.EventChip(
             id = "chip_${System.currentTimeMillis()}",
@@ -51,7 +91,10 @@ class MockBitacoraRepositoryImpl : BitacoraRepository {
             text = text,
             iconType = iconType
         )
-        _mateoTimeline.update { (it + chip).ordenadaCronologicamente() }
+        val flow = synchronized(timelines) {
+            timelines.getOrPut(childId) { MutableStateFlow(emptyList()) }
+        }
+        flow.update { (it + chip).ordenadaCronologicamente() }
     }
 
     override fun addActivityCard(time: String, category: String, portionLabel: String, description: String, childId: String, date: String?) {
@@ -64,7 +107,10 @@ class MockBitacoraRepositoryImpl : BitacoraRepository {
             portionLabel = portionLabel,
             description = description
         )
-        _mateoTimeline.update { (it + card).ordenadaCronologicamente() }
+        val flow = synchronized(timelines) {
+            timelines.getOrPut(childId) { MutableStateFlow(emptyList()) }
+        }
+        flow.update { (it + card).ordenadaCronologicamente() }
     }
 
     private fun parseTimeToMinutes(timeStr: String): Int {

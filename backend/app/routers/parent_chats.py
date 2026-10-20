@@ -45,14 +45,18 @@ def listar_chats_familias_de_sala(
             .order_by(BitacoraMessage.created_at.desc())
         ).first()
 
+        unread = 1 if (ultimo and ultimo.sender_id != _.id) else 0
+        last_msg = (f"Yo: {ultimo.message}" if ultimo.sender_id == _.id else ultimo.message) if ultimo else "Sin mensajes aún."
+        last_time = ultimo.time if ultimo else "Hoy"
+
         resultado.append(
             ParentChatSummaryOut(
                 childId=a.id,
                 childName=a.full_name,
                 parentName=nombre_padre,
-                lastMessage=ultimo.message if ultimo else "Sin mensajes aún.",
-                lastMessageTime=ultimo.time if ultimo else "09:00 AM",
-                unreadCount=0,
+                lastMessage=last_msg,
+                lastMessageTime=last_time,
+                unreadCount=unread,
             )
         )
     return resultado

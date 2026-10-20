@@ -35,11 +35,29 @@ class NetworkBitacoraRepositoryImpl(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 ) : BitacoraRepository {
 
-    private val _mateoTimeline = MutableStateFlow<List<TimelineItem>>(MockDataRepository.getInitialMateoTimeline())
-    override val mateoTimeline: StateFlow<List<TimelineItem>> = _mateoTimeline.asStateFlow()
+    private val timelines = mutableMapOf<String, MutableStateFlow<List<TimelineItem>>>(
+        "mateo_garcia" to MutableStateFlow(MockDataRepository.getInitialMateoTimeline()),
+        "lucia_garcia" to MutableStateFlow(MockDataRepository.getInitialLuciaTimeline())
+    )
+
+    override val mateoTimeline: StateFlow<List<TimelineItem>>
+        get() = getTimelineForChild("mateo_garcia")
+
+    override fun getTimelineForChild(childId: String): StateFlow<List<TimelineItem>> {
+        val flow = synchronized(timelines) {
+            timelines.getOrPut(childId) {
+                MutableStateFlow(
+                    if (childId == "lucia_garcia") MockDataRepository.getInitialLuciaTimeline()
+                    else emptyList()
+                )
+            }
+        }
+        return flow.asStateFlow()
+    }
 
     init {
-        cargarLineaDeTiempo()
+        cargarLineaDeTiempo("mateo_garcia")
+        cargarLineaDeTiempo("lucia_garcia")
         observarWebSocket()
     }
 
@@ -48,7 +66,7 @@ class NetworkBitacoraRepositoryImpl(
     }
 
     private fun cargarLineaDeTiempo(childId: String = defaultChildId) {
-        RemoteSync.launch("Cargar línea de tiempo y mensajes de bitácora") {
+        RemoteSync.launch("Cargar línea de tiempo y mensajes de bitácora para $childId") {
             api.getChildTimeline(childId).bodyOrLog("GET /children/$childId/timeline")?.let { dtos ->
                 if (dtos.isNotEmpty()) {
                     val convertidos = dtos.map { dto ->
@@ -81,7 +99,10 @@ class NetworkBitacoraRepositoryImpl(
                             )
                         }
                     }
-                    _mateoTimeline.value = convertidos.ordenadaCronologicamente()
+                    val flow = synchronized(timelines) {
+                        timelines.getOrPut(childId) { MutableStateFlow(emptyList()) }
+                    }
+                    flow.value = convertidos.ordenadaCronologicamente()
                 }
             }
         }
@@ -92,57 +113,69 @@ class NetworkBitacoraRepositoryImpl(
             chatConexion.eventos.collect { evento ->
                 when (evento) {
                     is EventoServidor.NuevoMensajeBitacora -> {
-                        if (evento.childId == defaultChildId || evento.chatId == defaultChildId) {
-                            val payload = evento.message
-                            val nuevoMsg = TimelineItem.ChatMessage(
-                                id = payload.id.ifEmpty { "msg_${System.currentTimeMillis()}" },
-                                time = payload.time.ifEmpty { horaActual() },
-                                date = payload.date ?: fechaActual(),
-                                message = payload.message,
-                                isOutgoing = payload.senderId == tokenManager.userId,
-                                fileUri = payload.fileUri,
-                                fileName = payload.fileName,
-                                fileMimeType = payload.fileMimeType
-                            )
-                            _mateoTimeline.update { actual ->
-                                if (actual.any { it.id == nuevoMsg.id }) return@update actual
-                                val pendingIdx = actual.indexOfFirst {
-                                    it is TimelineItem.ChatMessage &&
+                        val targetChildId = when {
+                            !evento.childId.isNullOrEmpty() -> evento.childId
+                            !evento.chatId.isNullOrEmpty() -> evento.chatId
+                            else -> defaultChildId
+                        }
+                        val payload = evento.message
+                        val nuevoMsg = TimelineItem.ChatMessage(
+                            id = payload.id.ifEmpty { "msg_${System.currentTimeMillis()}" },
+                            time = payload.time.ifEmpty { horaActual() },
+                            date = payload.date ?: fechaActual(),
+                            message = payload.message,
+                            isOutgoing = payload.senderId == tokenManager.userId,
+                            fileUri = payload.fileUri,
+                            fileName = payload.fileName,
+                            fileMimeType = payload.fileMimeType
+                        )
+                        val flow = synchronized(timelines) {
+                            timelines.getOrPut(targetChildId) { MutableStateFlow(emptyList()) }
+                        }
+                        flow.update { actual ->
+                            if (actual.any { it.id == nuevoMsg.id }) return@update actual
+                            val pendingIdx = actual.indexOfFirst {
+                                it is TimelineItem.ChatMessage &&
                                     it.id.startsWith("temp_") &&
                                     it.message == nuevoMsg.message
-                                }
-                                if (pendingIdx >= 0) {
-                                    actual.toMutableList().apply { set(pendingIdx, nuevoMsg) }.ordenadaCronologicamente()
-                                } else {
-                                    (actual + nuevoMsg).ordenadaCronologicamente()
-                                }
+                            }
+                            if (pendingIdx >= 0) {
+                                actual.toMutableList().apply { set(pendingIdx, nuevoMsg) }.ordenadaCronologicamente()
+                            } else {
+                                (actual + nuevoMsg).ordenadaCronologicamente()
                             }
                         }
                     }
                     is EventoServidor.NuevaActividadBitacora -> {
-                        if (evento.childId == defaultChildId || evento.chatId == defaultChildId) {
-                            val act = evento.activity
-                            val card = TimelineItem.ActivityCard(
-                                id = act.id,
-                                time = act.time,
-                                date = act.date ?: fechaActual(),
-                                category = act.category ?: "Actividad",
-                                portionLabel = act.portionLabel ?: "",
-                                description = act.description ?: ""
-                            )
-                            _mateoTimeline.update { actual ->
-                                if (actual.any { it.id == card.id }) return@update actual
-                                val pendingIdx = actual.indexOfFirst {
-                                    it is TimelineItem.ActivityCard &&
-                                    it.id.startsWith("temp_") &&
-                                    it.category == card.category &&
-                                    it.description == card.description
-                                }
-                                if (pendingIdx >= 0) {
-                                    actual.toMutableList().apply { set(pendingIdx, card) }.ordenadaCronologicamente()
-                                } else {
-                                    (actual + card).ordenadaCronologicamente()
-                                }
+                        val targetChildId = when {
+                            !evento.childId.isNullOrEmpty() -> evento.childId
+                            !evento.chatId.isNullOrEmpty() -> evento.chatId
+                            else -> defaultChildId
+                        }
+                        val act = evento.activity
+                        val card = TimelineItem.ActivityCard(
+                            id = act.id,
+                            time = act.time,
+                            date = act.date ?: fechaActual(),
+                            category = act.category ?: "Actividad",
+                            portionLabel = act.portionLabel ?: "",
+                            description = act.description ?: ""
+                        )
+                        val flow = synchronized(timelines) {
+                            timelines.getOrPut(targetChildId) { MutableStateFlow(emptyList()) }
+                        }
+                        flow.update { actual ->
+                            if (actual.any { it.id == card.id }) return@update actual
+                            val pendingIdx = actual.indexOfFirst {
+                                it is TimelineItem.ActivityCard &&
+                                it.id.startsWith("temp_") &&
+                                it.category == card.category &&
+                                it.description == card.description
+                            }
+                            if (pendingIdx >= 0) {
+                                actual.toMutableList().apply { set(pendingIdx, card) }.ordenadaCronologicamente()
+                            } else {
+                                (actual + card).ordenadaCronologicamente()
                             }
                         }
                     }
@@ -161,6 +194,20 @@ class NetworkBitacoraRepositoryImpl(
         senderRole: com.example.etapa1.model.UserRole?,
         date: String?
     ) {
+        addChatMessageForChild(defaultChildId, text, isOutgoing, fileUri, fileName, fileMimeType, senderRole, date)
+    }
+
+    override fun addChatMessageForChild(
+        childId: String,
+        text: String,
+        isOutgoing: Boolean,
+        fileUri: String?,
+        fileName: String?,
+        fileMimeType: String?,
+        senderRole: com.example.etapa1.model.UserRole?,
+        date: String?
+    ) {
+        val targetChildId = childId.ifEmpty { defaultChildId }
         val hora = horaActual()
         val fecha = date ?: fechaActual()
         val tempId = "temp_${System.currentTimeMillis()}"
@@ -177,12 +224,15 @@ class NetworkBitacoraRepositoryImpl(
         )
 
         // Actualización reactiva instantánea en la interfaz
-        _mateoTimeline.update { (it + nuevoMsg).ordenadaCronologicamente() }
+        val flow = synchronized(timelines) {
+            timelines.getOrPut(targetChildId) { MutableStateFlow(emptyList()) }
+        }
+        flow.update { (it + nuevoMsg).ordenadaCronologicamente() }
 
         // Envío asíncrono al servidor FastAPI
-        RemoteSync.launch("Enviar mensaje bitácora a $defaultChildId") {
+        RemoteSync.launch("Enviar mensaje bitácora a $targetChildId") {
             val response = api.sendBitacoraMessage(
-                defaultChildId,
+                targetChildId,
                 SendBitacoraMessageDto(
                     message = text,
                     fileUri = fileUri,
@@ -193,7 +243,7 @@ class NetworkBitacoraRepositoryImpl(
                 )
             )
             response.body()?.let { serverDto ->
-                _mateoTimeline.update { actual ->
+                flow.update { actual ->
                     val idx = actual.indexOfFirst { it.id == tempId }
                     if (idx >= 0) {
                         val finalMsg = nuevoMsg.copy(id = serverDto.id, date = serverDto.date ?: fecha)
@@ -207,6 +257,11 @@ class NetworkBitacoraRepositoryImpl(
     }
 
     override fun addEventChip(time: String, text: String, iconType: String, date: String?) {
+        addEventChipForChild(defaultChildId, time, text, iconType, date)
+    }
+
+    override fun addEventChipForChild(childId: String, time: String, text: String, iconType: String, date: String?) {
+        val targetChildId = childId.ifEmpty { defaultChildId }
         val fecha = date ?: fechaActual()
         val chip = TimelineItem.EventChip(
             id = "chip_${System.currentTimeMillis()}",
@@ -215,7 +270,10 @@ class NetworkBitacoraRepositoryImpl(
             text = text,
             iconType = iconType
         )
-        _mateoTimeline.update { (it + chip).ordenadaCronologicamente() }
+        val flow = synchronized(timelines) {
+            timelines.getOrPut(targetChildId) { MutableStateFlow(emptyList()) }
+        }
+        flow.update { (it + chip).ordenadaCronologicamente() }
     }
 
     override fun addActivityCard(
@@ -237,7 +295,10 @@ class NetworkBitacoraRepositoryImpl(
             portionLabel = portionLabel,
             description = description
         )
-        _mateoTimeline.update { (it + card).ordenadaCronologicamente() }
+        val flow = synchronized(timelines) {
+            timelines.getOrPut(targetChildId) { MutableStateFlow(emptyList()) }
+        }
+        flow.update { (it + card).ordenadaCronologicamente() }
 
         RemoteSync.launch("Registrar actividad para $targetChildId") {
             val response = api.createActivity(
@@ -252,7 +313,7 @@ class NetworkBitacoraRepositoryImpl(
                 )
             )
             response.body()?.let { res ->
-                _mateoTimeline.update { actual ->
+                flow.update { actual ->
                     val idx = actual.indexOfFirst { it.id == tempId }
                     if (idx >= 0) {
                         val finalCard = card.copy(id = res.id, date = res.timelineItem.date ?: fecha)

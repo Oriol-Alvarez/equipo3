@@ -24,6 +24,8 @@ class NewActivityViewModelTest {
 
         override val mateoTimeline: StateFlow<List<TimelineItem>> = MutableStateFlow(emptyList())
 
+        override fun getTimelineForChild(childId: String): StateFlow<List<TimelineItem>> = mateoTimeline
+
         override fun recargar(childId: String) {}
 
         override fun addChatMessage(
@@ -36,7 +38,20 @@ class NewActivityViewModelTest {
             date: String?
         ) {}
 
+        override fun addChatMessageForChild(
+            childId: String,
+            text: String,
+            isOutgoing: Boolean,
+            fileUri: String?,
+            fileName: String?,
+            fileMimeType: String?,
+            senderRole: UserRole?,
+            date: String?
+        ) {}
+
         override fun addEventChip(time: String, text: String, iconType: String, date: String?) {}
+
+        override fun addEventChipForChild(childId: String, time: String, text: String, iconType: String, date: String?) {}
 
         override fun addActivityCard(
             time: String,

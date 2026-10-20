@@ -21,6 +21,7 @@ class NetworkAuthRepositoryImpl(
 
     private val initialRole = when (tokenManager.userRole?.uppercase()) {
         "FAMILIAR" -> UserRole.FAMILIAR
+        "ADMINISTRADOR", "DIRECCION", "ADMIN" -> UserRole.ADMINISTRADOR
         else -> UserRole.EDUCADORA
     }
 
@@ -44,6 +45,7 @@ class NetworkAuthRepositoryImpl(
 
                 val resolvedRole = when (loginData.user.role.uppercase()) {
                     "FAMILIAR" -> UserRole.FAMILIAR
+                    "ADMINISTRADOR", "DIRECCION", "ADMIN" -> UserRole.ADMINISTRADOR
                     else -> UserRole.EDUCADORA
                 }
                 _currentUserRole.value = resolvedRole

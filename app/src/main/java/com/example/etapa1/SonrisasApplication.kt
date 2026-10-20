@@ -12,6 +12,7 @@ import com.example.etapa1.data.repository.AuthRepository
 import com.example.etapa1.data.repository.BitacoraRepository
 import com.example.etapa1.data.repository.ChildRepository
 import com.example.etapa1.data.repository.DailyLogRepository
+import com.example.etapa1.data.repository.AdminRepository
 import com.example.etapa1.data.repository.DailyPlanRepository
 import com.example.etapa1.data.repository.FamilyGroupsRepository
 import com.example.etapa1.data.repository.LostObjectsRepository
@@ -19,6 +20,7 @@ import com.example.etapa1.data.repository.MessagesRepository
 import com.example.etapa1.data.repository.RoomRepository
 import com.example.etapa1.data.repository.SuggestionsRepository
 import com.example.etapa1.data.repository.WeeklyObservationsRepository
+import com.example.etapa1.data.repository.impl.MockAdminRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockAnnouncementRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockAttendanceRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockAuthRepositoryImpl
@@ -32,6 +34,7 @@ import com.example.etapa1.data.repository.impl.MockMessagesRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockRoomRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockSuggestionsRepositoryImpl
 import com.example.etapa1.data.repository.impl.MockWeeklyObservationsRepositoryImpl
+import com.example.etapa1.data.repository.impl.NetworkAdminRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkAnnouncementRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkAttendanceRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkAuthRepositoryImpl
@@ -80,13 +83,14 @@ open class AppContainer(val context: Context) {
     private val mockWeeklyObservationsRepository by lazy { MockWeeklyObservationsRepositoryImpl() }
     private val mockDailyPlanRepository by lazy { MockDailyPlanRepositoryImpl() }
     private val mockDailyLogRepository by lazy { MockDailyLogRepositoryImpl() }
+    private val mockAdminRepository by lazy { MockAdminRepositoryImpl() }
 
     // Repositorios de Red conectados a FastAPI
     private val networkAuthRepository by lazy { NetworkAuthRepositoryImpl(api, tokenManager) }
     private val networkRoomRepository by lazy { NetworkRoomRepositoryImpl(api) }
     private val networkChildRepository by lazy { NetworkChildRepositoryImpl(api) }
     private val networkAttendanceRepository by lazy { NetworkAttendanceRepositoryImpl(api) }
-    private val networkAnnouncementRepository by lazy { NetworkAnnouncementRepositoryImpl(api) }
+    private val networkAnnouncementRepository by lazy { NetworkAnnouncementRepositoryImpl(api, chatConexion) }
     private val networkSuggestionsRepository by lazy { NetworkSuggestionsRepositoryImpl(api) }
     private val networkLostObjectsRepository by lazy { NetworkLostObjectsRepositoryImpl(api) }
     private val networkFamilyGroupsRepository by lazy { NetworkFamilyGroupsRepositoryImpl(api, tokenManager, context, chatConexion) }
@@ -95,10 +99,14 @@ open class AppContainer(val context: Context) {
     private val networkDailyLogRepository by lazy { NetworkDailyLogRepositoryImpl(api) }
     private val networkMessagesRepository by lazy { NetworkMessagesRepositoryImpl(api, tokenManager, chatConexion) }
     private val networkBitacoraRepository by lazy { NetworkBitacoraRepositoryImpl(api, tokenManager, chatConexion) }
+    private val networkAdminRepository by lazy { NetworkAdminRepositoryImpl(api) }
 
     // Repositorios expuestos a la aplicación (conmutación transparente según `useMocks`)
     open val authRepository: AuthRepository
         get() = if (useMocks) mockAuthRepository else networkAuthRepository
+
+    open val adminRepository: AdminRepository
+        get() = if (useMocks) mockAdminRepository else networkAdminRepository
 
     open val roomRepository: RoomRepository
         get() = if (useMocks) mockRoomRepository else networkRoomRepository
