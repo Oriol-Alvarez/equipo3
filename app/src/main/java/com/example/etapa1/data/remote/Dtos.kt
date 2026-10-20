@@ -94,8 +94,6 @@ data class ChildDto(
     val allergyAlert: String? = null,
     val avatarInitials: String = "MG",
     val avatarBgColor: Long = 4294948685L,
-    val birthDate: String = "",
-    val roomId: String = "",
     val educatorName: String? = null,
     val educatorRole: String? = null,
     val educatorAvatarInitials: String? = null,
@@ -232,16 +230,6 @@ data class LostItemDto(
     val isClaimed: Boolean = false
 )
 
-@Serializable
-data class CreateLostObjectDto(
-    val title: String,
-    val description: String,
-    val category: String,
-    val location: String? = null,
-    val room: String = "General",
-    val imageUri: String? = null
-)
-
 // ---------------------------------------------------------------- Mensajería y Chat en Tiempo Real
 @Serializable
 data class StaffMemberDto(
@@ -264,12 +252,6 @@ data class WorkerChatMessageDto(
     val fileUri: String? = null,
     val fileName: String? = null,
     val fileMimeType: String? = null
-)
-
-@Serializable
-data class CreateWorkerGroupDto(
-    val title: String,
-    val memberIds: List<String> = emptyList()
 )
 
 @Serializable
@@ -378,20 +360,6 @@ data class NewActivityResponseDto(
 )
 
 @Serializable
-data class QuickEventDto(
-    val time: String,
-    val text: String,
-    val iconType: String,
-    val date: String? = null
-)
-
-@Serializable
-data class DeviceTokenRequestDto(
-    val deviceToken: String,
-    val platform: String = "android"
-)
-
-@Serializable
 data class CreateAnnouncementDto(
     val title: String,
     val summary: String,
@@ -405,6 +373,16 @@ data class UpdateAnnouncementDto(
     val summary: String? = null,
     val fullContent: String? = null,
     val author: String? = null
+)
+
+@Serializable
+data class CreateLostObjectDto(
+    val title: String,
+    val description: String,
+    val category: String,
+    val location: String? = null,
+    val imageUri: String? = null,
+    val room: String = "Sala 1A"
 )
 
 @Serializable

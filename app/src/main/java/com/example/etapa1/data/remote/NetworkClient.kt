@@ -1,6 +1,5 @@
 package com.example.etapa1.data.remote
 
-import com.example.etapa1.BuildConfig
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -25,10 +24,7 @@ object NetworkClient {
             level = HttpLoggingInterceptor.Level.BODY
         }
         return OkHttpClient.Builder()
-            .addInterceptor(AuthInterceptor(
-                tokenProvider = { tokenManager.token },
-                onUnauthorized = { tokenManager.notifySessionExpired() }
-            ))
+            .addInterceptor(AuthInterceptor { tokenManager.token })
             .addInterceptor(logging)
             .pingInterval(20, TimeUnit.SECONDS)
             .connectTimeout(15, TimeUnit.SECONDS)
