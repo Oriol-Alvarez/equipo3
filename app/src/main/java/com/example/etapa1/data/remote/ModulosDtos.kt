@@ -42,7 +42,8 @@ data class FamilyGroupMessageDto(
 @Serializable
 data class SendFamilyGroupMessageDto(
     val text: String,
-    val attachment: AttachmentDto? = null
+    val attachment: AttachmentDto? = null,
+    val time: String? = null
 )
 
 @Serializable

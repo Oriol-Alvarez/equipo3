@@ -29,6 +29,10 @@ class NetworkChildRepositoryImpl(
     private val _childProfiles = mutableMapOf<String, ChildFullProfile>()
 
     init {
+        refresh()
+    }
+
+    override fun refresh() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val salaRes = api.getChildrenByRoom("sala_1a")
@@ -54,7 +58,7 @@ class NetworkChildRepositoryImpl(
     }
 
     override fun updateChildAttendance(childId: String, isPresent: Boolean, time: String, statusText: String) {
-        _childrenSala1A.update { currentList ->
+        val updater: (List<Child>) -> List<Child> = { currentList ->
             currentList.map { child ->
                 if (child.id == childId) {
                     child.copy(
@@ -67,6 +71,8 @@ class NetworkChildRepositoryImpl(
                 }
             }
         }
+        _childrenSala1A.update(updater)
+        _parentChildren.update(updater)
     }
 
     override fun getChildFullProfile(child: Child): ChildFullProfile {
@@ -77,6 +83,7 @@ class NetworkChildRepositoryImpl(
 
     override fun updateChildFullProfile(childId: String, profile: ChildFullProfile) {
         _childProfiles[childId] = profile
+        MockDataRepository.updateChildFullProfile(childId, profile)
     }
 
     override fun getWeeklySummaryForChild(child: Child): WeeklySummary {
@@ -104,7 +111,11 @@ class NetworkChildRepositoryImpl(
             arrivalTime = arrivalTime,
             allergyAlert = allergyAlert,
             avatarInitials = avatarInitials,
-            avatarBgColor = avatarBgColor
+            avatarBgColor = avatarBgColor,
+            educatorName = educatorName,
+            educatorRole = educatorRole,
+            educatorAvatarInitials = educatorAvatarInitials,
+            educatorAvatarBgColor = educatorAvatarBgColor
         )
     }
 }

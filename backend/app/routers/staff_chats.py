@@ -74,6 +74,11 @@ def mensajes_chat_trabajador(
     db: Session = Depends(get_db),
 ) -> list[WorkerChatMessageOut]:
     """Obtiene el historial de mensajes de un chat interno entre trabajadores."""
+    chat = db.get(WorkerChat, chatId)
+    if chat and chat.unread_count > 0:
+        chat.unread_count = 0
+        db.commit()
+
     mensajes = db.scalars(select(WorkerChatMessage).where(WorkerChatMessage.chat_id == chatId)).all()
     return [
         WorkerChatMessageOut(
@@ -100,7 +105,7 @@ def enviar_mensaje_trabajador(
     if chat is None:
         raise ApiError(404, f"No existe el chat con id {chatId}")
 
-    hora_actual = time.strftime("%I:%M %p")
+    hora_actual = body.time or time.strftime("%I:%M %p")
     msg_id = f"wm_{uuid.uuid4().hex[:8]}"
     nuevo_msg = WorkerChatMessage(
         id=msg_id,
@@ -151,6 +156,19 @@ def enviar_mensaje_trabajador(
     )
 
 
+@router.post("/chats/workers/{chatId}/read", status_code=204)
+def marcar_chat_trabajador_leido(
+    chatId: str,
+    _: Identidad = Depends(requiere_educadora),
+    db: Session = Depends(get_db),
+):
+    """Marca una conversación entre trabajadores como leída reseteando su contador de no leídos."""
+    chat = db.get(WorkerChat, chatId)
+    if chat and chat.unread_count > 0:
+        chat.unread_count = 0
+        db.commit()
+
+
 @router.get("/chats/staff-global/messages", response_model=StaffGlobalChatOut)
 def chat_global_personal(
     quien: Identidad = Depends(requiere_educadora),
@@ -158,6 +176,10 @@ def chat_global_personal(
 ) -> StaffGlobalChatOut:
     """Obtiene el canal global institucional donde participan todas las trabajadoras."""
     chat = db.get(WorkerChat, "global_staff_chat")
+    if chat and chat.unread_count > 0:
+        chat.unread_count = 0
+        db.commit()
+
     mensajes = db.scalars(select(WorkerChatMessage).where(WorkerChatMessage.chat_id == "global_staff_chat")).all() if chat else []
 
     msgs_out = [
@@ -187,7 +209,7 @@ def enviar_chat_global_personal(
     db: Session = Depends(get_db),
 ) -> WorkerChatMessageOut:
     """Publica un mensaje en el canal global de trabajadores."""
-    hora_actual = time.strftime("%I:%M %p")
+    hora_actual = body.time or time.strftime("%I:%M %p")
     msg_id = f"gm_{uuid.uuid4().hex[:8]}"
     nuevo_msg = WorkerChatMessage(
         id=msg_id,

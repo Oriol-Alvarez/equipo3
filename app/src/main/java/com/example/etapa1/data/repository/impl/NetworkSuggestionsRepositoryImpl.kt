@@ -66,6 +66,19 @@ class NetworkSuggestionsRepositoryImpl(
                 } else it
             }
         }
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                api.updateSuggestionStatus(
+                    id = id,
+                    request = com.example.etapa1.data.remote.UpdateSuggestionStatusDto(
+                        status = status.name,
+                        response = response,
+                        responderName = responderName
+                    )
+                )
+            } catch (_: Exception) {
+            }
+        }
     }
 
     private fun SuggestionDto.toDomain(): ParentSuggestion {

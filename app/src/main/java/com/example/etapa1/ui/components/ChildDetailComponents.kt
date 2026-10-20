@@ -112,19 +112,28 @@ fun ChildHeaderSummaryCard(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
+                val isExited = !child.isPresent && (
+                    child.statusText.contains("Retirado", ignoreCase = true) ||
+                    child.statusText.contains("Egresado", ignoreCase = true)
+                )
+                val statusColor = when {
+                    child.isPresent -> StatusPresentGreen
+                    isExited -> BrandBlue
+                    else -> StatusAbsentOrange
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
                             .size(7.dp)
                             .clip(CircleShape)
-                            .background(if (child.isPresent) StatusPresentGreen else StatusAbsentOrange)
+                            .background(statusColor)
                     )
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
                         text = child.statusText,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
-                        color = if (child.isPresent) StatusPresentGreen else StatusAbsentOrange
+                        color = statusColor
                     )
                 }
             }
@@ -217,7 +226,12 @@ fun ChildFullDataContent(
         SectionDetailCard(title = "Familia y Recogida", icon = Icons.Default.FamilyRestroom) {
             DetailRowItem(label = "Madre", value = "${fullProfile.motherName} (${fullProfile.motherPhone})")
             DetailRowItem(label = "Padre", value = "${fullProfile.fatherName} (${fullProfile.fatherPhone})")
-            DetailRowItem(label = "Teléfono de emergencia", value = fullProfile.emergencyPhone)
+            val emergencyValue = if (fullProfile.emergencyPhoneRelation.isNotBlank()) {
+                "${fullProfile.emergencyPhone} (${fullProfile.emergencyPhoneRelation})"
+            } else {
+                fullProfile.emergencyPhone
+            }
+            DetailRowItem(label = "Teléfono de emergencia", value = emergencyValue)
 
             Spacer(modifier = Modifier.height(4.dp))
             Text(

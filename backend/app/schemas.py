@@ -25,6 +25,39 @@ class RegisterRequest(BaseModel):
     codigoProfesor: str | None = None
 
 
+class AdminChildSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    id: str
+    fullName: str
+    shortName: str = ""
+    ageText: str = ""
+    roomText: str = ""
+    groupText: str = ""
+    isPresent: bool = False
+    statusText: str = ""
+    arrivalTime: str | None = None
+    allergyAlert: str | None = None
+    avatarInitials: str = "MG"
+    avatarBgColor: int = 4294948685
+    birthDate: str | None = None
+    enrollmentDate: str | None = None
+    studentId: str | None = None
+    bloodType: str | None = None
+    pediatrician: str | None = None
+    pediatricianPhone: str | None = None
+    emergencyPhone: str | None = None
+    emergencyPhoneRelation: str | None = None
+    motherName: str | None = None
+    motherPhone: str | None = None
+    fatherName: str | None = None
+    fatherPhone: str | None = None
+    authorizedPickups: list[str] = Field(default_factory=list)
+    medicalNotes: str | None = None
+    generalNotes: str | None = None
+    habitsNotes: str | None = None
+
+
 class UserProfileOut(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
@@ -34,6 +67,7 @@ class UserProfileOut(BaseModel):
     displayName: str = Field(validation_alias="display_name")
     phone: str | None = None
     avatarUrl: str | None = Field(default=None, validation_alias="avatar_url")
+    children: list[AdminChildSummary] = Field(default_factory=list)
 
 
 class LoginResponse(BaseModel):
@@ -97,6 +131,20 @@ class ChildOut(BaseModel):
     allergyAlert: str | None = None
     avatarInitials: str = "MG"
     avatarBgColor: int = 4294948685
+    educatorName: str | None = None
+    educatorRole: str | None = None
+    educatorAvatarInitials: str | None = None
+    educatorAvatarBgColor: int | None = None
+
+
+class EducatorOut(BaseModel):
+    id: str
+    name: str
+    role: str
+    avatarInitials: str = "LG"
+    avatarBgColor: int = 4278364369
+    roomId: str = ""
+    roomName: str = ""
 
 
 class ChildFullProfileOut(BaseModel):
@@ -108,6 +156,7 @@ class ChildFullProfileOut(BaseModel):
     pediatrician: str
     pediatricianPhone: str
     emergencyPhone: str
+    emergencyPhoneRelation: str = "Tutor legal"
     motherName: str
     motherPhone: str
     fatherName: str
@@ -126,6 +175,7 @@ class ChildProfileUpdate(BaseModel):
     medicalNotes: str | None = None
     habitsAndPedagogicalNotes: str | None = None
     emergencyPhone: str | None = None
+    emergencyPhoneRelation: str | None = None
     authorizedPickups: list[str] | None = None
     medicalCertificateUri: str | None = None
     medicalCertificateName: str | None = None
@@ -204,6 +254,7 @@ class TimelineItemOut(BaseModel):
     type: Literal["EVENT_CHIP", "CHAT_MESSAGE", "ACTIVITY_CARD"]
     id: str
     time: str
+    date: str | None = None
     # Campos para EVENT_CHIP
     text: str | None = None
     iconType: str | None = None
@@ -230,6 +281,7 @@ class NewActivityRequest(BaseModel):
     napMinutes: int | None = None
     moodState: str | None = None
     excretoryFunction: str | None = None
+    date: str | None = None
 
 
 class NewActivityResponse(BaseModel):
@@ -316,6 +368,7 @@ class SendWorkerMessageRequest(BaseModel):
     fileUri: str | None = None
     fileName: str | None = None
     fileMimeType: str | None = None
+    time: str | None = None
 
 
 class StaffGlobalChatOut(BaseModel):
@@ -327,6 +380,7 @@ class StaffGlobalChatOut(BaseModel):
 
 class SendGlobalMessageRequest(BaseModel):
     message: str
+    time: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -347,6 +401,7 @@ class BitacoraMessageOut(BaseModel):
     senderId: str
     senderName: str
     time: str
+    date: str | None = None
     message: str
     isOutgoing: bool
     fileUri: str | None = None
@@ -357,6 +412,8 @@ class SendBitacoraMessageRequest(BaseModel):
     fileUri: str | None = None
     fileName: str | None = None
     fileMimeType: str | None = None
+    time: str | None = None
+    date: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -404,6 +461,7 @@ class FamilyGroupMessageOut(BaseModel):
 class SendFamilyGroupMessageRequest(BaseModel):
     text: str
     attachment: AttachmentData | None = None
+    time: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -466,8 +524,8 @@ class CreateSuggestionRequest(BaseModel):
 
 class UpdateSuggestionStatusRequest(BaseModel):
     status: str
-    response: str
-    responderName: str
+    response: str | None = None
+    responderName: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -647,3 +705,131 @@ class DailyLogOut(BaseModel):
     ingreso: IngresoLogData | None = None
     estadia: EstadiaLogData | None = None
     egreso: EgresoLogData | None = None
+
+
+# ---------------------------------------------------------------------------
+# Módulo 14: Panel de Administración, Auditoría y Estadísticas (/admin)
+# ---------------------------------------------------------------------------
+
+class AdminUserCreate(BaseModel):
+    email: str
+    password: str
+    role: str = "EDUCADORA"
+    displayName: str
+    phone: str | None = None
+
+
+class AdminUserUpdate(BaseModel):
+    displayName: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    role: str | None = None
+    password: str | None = None
+
+
+class UpdateAnnouncementRequest(BaseModel):
+    title: str | None = None
+    summary: str | None = None
+    fullContent: str | None = None
+    author: str | None = None
+
+
+class UpdateLostObjectRequest(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    category: str | None = None
+    location: str | None = None
+    room: str | None = None
+    isClaimed: bool | None = None
+
+
+class AdminLogItem(BaseModel):
+    id: str
+    timestamp: str
+    category: str
+    title: str
+    description: str
+    actorName: str
+    actorRole: str | None = None
+    childName: str | None = None
+    roomName: str | None = None
+
+
+class AdminStatsOverview(BaseModel):
+    totalChildren: int
+    presentCount: int
+    absentCount: int
+    attendanceRate: float
+    totalEducators: int
+    totalFamilies: int
+    childrenFedCount: int
+    breakfastCount: int
+    lunchCount: int
+    snackCount: int
+    childrenNappedCount: int
+    totalNapMinutes: int
+    averageNapMinutes: int
+    ingresosCount: int
+    egresosCount: int
+    pendingPickupsCount: int
+    diaperChangesCount: int
+    incidentsCount: int
+    totalSuggestions: int
+    pendingSuggestions: int
+    attendedSuggestions: int
+    totalLostObjects: int
+    claimedLostObjects: int
+    unclaimedLostObjects: int
+    totalAnnouncements: int
+
+
+class AdminCreateChildRequest(BaseModel):
+    fullName: str
+    shortName: str | None = None
+    ageText: str | None = "2 años"
+    roomText: str | None = "Sala 1A"
+    groupText: str | None = "Maternal A"
+    allergyAlert: str | None = None
+    birthDate: str | None = None
+    studentId: str | None = None
+    bloodType: str | None = None
+    pediatrician: str | None = None
+    pediatricianPhone: str | None = None
+    emergencyPhone: str | None = None
+    emergencyPhoneRelation: str | None = None
+    motherName: str | None = None
+    motherPhone: str | None = None
+    fatherName: str | None = None
+    fatherPhone: str | None = None
+    medicalNotes: str | None = None
+    generalNotes: str | None = None
+    habitsNotes: str | None = None
+    authorizedPickups: list[str] = Field(default_factory=list)
+
+
+class AdminUpdateChildRequest(BaseModel):
+    fullName: str | None = None
+    shortName: str | None = None
+    ageText: str | None = None
+    roomText: str | None = None
+    groupText: str | None = None
+    statusText: str | None = None
+    isPresent: bool | None = None
+    allergyAlert: str | None = None
+    birthDate: str | None = None
+    enrollmentDate: str | None = None
+    studentId: str | None = None
+    bloodType: str | None = None
+    pediatrician: str | None = None
+    pediatricianPhone: str | None = None
+    emergencyPhone: str | None = None
+    emergencyPhoneRelation: str | None = None
+    motherName: str | None = None
+    motherPhone: str | None = None
+    fatherName: str | None = None
+    fatherPhone: str | None = None
+    authorizedPickups: list[str] | None = None
+    medicalNotes: str | None = None
+    generalNotes: str | None = None
+    habitsNotes: str | None = None
+

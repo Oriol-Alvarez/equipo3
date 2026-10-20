@@ -44,6 +44,9 @@ fun SonrisasApp() {
 
             androidx.compose.runtime.LaunchedEffect(actual.sesion) {
                 app?.container?.asegurarConexionChat()
+                app?.container?.childRepository?.refresh()
+                app?.container?.messagesRepository?.recargar()
+                app?.container?.announcementRepository?.refresh()
             }
 
             LaunchedEffect(Unit) {

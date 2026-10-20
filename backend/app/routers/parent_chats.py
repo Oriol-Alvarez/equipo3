@@ -45,14 +45,18 @@ def listar_chats_familias_de_sala(
             .order_by(BitacoraMessage.created_at.desc())
         ).first()
 
+        unread = 1 if (ultimo and ultimo.sender_id != _.id) else 0
+        last_msg = (f"Yo: {ultimo.message}" if ultimo.sender_id == _.id else ultimo.message) if ultimo else "Sin mensajes aún."
+        last_time = ultimo.time if ultimo else "Hoy"
+
         resultado.append(
             ParentChatSummaryOut(
                 childId=a.id,
                 childName=a.full_name,
                 parentName=nombre_padre,
-                lastMessage=ultimo.message if ultimo else "Sin mensajes aún.",
-                lastMessageTime=ultimo.time if ultimo else "09:00 AM",
-                unreadCount=0,
+                lastMessage=last_msg,
+                lastMessageTime=last_time,
+                unreadCount=unread,
             )
         )
     return resultado
@@ -72,6 +76,7 @@ def obtener_mensajes_chat_bitacora(
             senderId=m.sender_id,
             senderName=m.sender_name,
             time=m.time,
+            date=m.created_at.strftime("%d/%m/%Y") if m.created_at else "12/10/2026",
             message=m.message,
             isOutgoing=m.sender_id == quien.id,
             fileUri=m.file_uri,
@@ -92,7 +97,8 @@ def enviar_mensaje_chat_bitacora(
     if alumno is None:
         raise ApiError(404, f"No existe el alumno con id {childId}")
 
-    hora_actual = time.strftime("%I:%M %p")
+    hora_actual = body.time or time.strftime("%I:%M %p")
+    fecha_actual = body.date or "12/10/2026"
     msg_id = f"msg_{uuid.uuid4().hex[:8]}"
     nuevo_msg = BitacoraMessage(
         id=msg_id,
@@ -100,6 +106,7 @@ def enviar_mensaje_chat_bitacora(
         sender_id=quien.id,
         sender_name=quien.display_name,
         time=hora_actual,
+        date=fecha_actual,
         message=body.message,
         file_uri=body.fileUri,
         file_name=body.fileName,
@@ -116,6 +123,7 @@ def enviar_mensaje_chat_bitacora(
         "senderId": quien.id,
         "senderName": quien.display_name,
         "time": hora_actual,
+        "date": fecha_actual,
         "message": body.message,
         "fileUri": body.fileUri,
         "fileName": body.fileName,
@@ -123,13 +131,13 @@ def enviar_mensaje_chat_bitacora(
         "isOutgoing": False,
     }
     ws_manager.broadcast_sync("chat:bitacora:new", {"childId": childId, "chatId": childId, "message": msg_dict})
-    ws_manager.broadcast_sync("chat:message:new", {"chatId": childId, "message": msg_dict})
 
     return BitacoraMessageOut(
         id=msg_id,
         senderId=quien.id,
         senderName=quien.display_name,
         time=hora_actual,
+        date=fecha_actual,
         message=body.message,
         isOutgoing=True,
         fileUri=body.fileUri,

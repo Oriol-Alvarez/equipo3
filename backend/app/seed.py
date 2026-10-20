@@ -10,6 +10,7 @@ from .models import (
     Activity,
     Announcement,
     AttendanceRecord,
+    BitacoraMessage,
     Child,
     ChildParent,
     ChildProfile,
@@ -37,31 +38,58 @@ def seed_database(db: Session) -> None:
     pwd = hash_password("Password123!")
     usuarios = [
         Usuario(
-            id="usr_familia_garcia",
-            email="familiar@sonrisas.edu",
+            id="usr_dir_mendez",
+            email="direccion@sonrisas.edu",
             password_hash=pwd,
-            role="FAMILIAR",
-            display_name="María López Fernández",
-            phone="+52 555 123 456",
-            avatar_url="https://cdn.sonrisas.edu/avatars/maria.png",
+            role="DIRECCION",
+            display_name="Laura Méndez (Dirección)",
+            phone="+34 600 111 222",
+            avatar_url="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
         ),
         Usuario(
             id="usr_educadora_laura",
             email="educadora@sonrisas.edu",
             password_hash=pwd,
             role="EDUCADORA",
-            display_name="Laura Gómez",
-            phone="+52 555 987 654",
-            avatar_url=None,
+            display_name="Laura Gómez (Educadora)",
+            phone="+34 600 333 444",
+            avatar_url="https://images.unsplash.com/photo-1580894732454-d6771d479d2a?w=150",
         ),
         Usuario(
-            id="usr_dir_mendez",
-            email="direccion@sonrisas.edu",
+            id="usr_educador_carlos",
+            email="carlos@sonrisas.edu",
             password_hash=pwd,
-            role="DIRECCION",
-            display_name="Laura Méndez",
-            phone="+52 555 333 444",
-            avatar_url=None,
+            role="EDUCADORA",
+            display_name="Carlos Ruiz (Educador)",
+            phone="+34 600 555 666",
+            avatar_url="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+        ),
+        Usuario(
+            id="usr_familia_garcia",
+            email="familiar@sonrisas.edu",
+            password_hash=pwd,
+            role="FAMILIAR",
+            display_name="María López Fernández",
+            phone="+34 611 222 333",
+            avatar_url="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
+        ),
+        Usuario(
+            id="usr_familia_martinez",
+            email="martinez@sonrisas.edu",
+            password_hash=pwd,
+            role="FAMILIAR",
+            display_name="Roberto Martínez Ruiz",
+            phone="+34 633 444 555",
+            avatar_url="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
+        ),
+        Usuario(
+            id="usr_familia_lopez",
+            email="lopez@sonrisas.edu",
+            password_hash=pwd,
+            role="FAMILIAR",
+            display_name="Ana López Navarro",
+            phone="+34 655 666 777",
+            avatar_url="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
         ),
     ]
     db.add_all(usuarios)
@@ -76,18 +104,19 @@ def seed_database(db: Session) -> None:
     db.add_all(salas)
     db.flush()
 
-    # Asignación de educadora a sala
+    # Asignación de educadores a salas
     db.add(RoomEducator(room_id="sala_1a", educator_id="usr_educadora_laura", role_title="Educadora Titular"))
+    db.add(RoomEducator(room_id="sala_2b", educator_id="usr_educador_carlos", role_title="Educador Titular"))
 
-    # 3. Alumnos
+    # 3. Alumnos (Todos vinculados a una cuenta familiar)
     ninos = [
         Child(
             id="mateo_garcia",
-            full_name="Mateo García",
-            short_name="Mateo G.",
+            full_name="Mateo García López",
+            short_name="Mateo",
             age_text="2 años",
             room_id="sala_1a",
-            group_text="Grupo Sala 1A",
+            group_text="Maternal A",
             status_text="08:15 AM • Presente",
             is_present=True,
             arrival_time="08:15 AM",
@@ -98,7 +127,7 @@ def seed_database(db: Session) -> None:
         Child(
             id="lucia_garcia",
             full_name="Lucía García López",
-            short_name="Lucía G.",
+            short_name="Lucía",
             age_text="1 año y 2 meses",
             room_id="sala_1a",
             group_text="Lactantes A",
@@ -110,12 +139,26 @@ def seed_database(db: Session) -> None:
             avatar_bg_color=4293944082,
         ),
         Child(
+            id="lucas_martinez",
+            full_name="Lucas Martínez Sánchez",
+            short_name="Lucas",
+            age_text="2 años",
+            room_id="sala_2b",
+            group_text="Maternal B",
+            status_text="No ha ingresado",
+            is_present=False,
+            arrival_time=None,
+            allergy_alert="Intolerancia a la lactosa",
+            avatar_initials="LM",
+            avatar_bg_color=4287665326,
+        ),
+        Child(
             id="sofia_lopez",
-            full_name="Sofía López",
-            short_name="Sofía L.",
+            full_name="Sofía López Gómez",
+            short_name="Sofía",
             age_text="1 año y 8 meses",
             room_id="sala_1a",
-            group_text="Grupo Sala 1A",
+            group_text="Maternal A",
             status_text="08:30 AM • Presente",
             is_present=True,
             arrival_time="08:30 AM",
@@ -123,29 +166,17 @@ def seed_database(db: Session) -> None:
             avatar_initials="SL",
             avatar_bg_color=4286695300,
         ),
-        Child(
-            id="lucas_martinez",
-            full_name="Lucas Martínez",
-            short_name="Lucas M.",
-            age_text="2 años",
-            room_id="sala_1a",
-            group_text="Grupo Sala 1A",
-            status_text="No ha ingresado",
-            is_present=False,
-            arrival_time=None,
-            allergy_alert=None,
-            avatar_initials="LM",
-            avatar_bg_color=4287665326,
-        ),
     ]
     db.add_all(ninos)
     db.flush()
 
-    # Relación padres <-> hijos
+    # Relación padres <-> hijos (100% de los niños vinculados a una cuenta familiar)
     db.add(ChildParent(child_id="mateo_garcia", parent_user_id="usr_familia_garcia"))
     db.add(ChildParent(child_id="lucia_garcia", parent_user_id="usr_familia_garcia"))
+    db.add(ChildParent(child_id="lucas_martinez", parent_user_id="usr_familia_martinez"))
+    db.add(ChildParent(child_id="sofia_lopez", parent_user_id="usr_familia_lopez"))
 
-    # Expediente completo de Mateo
+    # Expedientes completos de todos los alumnos
     mateo_profile = ChildProfile(
         child_id="mateo_garcia",
         birth_date="14/04/2024",
@@ -153,15 +184,16 @@ def seed_database(db: Session) -> None:
         student_id="EST-MATE-2026",
         blood_type="O+",
         pediatrician="Dra. Sofía Morales",
-        pediatrician_phone="+52 555 111 222",
-        emergency_phone="+52 555 333 444",
+        pediatrician_phone="+34 912 345 678",
+        emergency_phone="+34 611 999 888",
+        emergency_phone_relation="Abuela materna (Rosa)",
         mother_name="María López Fernández",
-        mother_phone="+52 555 123 456",
+        mother_phone="+34 611 222 333",
         father_name="Carlos García Ramos",
-        father_phone="+52 555 987 654",
+        father_phone="+34 622 333 444",
         authorized_pickups=json.dumps([
-            "Rosa Fernández (Abuela materna) - DNI ***4521",
-            "Elena García (Tía paterna) - DNI ***9812",
+            "Rosa Fernández (Abuela materna) - DNI 12345678A",
+            "Carlos García Ramos (Padre) - DNI 87654321B",
         ]),
         medical_notes="Alergia a Nuez (No Certificado). Se requiere extremo cuidado en meriendas.",
         general_notes="Muy sociable y participativo. Se adapta muy bien a las rutinas.",
@@ -171,6 +203,78 @@ def seed_database(db: Session) -> None:
         medical_certificate_date="15/08/2026",
     )
     db.add(mateo_profile)
+
+    lucia_profile = ChildProfile(
+        child_id="lucia_garcia",
+        birth_date="10/08/2025",
+        enrollment_date="01/09/2026",
+        student_id="EST-LUCI-2026",
+        blood_type="O+",
+        pediatrician="Dra. Sofía Morales",
+        pediatrician_phone="+34 912 345 678",
+        emergency_phone="+34 611 999 888",
+        emergency_phone_relation="Abuela materna (Rosa)",
+        mother_name="María López Fernández",
+        mother_phone="+34 611 222 333",
+        father_name="Carlos García Ramos",
+        father_phone="+34 622 333 444",
+        authorized_pickups=json.dumps([
+            "Rosa Fernández (Abuela materna) - DNI 12345678A",
+            "Carlos García Ramos (Padre) - DNI 87654321B",
+        ]),
+        medical_notes="Sin alergias conocidas. Calendario de vacunación al día.",
+        general_notes="Comenzando a dar sus primeros pasos de forma alegre.",
+        habits_notes="Toma biberón de 180ml a media mañana.",
+    )
+    db.add(lucia_profile)
+
+    lucas_profile = ChildProfile(
+        child_id="lucas_martinez",
+        birth_date="22/02/2024",
+        enrollment_date="01/09/2025",
+        student_id="EST-LUCA-2026",
+        blood_type="A+",
+        pediatrician="Dr. Manuel Benítez",
+        pediatrician_phone="+34 913 456 789",
+        emergency_phone="+34 644 111 222",
+        emergency_phone_relation="Tío (Javier)",
+        mother_name="Elena Sánchez Gil",
+        mother_phone="+34 633 888 999",
+        father_name="Roberto Martínez Ruiz",
+        father_phone="+34 633 444 555",
+        authorized_pickups=json.dumps([
+            "Elena Sánchez Gil (Madre) - DNI 33445566C",
+            "Roberto Martínez Ruiz (Padre) - DNI 55667788D",
+        ]),
+        medical_notes="Intolerancia a la lactosa. Sustituir lácteos por bebida vegetal.",
+        general_notes="Le gusta la música y construir torres de bloques.",
+        habits_notes="Usa chupete únicamente para conciliar el sueño.",
+    )
+    db.add(lucas_profile)
+
+    sofia_profile = ChildProfile(
+        child_id="sofia_lopez",
+        birth_date="15/05/2024",
+        enrollment_date="01/09/2025",
+        student_id="EST-SOFI-2026",
+        blood_type="B+",
+        pediatrician="Dra. Elena Castro",
+        pediatrician_phone="+34 914 567 890",
+        emergency_phone="+34 655 222 111",
+        emergency_phone_relation="Abuelo (Fernando)",
+        mother_name="Ana López Navarro",
+        mother_phone="+34 655 666 777",
+        father_name="David Gómez Prieto",
+        father_phone="+34 655 999 000",
+        authorized_pickups=json.dumps([
+            "Ana López Navarro (Madre) - DNI 77889900E",
+            "Fernando López (Abuelo) - DNI 11223344F",
+        ]),
+        medical_notes="Sin incidencias médicas registradas.",
+        general_notes="Muy sociable y curiosa, disfruta de las actividades de dibujo.",
+        habits_notes="Duerme siesta regular de 13:30 a 15:00.",
+    )
+    db.add(sofia_profile)
 
     # Asistencia y actividad inicial para la línea de tiempo de Mateo
     db.add(
@@ -198,11 +302,34 @@ def seed_database(db: Session) -> None:
             description="Comió sopa de verduras con pollo.",
         )
     )
+    db.add(
+        BitacoraMessage(
+            id="bm_mateo_1",
+            child_id="mateo_garcia",
+            sender_id="usr_educadora_laura",
+            sender_name="Laura Gómez",
+            message="Mateo comió muy bien hoy todo su puré.",
+            time="12:30 PM",
+            date="12/10/2026",
+        )
+    )
+    db.add(
+        BitacoraMessage(
+            id="bm_lucia_1",
+            child_id="lucia_garcia",
+            sender_id="usr_educador_carlos",
+            sender_name="Carlos Ruiz",
+            message="Lucía tomó su biberón y durmió una siesta tranquila.",
+            time="11:45 AM",
+            date="12/10/2026",
+        )
+    )
 
     # 4. Personal Escolar
     personal = [
         StaffMember(id="staff_1", user_id="usr_dir_mendez", name="Laura Méndez", role="Dirección General", avatar_initials="LM", avatar_bg_color=4287505578, is_online=True),
         StaffMember(id="staff_2", user_id="usr_educadora_laura", name="Laura Gómez", role="Educadora Titular", avatar_initials="LG", avatar_bg_color=4278364369, is_online=True),
+        StaffMember(id="staff_3", user_id="usr_educador_carlos", name="Carlos Ruiz", role="Educador Lactantes", avatar_initials="CR", avatar_bg_color=4283215696, is_online=True),
     ]
     db.add_all(personal)
 
@@ -269,6 +396,25 @@ def seed_database(db: Session) -> None:
             status="PENDIENTE",
         )
     )
+    db.add(
+        Suggestion(
+            id="sug_2",
+            parent_user_id="usr_familia_garcia",
+            parent_name="Marcos López",
+            child_id="mateo_garcia",
+            child_name="Mateo García",
+            room_name="Sala 1A",
+            date="11/10/2026",
+            time="17:15 PM",
+            category="INSTALACIONES",
+            subject="Toldo de sombra para el arenero del patio",
+            content="Notamos que en los días soleados la zona del arenero exterior recibe sol directo al mediodía.",
+            status="EN_REVISION",
+            response="Muchas gracias por la observación, Marcos. El área de mantenimiento ya está evaluando presupuesto.",
+            response_date="11/10/2026 06:00 PM",
+            responder_name="Laura Méndez (Dirección)",
+        )
+    )
 
     # 8. Grupo Familiar de Ejemplo
     fg = FamilyGroup(
@@ -329,7 +475,7 @@ def seed_database(db: Session) -> None:
         avatar_bg_color=4287505578,
         last_message="¿Cómo va la adaptación de Mateo García?",
         last_message_time="11:30 AM",
-        unread_count=1,
+        unread_count=0,
     )
     db.add(wchat1)
     db.add(

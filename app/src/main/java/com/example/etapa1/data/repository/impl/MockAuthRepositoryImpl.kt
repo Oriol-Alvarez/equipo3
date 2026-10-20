@@ -11,10 +11,10 @@ class MockAuthRepositoryImpl : AuthRepository {
     override val currentUserRole: StateFlow<UserRole> = _currentUserRole.asStateFlow()
 
     override fun login(email: String, password: String, role: UserRole): Result<UserRole> {
-        val resolvedRole = if (email.contains("familiar", ignoreCase = true)) {
-            UserRole.FAMILIAR
-        } else {
-            role
+        val resolvedRole = when {
+            email.contains("familiar", ignoreCase = true) -> UserRole.FAMILIAR
+            email.contains("admin", ignoreCase = true) || email.contains("direccion", ignoreCase = true) -> UserRole.ADMINISTRADOR
+            else -> role
         }
         _currentUserRole.value = resolvedRole
         return Result.success(resolvedRole)

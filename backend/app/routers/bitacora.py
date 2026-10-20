@@ -1,6 +1,7 @@
 """Módulo 5: Bitácora Diaria, Línea de Tiempo y Actividades (/children/{id}/...)"""
 
 import uuid
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends
@@ -22,10 +23,44 @@ from ..schemas import (
 router = APIRouter(tags=["bitacora"])
 
 
+def _parse_time_minutes(t: str | None) -> int:
+    if not t:
+        return 9999
+    s = t.strip().upper().replace(".", "").replace("A M", "AM").replace("P M", "PM")
+    for fmt in ("%I:%M %p", "%H:%M", "%I:%M%p"):
+        try:
+            dt = datetime.strptime(s, fmt)
+            return dt.hour * 60 + dt.minute
+        except ValueError:
+            pass
+    return 9999
+
+
+def _parse_item_timestamp(d: str | None, t: str | None) -> float:
+    time_clean = (t or "00:00").strip().upper().replace(".", "").replace("A M", "AM").replace("P M", "PM")
+    date_clean = (d or "12/10/2026").strip()
+
+    for date_fmt in ("%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y"):
+        for time_fmt in ("%I:%M %p", "%H:%M", "%I:%M%p"):
+            try:
+                dt = datetime.strptime(f"{date_clean} {time_clean}", f"{date_fmt} {time_fmt}")
+                return dt.timestamp()
+            except ValueError:
+                pass
+        try:
+            dt = datetime.strptime(date_clean, date_fmt)
+            minutos = _parse_time_minutes(t)
+            return dt.timestamp() + (minutos * 60 if minutos < 9999 else 0)
+        except ValueError:
+            pass
+
+    return float(_parse_time_minutes(t))
+
+
 @router.get("/children/{childId}/timeline", response_model=list[TimelineItemOut])
 def obtener_linea_de_tiempo(
     childId: str,
-    date: str = "12/10/2026",
+    date: str | None = None,
     _: Identidad = Depends(usuario_actual),
     db: Session = Depends(get_db),
 ) -> list[TimelineItemOut]:
@@ -33,12 +68,10 @@ def obtener_linea_de_tiempo(
     items: list[TimelineItemOut] = []
 
     # 1. Asistencia como chips de inicio/salida
-    asistencias = db.scalars(
-        select(AttendanceRecord).where(
-            AttendanceRecord.child_id == childId,
-            AttendanceRecord.date == date,
-        )
-    ).all()
+    stmt_att = select(AttendanceRecord).where(AttendanceRecord.child_id == childId)
+    if date:
+        stmt_att = stmt_att.where(AttendanceRecord.date == date)
+    asistencias = db.scalars(stmt_att).all()
     for att in asistencias:
         texto = f"{'Ingreso' if att.is_ingreso else 'Egreso'}: {att.time}"
         icono = "entry" if att.is_ingreso else "exit"
@@ -47,36 +80,34 @@ def obtener_linea_de_tiempo(
                 type="EVENT_CHIP",
                 id=att.id,
                 time=att.time,
+                date=att.date,
                 text=texto,
                 iconType=icono,
             )
         )
 
     # 2. Eventos rápidos guardados
-    eventos = db.scalars(
-        select(TimelineEvent).where(
-            TimelineEvent.child_id == childId,
-            TimelineEvent.date == date,
-        )
-    ).all()
+    stmt_ev = select(TimelineEvent).where(TimelineEvent.child_id == childId)
+    if date:
+        stmt_ev = stmt_ev.where(TimelineEvent.date == date)
+    eventos = db.scalars(stmt_ev).all()
     for ev in eventos:
         items.append(
             TimelineItemOut(
                 type="EVENT_CHIP",
                 id=ev.id,
                 time=ev.time,
+                date=ev.date,
                 text=ev.text,
                 iconType=ev.icon_type,
             )
         )
 
     # 3. Actividades del día
-    actividades = db.scalars(
-        select(Activity).where(
-            Activity.child_id == childId,
-            Activity.date == date,
-        )
-    ).all()
+    stmt_act = select(Activity).where(Activity.child_id == childId)
+    if date:
+        stmt_act = stmt_act.where(Activity.date == date)
+    actividades = db.scalars(stmt_act).all()
     for act in actividades:
         portion_text = act.portion_option or "Completo"
         items.append(
@@ -84,6 +115,7 @@ def obtener_linea_de_tiempo(
                 type="ACTIVITY_CARD",
                 id=act.id,
                 time=act.time,
+                date=act.date,
                 category=act.category,
                 portionLabel=portion_text,
                 description=act.description,
@@ -93,11 +125,15 @@ def obtener_linea_de_tiempo(
     # 4. Mensajes relevantes en bitácora
     mensajes = db.scalars(select(BitacoraMessage).where(BitacoraMessage.child_id == childId)).all()
     for m in mensajes:
+        fecha_msg = getattr(m, "date", None) or (m.created_at.strftime("%d/%m/%Y") if m.created_at else "12/10/2026")
+        if date and fecha_msg != date:
+            continue
         items.append(
             TimelineItemOut(
                 type="CHAT_MESSAGE",
                 id=m.id,
                 time=m.time,
+                date=fecha_msg,
                 message=m.message,
                 isOutgoing=m.sender_id == _.id,
                 fileUri=m.file_uri,
@@ -106,6 +142,7 @@ def obtener_linea_de_tiempo(
             )
         )
 
+    items.sort(key=lambda it: _parse_item_timestamp(it.date, it.time))
     return items
 
 
@@ -162,10 +199,11 @@ def registrar_actividad(
         raise ApiError(404, f"No existe el alumno con id {childId}")
 
     act_id = f"act_{uuid.uuid4().hex[:8]}"
+    fecha_actividad = body.date or "12/10/2026"
     actividad = Activity(
         id=act_id,
         child_id=childId,
-        date="12/10/2026",
+        date=fecha_actividad,
         time=body.time,
         category=body.category,
         meal_type=body.mealType,
@@ -185,9 +223,20 @@ def registrar_actividad(
         type="ACTIVITY_CARD",
         id=act_id,
         time=body.time,
+        date=fecha_actividad,
         category=body.category,
         portionLabel=portion_label,
         description=body.description,
+    )
+
+    from .ws_notifications import ws_manager
+    ws_manager.broadcast_sync(
+        "chat:bitacora:activity",
+        {
+            "childId": childId,
+            "chatId": childId,
+            "activity": timeline_item.model_dump(),
+        },
     )
 
     return NewActivityResponse(id=act_id, status="CREADA", timelineItem=timeline_item)
@@ -213,10 +262,23 @@ def registrar_evento_rapido(
     db.add(evento)
     db.commit()
 
-    return TimelineItemOut(
+    item_chip = TimelineItemOut(
         type="EVENT_CHIP",
         id=ev_id,
         time=body.time,
+        date="12/10/2026",
         text=body.text,
         iconType=body.iconType,
     )
+
+    from .ws_notifications import ws_manager
+    ws_manager.broadcast_sync(
+        "chat:bitacora:event",
+        {
+            "childId": childId,
+            "chatId": childId,
+            "event": item_chip.model_dump(),
+        },
+    )
+
+    return item_chip

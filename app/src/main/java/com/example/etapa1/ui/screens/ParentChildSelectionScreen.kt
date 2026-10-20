@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -68,7 +69,8 @@ fun ParentChildSelectionScreen(
     viewModel: ParentChildSelectionViewModel,
     unreadAnnouncementsCount: Int = 0,
     onChildSelected: (Child) -> Unit,
-    onNavigateToAnnouncements: () -> Unit = {}
+    onNavigateToAnnouncements: () -> Unit = {},
+    onBack: (() -> Unit)? = null
 ) {
     val children by viewModel.children.collectAsState()
 
@@ -76,7 +78,8 @@ fun ParentChildSelectionScreen(
         children = children,
         unreadAnnouncementsCount = unreadAnnouncementsCount,
         onChildSelected = onChildSelected,
-        onNavigateToAnnouncements = onNavigateToAnnouncements
+        onNavigateToAnnouncements = onNavigateToAnnouncements,
+        onBack = onBack
     )
 }
 
@@ -85,7 +88,8 @@ fun ParentChildSelectionScreen(
     children: List<Child> = MockDataRepository.parentChildren,
     unreadAnnouncementsCount: Int = 0,
     onChildSelected: (Child) -> Unit,
-    onNavigateToAnnouncements: () -> Unit = {}
+    onNavigateToAnnouncements: () -> Unit = {},
+    onBack: (() -> Unit)? = null
 ) {
     Scaffold(
         containerColor = AppBackground,
@@ -104,28 +108,42 @@ fun ParentChildSelectionScreen(
                     .padding(horizontal = 14.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
-                IconButton(
-                    onClick = onNavigateToAnnouncements,
-                    modifier = Modifier.align(Alignment.CenterStart)
-                ) {
-                    BadgedBox(
-                        badge = {
-                            if (unreadAnnouncementsCount > 0) {
-                                Badge(
-                                    containerColor = AlertRed,
-                                    contentColor = Color.White
-                                ) {
-                                    Text(text = unreadAnnouncementsCount.toString())
-                                }
-                            }
-                        }
+                if (onBack != null) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.align(Alignment.CenterStart)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Anuncios",
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
                             tint = BrandBlue,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(24.dp)
                         )
+                    }
+                } else {
+                    IconButton(
+                        onClick = onNavigateToAnnouncements,
+                        modifier = Modifier.align(Alignment.CenterStart)
+                    ) {
+                        BadgedBox(
+                            badge = {
+                                if (unreadAnnouncementsCount > 0) {
+                                    Badge(
+                                        containerColor = AlertRed,
+                                        contentColor = Color.White
+                                    ) {
+                                        Text(text = unreadAnnouncementsCount.toString())
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Anuncios",
+                                tint = BrandBlue,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     }
                 }
 
@@ -238,25 +256,39 @@ private fun ParentChildCard(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Chip de estado de asistencia
+                val isExited = !child.isPresent && (
+                    child.statusText.contains("Retirado", ignoreCase = true) ||
+                    child.statusText.contains("Egresado", ignoreCase = true)
+                )
+                val statusColor = when {
+                    child.isPresent -> StatusPresentGreen
+                    isExited -> BrandBlue
+                    else -> StatusAbsentOrange
+                }
+                val statusLabel = when {
+                    child.isPresent -> "En el centro • Llegó ${child.arrivalTime ?: "08:15 AM"}"
+                    isExited -> "Ya ha salido • ${child.statusText}"
+                    else -> "No ha ingresado hoy"
+                }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (child.isPresent) StatusPresentGreen.copy(alpha = 0.12f) else StatusAbsentOrange.copy(alpha = 0.12f))
+                        .background(statusColor.copy(alpha = 0.12f))
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Box(
                         modifier = Modifier
                             .size(7.dp)
                             .clip(CircleShape)
-                            .background(if (child.isPresent) StatusPresentGreen else StatusAbsentOrange)
+                            .background(statusColor)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (child.isPresent) "En el centro • Llegó ${child.arrivalTime ?: "08:15 AM"}" else "No ha ingresado hoy",
+                        text = statusLabel,
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (child.isPresent) StatusPresentGreen else StatusAbsentOrange
+                        color = statusColor
                     )
                 }
             }

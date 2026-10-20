@@ -6,12 +6,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -25,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -86,28 +89,35 @@ fun LoginScreen(
 fun LoginScreen(
     onLoginSuccess: (UserRole) -> Unit = {}
 ) {
-    var email by remember { mutableStateOf("correo@ejemplo.com") }
-    var password by remember { mutableStateOf("••••••••") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var hasError by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val state = com.example.etapa1.ui.state.LoginUiState(
         email = email,
         password = password,
         passwordVisible = passwordVisible,
-        hasError = hasError
+        hasError = hasError,
+        errorMessage = errorMessage
     )
 
     LoginContent(
         uiState = state,
-        onEmailChange = { email = it; hasError = false },
-        onPasswordChange = { password = it; hasError = false },
+        onEmailChange = { email = it; hasError = false; errorMessage = null },
+        onPasswordChange = { password = it; hasError = false; errorMessage = null },
         onTogglePasswordVisibility = { passwordVisible = !passwordVisible },
         onSubmitLogin = {
             if (email.isBlank() || password.isBlank()) {
                 hasError = true
+                errorMessage = "Por favor, introduce tu correo y contraseña."
             } else {
-                val role = if (email.contains("familiar", ignoreCase = true)) UserRole.FAMILIAR else UserRole.EDUCADORA
+                val role = when {
+                    email.contains("familiar", ignoreCase = true) -> UserRole.FAMILIAR
+                    email.contains("admin", ignoreCase = true) || email.contains("direccion", ignoreCase = true) -> UserRole.ADMINISTRADOR
+                    else -> UserRole.EDUCADORA
+                }
                 onLoginSuccess(role)
             }
         }
@@ -228,6 +238,7 @@ fun LoginContent(
 
             // Banner de error (si está activo)
             if (uiState.hasError) {
+                val errorText = uiState.errorMessage ?: "Correo o contraseña incorrectos"
                 Spacer(modifier = Modifier.height(12.dp))
                 Box(
                     modifier = Modifier
@@ -235,14 +246,15 @@ fun LoginContent(
                         .clip(RoundedCornerShape(16.dp))
                         .background(AlertRedBg)
                         .border(1.dp, AlertRedBorder, RoundedCornerShape(16.dp))
-                        .padding(vertical = 8.dp, horizontal = 12.dp),
+                        .padding(vertical = 10.dp, horizontal = 14.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Correo o contraseña incorrectos",
+                        text = errorText,
                         color = AlertRed,
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center
                     )
                 }
             }
@@ -268,18 +280,45 @@ fun LoginContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
-            // Link Recuperar contraseña
             Text(
-                text = "Recuperar contraseña",
-                fontSize = 13.sp,
-                color = BrandBlue,
+                text = "Acceso rápido de prueba:",
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier
-                    .clickable { /* Simulación de recuperación */ }
-                    .padding(4.dp)
+                color = TextSecondary
             )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                SuggestionChip(
+                    onClick = {
+                        onEmailChange("direccion@sonrisas.edu")
+                        onPasswordChange("Password123!")
+                    },
+                    label = { Text("Administrador", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = BrandBlue) }
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                SuggestionChip(
+                    onClick = {
+                        onEmailChange("educadora@sonrisas.edu")
+                        onPasswordChange("Password123!")
+                    },
+                    label = { Text("Educadora", fontSize = 11.sp) }
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                SuggestionChip(
+                    onClick = {
+                        onEmailChange("familiar@sonrisas.edu")
+                        onPasswordChange("Password123!")
+                    },
+                    label = { Text("Familiar", fontSize = 11.sp) }
+                )
+            }
+
+
         }
     }
 }

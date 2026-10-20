@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -56,10 +57,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.etapa1.model.Child
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.ParentSuggestion
 import com.example.etapa1.model.SuggestionCategory
 import com.example.etapa1.model.SuggestionStatus
+import com.example.etapa1.ui.components.ActiveChildSwitcher
 import com.example.etapa1.ui.state.ParentSuggestionsViewModel
 import com.example.etapa1.ui.theme.AlertRed
 import com.example.etapa1.ui.theme.AlertRedBg
@@ -77,12 +80,16 @@ import com.example.etapa1.ui.theme.TextSecondary
 @Composable
 fun ParentSuggestionsScreen(
     viewModel: ParentSuggestionsViewModel,
+    activeChild: Child? = null,
+    onSwitchChild: (() -> Unit)? = null,
     onBack: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     ParentSuggestionsScreen(
         suggestions = uiState.mySuggestions,
+        activeChild = activeChild,
+        onSwitchChild = onSwitchChild,
         onSendSuggestion = { cat, subject, content ->
             viewModel.sendSuggestion(cat, subject, content)
         },
@@ -94,6 +101,8 @@ fun ParentSuggestionsScreen(
 @Composable
 fun ParentSuggestionsScreen(
     suggestions: List<ParentSuggestion> = MockDataRepository.getInitialSuggestions(),
+    activeChild: Child? = null,
+    onSwitchChild: (() -> Unit)? = null,
     onSendSuggestion: (SuggestionCategory, String, String) -> Boolean = { _, _, _ -> true },
     onBack: () -> Unit = {}
 ) {
@@ -128,31 +137,53 @@ fun ParentSuggestionsScreen(
                     shadowElevation = 2.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Box(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 10.dp, vertical = 8.dp),
-                        contentAlignment = Alignment.Center
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(
-                            onClick = onBack,
-                            modifier = Modifier.align(Alignment.CenterStart)
+                        Box(
+                            modifier = Modifier.widthIn(min = 40.dp),
+                            contentAlignment = Alignment.CenterStart
                         ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Volver",
-                                tint = BrandBlue,
-                                modifier = Modifier.size(24.dp)
-                            )
+                            IconButton(
+                                onClick = onBack,
+                                modifier = Modifier.size(38.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Volver",
+                                    tint = BrandBlue,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
                         }
 
                         Text(
                             text = "Buzón de Sugerencias",
-                            fontSize = 18.sp,
+                            fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             color = BrandBlue,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 6.dp)
                         )
+
+                        Box(
+                            modifier = Modifier.widthIn(min = 40.dp),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            if (activeChild != null && onSwitchChild != null) {
+                                ActiveChildSwitcher(
+                                    child = activeChild,
+                                    onSwitchClick = onSwitchChild
+                                )
+                            }
+                        }
                     }
                 }
             }

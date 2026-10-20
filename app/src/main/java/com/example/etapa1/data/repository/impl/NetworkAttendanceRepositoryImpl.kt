@@ -61,13 +61,14 @@ class NetworkAttendanceRepositoryImpl(
         )
         _attendanceRecords.update { listOf(record) + it }
 
+        val todayIso = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 if (isIngreso) {
                     api.registrarIngreso(
                         IngresoDto(
                             childId = child.id,
-                            date = "2026-10-12",
+                            date = todayIso,
                             entryTime = time,
                             observations = observations
                         )
@@ -76,7 +77,7 @@ class NetworkAttendanceRepositoryImpl(
                     api.registrarEgreso(
                         EgresoDto(
                             childId = child.id,
-                            date = "2026-10-12",
+                            date = todayIso,
                             exitTime = time,
                             observations = observations
                         )

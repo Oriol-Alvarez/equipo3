@@ -3,7 +3,7 @@
 import time
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -11,11 +11,13 @@ from ..db import get_db
 from ..deps import Identidad, requiere_direccion, usuario_actual
 from ..errors import ApiError
 from ..models import Announcement, AnnouncementRead
+from .ws_notifications import ws_manager
 from ..schemas import (
     AnnouncementOut,
     CreateAnnouncementRequest,
     ReadAnnouncementOut,
     UnreadCountOut,
+    UpdateAnnouncementRequest,
 )
 
 router = APIRouter(prefix="/announcements", tags=["announcements"])
@@ -109,6 +111,18 @@ def publicar_aviso(
     db.add(aviso)
     db.commit()
 
+    ws_manager.broadcast_sync(
+        "announcement:new",
+        {
+            "id": aviso.id,
+            "title": aviso.title,
+            "date": aviso.date,
+            "summary": aviso.summary,
+            "fullContent": aviso.full_content,
+            "author": aviso.author,
+        },
+    )
+
     return AnnouncementOut(
         id=aviso.id,
         title=aviso.title,
@@ -118,3 +132,55 @@ def publicar_aviso(
         isUnread=True,
         author=aviso.author,
     )
+
+
+@router.put("/{id}", response_model=AnnouncementOut)
+def modificar_aviso(
+    id: str,
+    body: UpdateAnnouncementRequest,
+    _: Identidad = Depends(requiere_direccion),
+    db: Session = Depends(get_db),
+) -> AnnouncementOut:
+    """Modifica un aviso o circular escolar existente (restringido a DIRECCION/ADMIN)."""
+    aviso = db.get(Announcement, id)
+    if aviso is None:
+        raise ApiError(404, f"No existe el aviso con id {id}")
+
+    if body.title is not None:
+        aviso.title = body.title.strip()
+    if body.summary is not None:
+        aviso.summary = body.summary.strip()
+    if body.fullContent is not None:
+        aviso.full_content = body.fullContent.strip()
+    if body.author is not None:
+        aviso.author = body.author.strip()
+
+    db.commit()
+    db.refresh(aviso)
+
+    return AnnouncementOut(
+        id=aviso.id,
+        title=aviso.title,
+        date=aviso.date,
+        summary=aviso.summary,
+        fullContent=aviso.full_content,
+        isUnread=False,
+        author=aviso.author,
+    )
+
+
+@router.delete("/{id}", status_code=204)
+def eliminar_aviso(
+    id: str,
+    _: Identidad = Depends(requiere_direccion),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Elimina una circular o comunicado escolar (restringido a DIRECCION/ADMIN)."""
+    aviso = db.get(Announcement, id)
+    if aviso is None:
+        raise ApiError(404, f"No existe el aviso con id {id}")
+
+    db.delete(aviso)
+    db.commit()
+    return Response(status_code=204)
+

@@ -33,11 +33,26 @@ sealed interface EventoServidor {
         val message: ChatMessagePayload
     ) : EventoServidor
 
+    /** Nueva actividad registrada en la bitácora del alumno. */
+    @Serializable
+    data class NuevaActividadBitacora(
+        val childId: String,
+        val chatId: String = "",
+        val activity: TimelineItemDto
+    ) : EventoServidor
+
     /** Nuevo mensaje en un grupo familiar institucional. */
     @Serializable
     data class NuevoMensajeGrupo(
         val groupId: String,
         val message: FamilyGroupMessageDto
+    ) : EventoServidor
+
+    /** Nuevo aviso o circular general publicado en el centro. */
+    @Serializable
+    data class NuevoAviso(
+        val id: String = "",
+        val title: String = ""
     ) : EventoServidor
 
     /** Evento no tipado o genérico recibido desde el servidor. */
@@ -52,6 +67,7 @@ data class ChatMessagePayload(
     val senderName: String = "",
     val message: String = "",
     val time: String = "",
+    val date: String? = null,
     val isOutgoing: Boolean = false,
     val fileUri: String? = null,
     val fileName: String? = null,
@@ -124,11 +140,27 @@ object ChatProtocolo {
                     }
                 }
 
+                "chat:bitacora:activity" -> {
+                    if (dataObj is JsonObject) {
+                        json.decodeFromJsonElement<EventoServidor.NuevaActividadBitacora>(dataObj)
+                    } else {
+                        json.decodeFromJsonElement<EventoServidor.NuevaActividadBitacora>(root)
+                    }
+                }
+
                 "group:message:new" -> {
                     if (dataObj is JsonObject) {
                         json.decodeFromJsonElement<EventoServidor.NuevoMensajeGrupo>(dataObj)
                     } else {
                         json.decodeFromJsonElement<EventoServidor.NuevoMensajeGrupo>(root)
+                    }
+                }
+
+                "announcement:new", "announcement" -> {
+                    if (dataObj is JsonObject) {
+                        json.decodeFromJsonElement<EventoServidor.NuevoAviso>(dataObj)
+                    } else {
+                        json.decodeFromJsonElement<EventoServidor.NuevoAviso>(root)
                     }
                 }
 

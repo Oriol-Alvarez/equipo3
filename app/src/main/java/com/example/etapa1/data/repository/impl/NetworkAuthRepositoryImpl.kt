@@ -21,6 +21,7 @@ class NetworkAuthRepositoryImpl(
 
     private val initialRole = when (tokenManager.userRole?.uppercase()) {
         "FAMILIAR" -> UserRole.FAMILIAR
+        "ADMINISTRADOR", "DIRECCION", "ADMIN" -> UserRole.ADMINISTRADOR
         else -> UserRole.EDUCADORA
     }
 
@@ -44,16 +45,18 @@ class NetworkAuthRepositoryImpl(
 
                 val resolvedRole = when (loginData.user.role.uppercase()) {
                     "FAMILIAR" -> UserRole.FAMILIAR
+                    "ADMINISTRADOR", "DIRECCION", "ADMIN" -> UserRole.ADMINISTRADOR
                     else -> UserRole.EDUCADORA
                 }
                 _currentUserRole.value = resolvedRole
                 Result.success(resolvedRole)
             } else {
-                val errorMsg = response.errorBody()?.string() ?: "Código ${response.code()}"
-                Result.failure(Exception("Error de autenticación: $errorMsg"))
+                val errorMsg = com.example.etapa1.data.remote.NetworkErrorHelper.parseResponse(response)
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val errorMsg = com.example.etapa1.data.remote.NetworkErrorHelper.parseException(e)
+            Result.failure(Exception(errorMsg, e))
         }
     }
 

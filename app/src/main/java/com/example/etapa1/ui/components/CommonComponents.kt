@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -48,7 +49,11 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Warning
+import com.example.etapa1.model.Child
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -119,6 +124,8 @@ fun DaycareLogo(
 fun AppBottomBar(
     selectedTab: Int = 0,
     showMessagesTab: Boolean = true,
+    hasUnreadMessages: Boolean = false,
+    unreadMessagesCount: Int = 0,
     onTabSelected: (Int) -> Unit = {}
 ) {
     Surface(
@@ -150,23 +157,30 @@ fun AppBottomBar(
 
             // Tab 1 (opcional): Mensajes
             if (showMessagesTab) {
+                val effectiveCount = if (unreadMessagesCount > 0) unreadMessagesCount else if (hasUnreadMessages) 1 else 0
                 BottomNavItem(
                     modifier = Modifier.weight(1f),
                     icon = {
-                        Box(contentAlignment = Alignment.Center) {
+                        BadgedBox(
+                            badge = {
+                                if (effectiveCount > 0) {
+                                    Badge(
+                                        containerColor = AlertRed,
+                                        contentColor = Color.White
+                                    ) {
+                                        Text(
+                                            text = if (effectiveCount > 99) "99+" else effectiveCount.toString(),
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.MailOutline,
                                 contentDescription = "Mensajes",
                                 tint = if (selectedTab == 1) BrandBlue else TextMuted
-                            )
-                            // Notification dot
-                            Box(
-                                modifier = Modifier
-                                    .size(7.dp)
-                                    .align(Alignment.TopEnd)
-                                    .offset(x = 2.dp, y = (-2).dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFE53935))
                             )
                         }
                     },
@@ -438,4 +452,58 @@ fun ImagePlaceholderBox(
         }
     }
 }
+
+@Composable
+fun ActiveChildSwitcher(
+    child: Child,
+    onSwitchClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onSwitchClick,
+        shape = CircleShape,
+        color = CardBackground,
+        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBlue.copy(alpha = 0.22f)),
+        shadowElevation = 1.dp,
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 4.dp, top = 2.dp, end = 8.dp, bottom = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // Mini avatar circular nítido con iniciales
+            Box(
+                modifier = Modifier
+                    .size(20.dp)
+                    .clip(CircleShape)
+                    .background(Color(child.avatarBgColor)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = child.avatarInitials,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+            Text(
+                text = child.shortName,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = BrandBlue,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 68.dp)
+            )
+            Icon(
+                imageVector = Icons.Default.SwapHoriz,
+                contentDescription = "Cambiar de alumno",
+                tint = BrandBlue.copy(alpha = 0.85f),
+                modifier = Modifier.size(14.dp)
+            )
+        }
+    }
+}
+
 

@@ -213,7 +213,7 @@ def enviar_mensaje_grupo_familiar(
     if not body.text.strip() and body.attachment is None:
         raise ApiError(422, "El mensaje está vacío", "mensaje_vacio")
 
-    hora_actual = hora_12h()
+    hora_actual = body.time or hora_12h()
     msg_id = f"fgm_{uuid.uuid4().hex[:8]}"
 
     att_uri = body.attachment.uri if body.attachment else None

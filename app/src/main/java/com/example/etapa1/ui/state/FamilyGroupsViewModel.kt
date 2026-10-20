@@ -2,6 +2,7 @@ package com.example.etapa1.ui.state
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.etapa1.data.repository.BitacoraRepository
 import com.example.etapa1.data.repository.ChildRepository
 import com.example.etapa1.data.repository.FamilyGroupsRepository
 import com.example.etapa1.data.repository.MessagesRepository
@@ -30,7 +31,9 @@ data class FamilyGroupsUiState(
 class FamilyGroupsViewModel(
     private val familyGroupsRepository: FamilyGroupsRepository,
     messagesRepository: MessagesRepository,
-    private val childRepository: ChildRepository
+    private val childRepository: ChildRepository,
+    private val bitacoraRepository: BitacoraRepository? = null,
+    private val coroutineScope: kotlinx.coroutines.CoroutineScope? = null
 ) : ViewModel() {
 
     private val viewer = MutableStateFlow<GroupViewer?>(null)
@@ -62,7 +65,7 @@ class FamilyGroupsViewModel(
             )
         }
     }.stateIn(
-        scope = viewModelScope,
+        scope = coroutineScope ?: viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = FamilyGroupsUiState()
     )
@@ -77,10 +80,10 @@ class FamilyGroupsViewModel(
         )
     }
 
-    fun useFamilyViewer() {
+    fun useFamilyViewer(childIds: List<String>? = null) {
         viewer.value = GroupViewer.Familia(
             participant = familyGroupsRepository.currentParticipant() ?: FamilyGroupsSampleData.FAMILIA_GARCIA,
-            childIds = childRepository.parentChildren.value.map { it.id }
+            childIds = childIds ?: childRepository.parentChildren.value.map { it.id }
         )
     }
 
@@ -117,6 +120,38 @@ class FamilyGroupsViewModel(
 
         val attachment = fileUri?.let { MessageAttachment(uri = it, name = fileName, mimeType = fileMimeType) }
         familyGroupsRepository.sendMessage(groupId, current.participant, text, attachment)
+    }
+
+    fun sendGroupActivity(
+        groupId: String,
+        category: String,
+        badge: String,
+        description: String
+    ) {
+        val current = viewer.value ?: return
+        val group = familyGroupsRepository.groups.value.find { it.id == groupId } ?: return
+        if (!FamilyGroupsPresenter.canCreateGroups(current)) return
+
+        val formattedText = "[ACTIVIDAD]\nCategoría: $category\nDetalle: $badge\nObservaciones: $description"
+        familyGroupsRepository.sendMessage(groupId, current.participant, formattedText, null)
+
+        val targetChildIds = group.memberChildIds.ifEmpty {
+            childRepository.childrenSala1A.value.map { it.id }
+        }
+        val currentTime = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.US).format(java.util.Date())
+        val currentDate = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date())
+        bitacoraRepository?.let { repo ->
+            for (childId in targetChildIds) {
+                repo.addActivityCard(
+                    time = currentTime,
+                    category = category,
+                    portionLabel = badge,
+                    description = description,
+                    childId = childId,
+                    date = currentDate
+                )
+            }
+        }
     }
 
     fun clearError() {

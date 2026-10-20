@@ -58,6 +58,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.etapa1.model.Child
+import com.example.etapa1.ui.components.ActiveChildSwitcher
 import com.example.etapa1.ui.theme.AlertRed
 import com.example.etapa1.ui.theme.AlertRedBg
 import com.example.etapa1.ui.theme.AlertRedBorder
@@ -152,6 +154,8 @@ private val centerPoliciesList = listOf(
 
 @Composable
 fun MoreMenuScreen(
+    activeChild: Child? = null,
+    onSwitchChild: (() -> Unit)? = null,
     onNavigateToLostObjects: () -> Unit = {},
     onNavigateToHome: () -> Unit,
     onNavigateToMessages: () -> Unit = {},
@@ -169,19 +173,26 @@ fun MoreMenuScreen(
                 .padding(paddingValues)
         ) {
             // Header Top Bar
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 14.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Más",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = BrandBlue,
-                    textAlign = TextAlign.Center
+                    modifier = Modifier.weight(1f)
                 )
+
+                if (activeChild != null && onSwitchChild != null) {
+                    ActiveChildSwitcher(
+                        child = activeChild,
+                        onSwitchClick = onSwitchChild
+                    )
+                }
             }
 
             Column(

@@ -9,4 +9,8 @@ class ParentChildSelectionViewModel(
     private val childRepository: ChildRepository
 ) : ViewModel() {
     val children: StateFlow<List<Child>> = childRepository.parentChildren
+
+    init {
+        childRepository.refresh()
+    }
 }

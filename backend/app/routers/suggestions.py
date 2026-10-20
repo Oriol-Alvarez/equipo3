@@ -3,7 +3,7 @@
 import time
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -122,10 +122,13 @@ def actualizar_estado_sugerencia(
         raise ApiError(404, f"No existe la sugerencia con id {id}")
 
     sug.status = body.status
-    sug.response = body.response
-    sug.responder_name = body.responderName
-    sug.response_date = time.strftime("%d/%m/%Y %I:%M %p")
+    if body.response is not None:
+        sug.response = body.response
+        sug.response_date = time.strftime("%d/%m/%Y %I:%M %p")
+    if body.responderName is not None:
+        sug.responder_name = body.responderName
     db.commit()
+    db.refresh(sug)
 
     return SuggestionOut(
         id=sug.id,
@@ -142,3 +145,20 @@ def actualizar_estado_sugerencia(
         responseDate=sug.response_date,
         responderName=sug.responder_name,
     )
+
+
+@router.delete("/{id}", status_code=204)
+def eliminar_sugerencia(
+    id: str,
+    _: Identidad = Depends(requiere_educadora),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Elimina una sugerencia o queja (restringido a EDUCADORA/DIRECCION/ADMIN)."""
+    sug = db.get(Suggestion, id)
+    if sug is None:
+        raise ApiError(404, f"No existe la sugerencia con id {id}")
+
+    db.delete(sug)
+    db.commit()
+    return Response(status_code=204)
+

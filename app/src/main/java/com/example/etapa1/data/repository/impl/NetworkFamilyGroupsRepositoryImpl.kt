@@ -178,7 +178,7 @@ class NetworkFamilyGroupsRepositoryImpl(
                 removeMessage(groupId, pending.id)
                 return@enqueue
             }
-            val sent = api.sendFamilyGroupMessage(groupId, SendFamilyGroupMessageDto(cleanText, uploaded))
+            val sent = api.sendFamilyGroupMessage(groupId, SendFamilyGroupMessageDto(cleanText, uploaded, pending.time))
                 .bodyOrLog("POST mensaje")
             if (sent == null) {
                 removeMessage(groupId, pending.id)

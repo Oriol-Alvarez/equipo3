@@ -199,11 +199,5 @@ interface SonrisasApi {
         @Path("childId") childId: String,
         @Query("date") date: String? = null
     ): Response<List<TimelineItemDto>>
-
-    // ---------------------------------------------------------------- notificaciones push fcm
-    @POST("notifications/device-token")
-    suspend fun registerDeviceToken(
-        @Body request: DeviceTokenRequestDto
-    ): Response<Map<String, String>>
 }
 

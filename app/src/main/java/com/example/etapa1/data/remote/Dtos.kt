@@ -277,10 +277,3 @@ data class TimelineItemDto(
     val description: String? = null
 )
 
-@Serializable
-data class DeviceTokenRequestDto(
-    val deviceToken: String,
-    val platform: String = "android"
-)
-
-

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -57,10 +58,14 @@ fun AnnouncementsScreen(
     viewModel: AnnouncementsViewModel,
     onBack: () -> Unit
 ) {
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        viewModel.refresh()
+    }
     val announcements by viewModel.announcements.collectAsState()
     AnnouncementsScreen(
         announcements = announcements,
         onAnnouncementClick = { viewModel.markAsRead(it.id) },
+        onRefresh = { viewModel.refresh() },
         onBack = onBack
     )
 }
@@ -69,6 +74,7 @@ fun AnnouncementsScreen(
 fun AnnouncementsScreen(
     announcements: List<Announcement>,
     onAnnouncementClick: (Announcement) -> Unit = {},
+    onRefresh: () -> Unit = {},
     onBack: () -> Unit
 ) {
     Scaffold(
@@ -107,20 +113,55 @@ fun AnnouncementsScreen(
                         color = BrandBlue,
                         modifier = Modifier.padding(start = 8.dp)
                     )
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    IconButton(onClick = onRefresh) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Refrescar",
+                            tint = BrandBlue
+                        )
+                    }
                 }
             }
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(announcements, key = { it.id }) { announcement ->
-                    AnnouncementCardDetail(
-                        announcement = announcement,
-                        onClick = { onAnnouncementClick(announcement) }
-                    )
+            if (announcements.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Default.Campaign,
+                            contentDescription = null,
+                            tint = TextMuted,
+                            modifier = Modifier.size(64.dp)
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            text = "No hay anuncios oficiales publicados actualmente",
+                            fontSize = 15.sp,
+                            color = TextSecondary,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(announcements, key = { it.id }) { announcement ->
+                        AnnouncementCardDetail(
+                            announcement = announcement,
+                            onClick = { onAnnouncementClick(announcement) }
+                        )
+                    }
                 }
             }
         }

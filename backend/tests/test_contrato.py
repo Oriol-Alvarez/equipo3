@@ -40,6 +40,7 @@ def test_expediente_completo_contrato(cliente: TestClient, familiar: Persona):
         "pediatrician",
         "pediatricianPhone",
         "emergencyPhone",
+        "emergencyPhoneRelation",
         "motherName",
         "fatherName",
         "authorizedPickups",
@@ -102,3 +103,152 @@ def test_subida_media_y_descarga_contrato(cliente: TestClient, educadora: Person
     assert r_bajada.status_code == 200
     assert r_bajada.content == PNG_CHICO
     assert "ETag" in r_bajada.headers
+
+
+def test_registrar_actividad_y_persistencia_timeline(
+    cliente: TestClient, educadora: Persona, familiar: Persona
+):
+    # 1. Educadora registra una actividad pedagógica/alimentación para Mateo
+    payload = {
+        "time": "10:30 AM",
+        "category": "Alimentación",
+        "title": "Alimentación: Completo",
+        "description": "Mateo comió toda su fruta y merienda.",
+        "portionOption": "Completo",
+    }
+    r_post = cliente.post(
+        "/api/v1/children/mateo_garcia/activities",
+        headers=educadora.headers,
+        json=payload,
+    )
+    assert r_post.status_code == 201
+    datos = r_post.json()
+    assert datos["status"] == "CREADA"
+    act_id = datos["id"]
+    assert datos["timelineItem"]["type"] == "ACTIVITY_CARD"
+    assert datos["timelineItem"]["description"] == "Mateo comió toda su fruta y merienda."
+
+    # 2. Familiar consulta la línea de tiempo del día y comprueba que la actividad está guardada
+    r_get = cliente.get("/api/v1/children/mateo_garcia/timeline", headers=familiar.headers)
+    assert r_get.status_code == 200
+    timeline = r_get.json()
+    actividad_encontrada = next((item for item in timeline if item["id"] == act_id), None)
+    assert actividad_encontrada is not None
+    assert actividad_encontrada["type"] == "ACTIVITY_CARD"
+    assert actividad_encontrada["category"] == "Alimentación"
+    assert actividad_encontrada["portionLabel"] == "Completo"
+    assert actividad_encontrada["description"] == "Mateo comió toda su fruta y merienda."
+
+
+def test_mensaje_con_hora_personalizada_y_orden_cronologico_timeline(
+    cliente: TestClient, educadora: Persona, familiar: Persona
+):
+    # 1. Enviar mensaje con hora 09:15 AM
+    r_msg1 = cliente.post(
+        "/api/v1/chats/bitacora/mateo_garcia/messages",
+        headers=familiar.headers,
+        json={"message": "Mensaje de las 9:15", "time": "09:15 AM"},
+    )
+    assert r_msg1.status_code == 201
+    assert r_msg1.json()["time"] == "09:15 AM"
+
+    # 2. Registrar actividad con hora 10:00 AM
+    r_act = cliente.post(
+        "/api/v1/children/mateo_garcia/activities",
+        headers=educadora.headers,
+        json={
+            "time": "10:00 AM",
+            "category": "Juego",
+            "title": "Juego: Patio",
+            "description": "Jugó en el patio",
+        },
+    )
+    assert r_act.status_code == 201
+
+    # 3. Enviar mensaje posterior con hora 11:30 AM
+    r_msg2 = cliente.post(
+        "/api/v1/chats/bitacora/mateo_garcia/messages",
+        headers=educadora.headers,
+        json={"message": "Mensaje de las 11:30", "time": "11:30 AM"},
+    )
+    assert r_msg2.status_code == 201
+    assert r_msg2.json()["time"] == "11:30 AM"
+
+    # 4. Obtener timeline y verificar que los elementos están ordenados cronológicamente
+    r_timeline = cliente.get("/api/v1/children/mateo_garcia/timeline", headers=familiar.headers)
+    assert r_timeline.status_code == 200
+    timeline = r_timeline.json()
+
+    id_msg1 = r_msg1.json()["id"]
+    id_act = r_act.json()["id"]
+    id_msg2 = r_msg2.json()["id"]
+
+    idx_msg1 = next(i for i, item in enumerate(timeline) if item["id"] == id_msg1)
+    idx_act = next(i for i, item in enumerate(timeline) if item["id"] == id_act)
+    idx_msg2 = next(i for i, item in enumerate(timeline) if item["id"] == id_msg2)
+
+    # 09:15 AM (mensaje) < 10:00 AM (actividad) < 11:30 AM (mensaje)
+    assert idx_msg1 < idx_act < idx_msg2
+
+
+def test_elementos_diferentes_dias_ordenados_por_dia_y_hora(
+    cliente: TestClient, educadora: Persona, familiar: Persona
+):
+    # Actividad de un día previo a mediodía (12:20 PM el 12/10/2026)
+    r_act = cliente.post(
+        "/api/v1/children/mateo_garcia/activities",
+        headers=educadora.headers,
+        json={
+            "time": "12:20 PM",
+            "date": "12/10/2026",
+            "category": "Alimentación",
+            "title": "Almuerzo",
+            "description": "Comió su plato principal",
+        },
+    )
+    assert r_act.status_code == 201
+    id_act = r_act.json()["id"]
+
+    # Mensaje enviado un día posterior por la mañana temprana (08:30 AM el 19/10/2026)
+    r_msg = cliente.post(
+        "/api/v1/chats/bitacora/mateo_garcia/messages",
+        headers=familiar.headers,
+        json={
+            "message": "Mensaje de días después a primera hora",
+            "time": "08:30 AM",
+            "date": "19/10/2026",
+        },
+    )
+    assert r_msg.status_code == 201
+    id_msg = r_msg.json()["id"]
+
+    r_timeline = cliente.get("/api/v1/children/mateo_garcia/timeline", headers=familiar.headers)
+    assert r_timeline.status_code == 200
+    timeline = r_timeline.json()
+
+    idx_act = next(i for i, item in enumerate(timeline) if item["id"] == id_act)
+    idx_msg = next(i for i, item in enumerate(timeline) if item["id"] == id_msg)
+
+    # 12/10/2026 12:20 PM debe ir ANTES de 19/10/2026 08:30 AM
+    assert idx_act < idx_msg
+
+
+def test_obtener_educador_alumno_contrato(cliente: TestClient, familiar: Persona):
+    r = cliente.get("/api/v1/children/mateo_garcia/educator", headers=familiar.headers)
+    assert r.status_code == 200
+    datos = r.json()
+    assert datos["name"] == "Laura Gómez"
+    assert "Educadora" in datos["role"]
+    assert datos["roomName"] == "Sala 1A"
+    assert datos["avatarInitials"] == "LG"
+
+    # También verificar que el endpoint de hijos de familiar devuelve educatorName y roomText resuelto
+    r_hijos = cliente.get("/api/v1/parents/me/children", headers=familiar.headers)
+    assert r_hijos.status_code == 200
+    hijos = r_hijos.json()
+    mateo = next(h for h in hijos if h["id"] == "mateo_garcia")
+    assert mateo["educatorName"] == "Laura Gómez"
+    assert "Educadora" in mateo["educatorRole"]
+    assert mateo["roomText"] == "Sala 1A"
+
+
