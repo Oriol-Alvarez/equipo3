@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.data.remote.PushNotificationHelper
+import com.example.etapa1.data.remote.SyncWorker
 import com.example.etapa1.ui.navigation.SonrisasApp
 import com.example.etapa1.ui.theme.Etapa1Theme
 import com.google.firebase.messaging.FirebaseMessaging
@@ -48,6 +49,9 @@ class MainActivity : ComponentActivity() {
             } catch (_: Exception) {
                 // Firebase sin configurar en desarrollo
             }
+            
+            // Inicia el worker secundario que revisará notificaciones localmente si Firebase no está disponible
+            SyncWorker.setupPeriodicSync(this)
         }
 
         setContent {
