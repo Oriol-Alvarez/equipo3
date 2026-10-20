@@ -9,7 +9,7 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.concurrent.TimeUnit
 
 object NetworkClient {
-    const val DEFAULT_BASE_URL = "https://clone-wiley-collector-trim.trycloudflare.com/api/v1/"
+    const val DEFAULT_BASE_URL = "https://spirits-pastor-portrait-genetic.trycloudflare.com/api/v1/"
     var baseUrl: String = DEFAULT_BASE_URL
 
     val json: Json = Json {
@@ -24,10 +24,7 @@ object NetworkClient {
             level = HttpLoggingInterceptor.Level.BODY
         }
         return OkHttpClient.Builder()
-            .addInterceptor(AuthInterceptor(
-                tokenProvider = { tokenManager.token },
-                onUnauthorized = { tokenManager.notifySessionExpired() }
-            ))
+            .addInterceptor(AuthInterceptor { tokenManager.token })
             .addInterceptor(logging)
             .pingInterval(20, TimeUnit.SECONDS)
             .connectTimeout(15, TimeUnit.SECONDS)
