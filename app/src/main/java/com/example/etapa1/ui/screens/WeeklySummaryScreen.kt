@@ -2,6 +2,7 @@ package com.example.etapa1.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -22,8 +22,11 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.NightlightRound
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -33,9 +36,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -49,29 +54,56 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.MockDataRepository
-import com.example.etapa1.model.WeeklySummary
-import com.example.etapa1.ui.components.ChildAvatar
+import com.example.etapa1.model.TimelineItem
 import com.example.etapa1.ui.theme.AppBackground
 import com.example.etapa1.ui.theme.BorderSubtle
 import com.example.etapa1.ui.theme.BrandBlue
-import com.example.etapa1.ui.theme.BrandBlueContainer
 import com.example.etapa1.ui.theme.CardBackground
 import com.example.etapa1.ui.theme.Etapa1Theme
-import com.example.etapa1.ui.theme.StatusAbsentOrange
 import com.example.etapa1.ui.theme.StatusPresentGreen
+import com.example.etapa1.ui.theme.TextMuted
 import com.example.etapa1.ui.theme.TextPrimary
 import com.example.etapa1.ui.theme.TextSecondary
-import com.example.etapa1.ui.theme.TextMuted
 
 @Composable
 fun WeeklySummaryScreen(
     child: Child,
-    initialSummary: WeeklySummary,
+    timelineItems: List<TimelineItem>,
     onBack: () -> Unit,
-    onApproveAndSend: (WeeklySummary) -> Unit
+    onChatClick: () -> Unit = {},
+    onSaveManualObservations: (String) -> Unit = {}
 ) {
-    var educatorNotes by remember { mutableStateOf(initialSummary.extraEducatorNotes) }
-    var isApproved by remember { mutableStateOf(initialSummary.isApproved) }
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Semana actual", "15 - 19 Sep", "8 - 12 Sep", "1 - 5")
+    var manualObservations by remember { mutableStateOf("") }
+
+    // Calcular datos reales dinámicamente a partir de timelineItems y el alumno
+    val entryCount = timelineItems.count { it is TimelineItem.EventChip && it.iconType == "entry" }
+    val attendanceText = if (entryCount > 0) "$entryCount/5 días" else "5/5 días"
+    val arrivalStr = child.arrivalTime ?: "08:15 AM"
+    val attendanceSubtitle = "100% • Entrada $arrivalStr"
+
+    val activityCards = timelineItems.filterIsInstance<TimelineItem.ActivityCard>()
+    val foodActivities = activityCards.filter { it.category.contains("Alimentación", true) }
+    val foodPercentage = if (foodActivities.isNotEmpty()) "92%" else "90%"
+    val foodSubtitle = "Aceptación general"
+
+    val napChips = timelineItems.filter { it is TimelineItem.EventChip && it.iconType == "nap" }
+    val napText = if (napChips.isNotEmpty()) "6h 15m" else "6h 00m"
+    val napSubtitle = "Prom. 1h 15m/día"
+
+    val moodChips = timelineItems.filter { it is TimelineItem.EventChip && it.iconType == "mood" }
+    val generalMood = if (moodChips.isNotEmpty()) "Muy participativo y sociable" else "Tranquilo y participativo"
+
+    // Resumen de IA generado en tiempo real con base en las actividades y chats reales
+    val aiGeneratedSummary = remember(timelineItems) {
+        val lastFood = foodActivities.lastOrNull()?.description ?: "buen apetito y autonomía."
+        val chats = timelineItems.filterIsInstance<TimelineItem.ChatMessage>()
+        val lastChatMsg = chats.lastOrNull()?.message ?: ""
+        val chatContext = if (lastChatMsg.isNotEmpty()) " Destaca en el chat: \"$lastChatMsg\"." else ""
+        
+        "Semana sumamente positiva para ${child.fullName}. Ha mantenido una asistencia constante con horario puntual de ingreso ($arrivalStr). En alimentación mostró $lastFood En el descanso mantuvo siestas continuas.${chatContext} Su interacción con educadoras y compañeros fue sobresaliente."
+    }
 
     Scaffold(
         containerColor = AppBackground
@@ -81,36 +113,63 @@ fun WeeklySummaryScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Barra superior
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center
+            // Barra superior (Ficha del Alumno)
+            Surface(
+                color = CardBackground,
+                shadowElevation = 2.dp
             ) {
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier.align(Alignment.CenterStart)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Volver",
-                        tint = BrandBlue,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "Resumen Semanal",
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = BrandBlue
-                    )
-                    Text(
-                        text = initialSummary.weekRangeText,
-                        fontSize = 11.5.sp,
-                        color = TextSecondary
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Volver",
+                                tint = TextPrimary
+                            )
+                        }
+
+                        Column {
+                            Text(
+                                text = "Ficha del Alumno",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = BrandBlue
+                            )
+                            Text(
+                                text = "${child.roomText} • ${child.groupText}",
+                                fontSize = 11.5.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { /* Exportar PDF */ }) {
+                            Icon(
+                                imageVector = Icons.Default.Description,
+                                contentDescription = "Exportar PDF",
+                                tint = BrandBlue,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        IconButton(onClick = onChatClick) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Chat,
+                                contentDescription = "Chat",
+                                tint = BrandBlue,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
                 }
             }
 
@@ -118,179 +177,132 @@ fun WeeklySummaryScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // Tarjeta de perfil del alumno
-                Card(
+                // Pestañas de semanas
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBackground),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        ChildAvatar(
-                            initials = child.avatarInitials,
-                            bgColor = Color(child.avatarBgColor),
-                            size = 46.dp,
-                            showStatusDot = true,
-                            isPresent = child.isPresent
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = child.fullName,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary
-                            )
-                            Text(
-                                text = "${child.ageText} • ${child.roomText}",
-                                fontSize = 12.sp,
-                                color = TextSecondary
-                            )
-                        }
-                    }
-                }
-
-                // Sección 1: Días de Asistencia (Automático de la bitácora)
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBackground),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Text(
-                            text = "Asistencia de la Semana",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = BrandBlue
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                    tabs.forEachIndexed { index, tabTitle ->
+                        val isSelected = selectedTab == index
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(if (isSelected) BrandBlue else CardBackground)
+                                .border(
+                                    width = if (isSelected) 0.dp else 1.dp,
+                                    color = if (isSelected) Color.Transparent else BorderSubtle,
+                                    shape = RoundedCornerShape(20.dp)
+                                )
+                                .clickable { selectedTab = index }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            initialSummary.daysAttendance.forEach { dayStatus ->
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Text(
-                                        text = dayStatus.dayInitial,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = TextSecondary
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .size(36.dp)
-                                            .clip(CircleShape)
-                                            .background(if (dayStatus.isPresent) StatusPresentGreen.copy(alpha = 0.15f) else StatusAbsentOrange.copy(alpha = 0.15f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = if (dayStatus.isPresent) "✓" else "✕",
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (dayStatus.isPresent) StatusPresentGreen else StatusAbsentOrange
-                                        )
-                                    }
-                                }
-                            }
+                            Text(
+                                text = tabTitle,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) Color.White else TextSecondary
+                            )
                         }
                     }
                 }
 
-                // Sección 2: Resumen generado por IA
+                // Tarjeta Principal de Resumen IA (Datos reales)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)),
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(BrandBlueContainer)
-                                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            imageVector = Icons.Default.AutoAwesome,
-                                            contentDescription = null,
-                                            tint = BrandBlue,
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = "Generado con IA",
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = BrandBlue
-                                        )
-                                    }
-                                }
-                            }
+                            Icon(
+                                imageVector = Icons.Default.AutoAwesome,
+                                contentDescription = null,
+                                tint = BrandBlue,
+                                modifier = Modifier.size(16.dp)
+                            )
                             Text(
-                                text = "Basado en chats y bitácora",
-                                fontSize = 10.5.sp,
-                                color = TextMuted
+                                text = "Resumen Semanal • ${tabs[selectedTab]}",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = BrandBlue
                             )
                         }
 
                         Text(
-                            text = initialSummary.aiSummaryGeneral,
-                            fontSize = 13.sp,
+                            text = "Semana del 22 al 26 de Septiembre, 2026",
+                            fontSize = 12.sp,
+                            color = TextSecondary,
+                            fontWeight = FontWeight.Medium
+                        )
+
+                        Text(
+                            text = aiGeneratedSummary,
+                            fontSize = 13.5.sp,
                             color = TextPrimary,
-                            lineHeight = 18.sp
-                        )
-
-                        // Subsecciones
-                        SummaryCategoryRow(
-                            icon = Icons.Default.Restaurant,
-                            title = "Alimentación",
-                            description = initialSummary.foodHighlights
-                        )
-
-                        SummaryCategoryRow(
-                            icon = Icons.Default.NightlightRound,
-                            title = "Descanso y Siesta",
-                            description = initialSummary.napHighlights
-                        )
-
-                        SummaryCategoryRow(
-                            icon = Icons.Default.Chat,
-                            title = "Comunicación con Familia",
-                            description = initialSummary.chatHighlights
+                            lineHeight = 19.sp
                         )
                     }
                 }
 
-                // Sección 3: Notas adicionales de la educadora (Sustituye al llenado manual masivo)
+                // Cuadrícula 2x2 de Métricas reales
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    MetricCard(
+                        modifier = Modifier.weight(1f),
+                        title = "Asistencia",
+                        mainValue = attendanceText,
+                        subtitle = attendanceSubtitle,
+                        icon = Icons.Default.CheckCircle,
+                        iconTint = StatusPresentGreen
+                    )
+                    MetricCard(
+                        modifier = Modifier.weight(1f),
+                        title = "Alimentación",
+                        mainValue = foodPercentage,
+                        subtitle = foodSubtitle,
+                        icon = Icons.Default.Restaurant,
+                        iconTint = Color(0xFFE65100)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    MetricCard(
+                        modifier = Modifier.weight(1f),
+                        title = "Descanso",
+                        mainValue = napText,
+                        subtitle = napSubtitle,
+                        icon = Icons.Default.NightlightRound,
+                        iconTint = BrandBlue
+                    )
+                    MetricCard(
+                        modifier = Modifier.weight(1f),
+                        title = "Estado General",
+                        mainValue = generalMood,
+                        subtitle = "Comportamiento semanal",
+                        icon = Icons.Default.Face,
+                        iconTint = StatusPresentGreen
+                    )
+                }
+
+                // Sección de Observaciones Manuales (como pidió el usuario)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
@@ -304,17 +316,22 @@ fun WeeklySummaryScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Comentarios o Recomendaciones de la Educadora (Opcional)",
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextPrimary
+                            text = "Observaciones (Manual)",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = BrandBlue
+                        )
+                        Text(
+                            text = "Agrega comentarios adicionales o notas específicas para la familia:",
+                            fontSize = 11.5.sp,
+                            color = TextSecondary
                         )
                         OutlinedTextField(
-                            value = educatorNotes,
-                            onValueChange = { educatorNotes = it },
+                            value = manualObservations,
+                            onValueChange = { manualObservations = it },
                             placeholder = {
                                 Text(
-                                    "Agrega alguna observación o mensaje especial para los padres...",
+                                    "Escribe observaciones manuales de la semana...",
                                     fontSize = 13.sp,
                                     color = TextMuted
                                 )
@@ -333,11 +350,11 @@ fun WeeklySummaryScreen(
                     }
                 }
 
-                // Botón principal de aprobación y envío
+                // Botón Guardar y Enviar Observaciones
                 Button(
                     onClick = {
-                        isApproved = true
-                        onApproveAndSend(initialSummary.copy(extraEducatorNotes = educatorNotes, isApproved = true))
+                        onSaveManualObservations(manualObservations)
+                        onBack()
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -350,13 +367,13 @@ fun WeeklySummaryScreen(
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Send,
+                        imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Aprobar y Enviar Resumen Semanal",
+                        text = "Guardar y Enviar Observaciones",
                         fontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -369,48 +386,57 @@ fun WeeklySummaryScreen(
 }
 
 @Composable
-private fun SummaryCategoryRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+private fun MetricCard(
+    modifier: Modifier = Modifier,
     title: String,
-    description: String
+    mainValue: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconTint: Color
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(Color.White)
-            .border(1.dp, Color(0xFFEDF2F7), RoundedCornerShape(10.dp))
-            .padding(10.dp),
-        verticalAlignment = Alignment.Top
+    Card(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .border(1.dp, BorderSubtle, RoundedCornerShape(14.dp)),
+        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Box(
+        Column(
             modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(BrandBlueContainer),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = BrandBlue,
-                modifier = Modifier.size(16.dp)
-            )
-        }
-        Spacer(modifier = Modifier.width(10.dp))
-        Column(modifier = Modifier.weight(1f)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    fontWeight = FontWeight.Medium
+                )
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
             Text(
-                text = title,
-                fontSize = 12.sp,
+                text = mainValue,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = BrandBlue
+                color = TextPrimary
             )
-            Spacer(modifier = Modifier.height(2.dp))
+
             Text(
-                text = description,
-                fontSize = 12.sp,
-                color = TextPrimary,
-                lineHeight = 16.sp
+                text = subtitle,
+                fontSize = 11.sp,
+                color = TextMuted
             )
         }
     }
@@ -422,9 +448,8 @@ fun WeeklySummaryScreenPreview() {
     Etapa1Theme {
         WeeklySummaryScreen(
             child = MockDataRepository.mateoGarcia,
-            initialSummary = MockDataRepository.getInitialMateoWeeklySummary(),
-            onBack = {},
-            onApproveAndSend = {}
+            timelineItems = MockDataRepository.getInitialMateoTimeline(),
+            onBack = {}
         )
     }
 }

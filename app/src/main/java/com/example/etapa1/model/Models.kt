@@ -172,16 +172,6 @@ enum class MedicationPrescriptionOption(val label: String) {
     NO_APLICA("No aplica")
 }
 
-data class AttendanceRecord(
-    val id: String = "att_${System.currentTimeMillis()}",
-    val childId: String,
-    val isIngreso: Boolean, // true = Ingreso (Entrada), false = Egreso (Salida)
-    val date: String,
-    val dayOfWeek: String, // L, M, M, J, V
-    val time: String,
-    val observations: String = ""
-)
-
 sealed interface TimelineItem {
     val id: String
     val time: String
