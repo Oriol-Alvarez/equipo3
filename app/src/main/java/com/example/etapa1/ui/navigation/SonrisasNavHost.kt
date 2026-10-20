@@ -324,14 +324,31 @@ fun SonrisasNavHost(
                     LaunchedEffect(Unit) { nav.popBackStack() }
                     return@composable
                 }
-                // Usa la bitácora ya abierta del niño (datos del servidor)
+                // Bitácora ya abierta del niño + asistencia, todo del servidor
                 val vm: ChatBitacoraViewModel = viewModel(factory = AppViewModelProvider.Factory)
                 val items by vm.timelineItems.collectAsState()
+                val asistenciaRepo = app?.container?.attendanceRepository
+                LaunchedEffect(selectedChild.id) { asistenciaRepo?.refresh() }
+                val asistencias = asistenciaRepo?.attendanceRecords?.collectAsState()?.value.orEmpty()
                 WeeklySummaryScreen(
                     child = selectedChild,
                     timelineItems = items,
+                    attendanceRecords = asistencias,
                     onBack = { nav.popBackStack() },
-                    onChatClick = { nav.popBackStack() }
+                    onChatClick = { nav.popBackStack() },
+                    onExportClick = if (isEducadora) {
+                        { nav.navigate(Route.EXPORT_LOG) }
+                    } else {
+                        null
+                    },
+                    onSaveManualObservations = { texto ->
+                        vm.sendMessage(
+                            text = texto,
+                            senderRole = if (isEducadora) com.example.etapa1.model.UserRole.EDUCADORA
+                            else com.example.etapa1.model.UserRole.FAMILIAR,
+                            childId = selectedChild.id
+                        )
+                    }
                 )
             }
 
