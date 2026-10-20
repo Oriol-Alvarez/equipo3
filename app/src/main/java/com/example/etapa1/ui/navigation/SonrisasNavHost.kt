@@ -267,7 +267,7 @@ fun SonrisasNavHost(
                     val isGroup = currentWorkerChat.isGroup || currentWorkerChat.isGlobal
                     val isFamilyGroup = familyGroupsState.groups.any { it.id == currentWorkerChat.id }
 
-                    qChatBitacoraScreen(
+                    ChatBitacoraScreen(
                         workerChat = currentWorkerChat,
                         child = null,
                         isWorkerRole = isEducadora,
@@ -313,9 +313,26 @@ fun SonrisasNavHost(
                         onAttendanceClick = {
                             attendanceChild = selectedChild
                             nav.navigate(Route.ATTENDANCE)
-                        }
+                        },
+                        onWeeklySummaryClick = { nav.navigate(Route.WEEKLY_SUMMARY) }
                     )
                 }
+            }
+
+            composable(Route.WEEKLY_SUMMARY) {
+                if (selectedChild.id.isEmpty()) {
+                    LaunchedEffect(Unit) { nav.popBackStack() }
+                    return@composable
+                }
+                // Usa la bitácora ya abierta del niño (datos del servidor)
+                val vm: ChatBitacoraViewModel = viewModel(factory = AppViewModelProvider.Factory)
+                val items by vm.timelineItems.collectAsState()
+                WeeklySummaryScreen(
+                    child = selectedChild,
+                    timelineItems = items,
+                    onBack = { nav.popBackStack() },
+                    onChatClick = { nav.popBackStack() }
+                )
             }
 
             composable(Route.NEW_ACTIVITY) {
