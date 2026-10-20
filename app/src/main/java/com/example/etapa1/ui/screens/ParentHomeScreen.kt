@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -71,6 +72,7 @@ import com.example.etapa1.model.ChildFullProfile
 import com.example.etapa1.model.DailyBitacora
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.WeeklySummary
+import com.example.etapa1.ui.components.ActiveChildSwitcher
 import com.example.etapa1.ui.components.ChildAvatar
 import com.example.etapa1.ui.components.ChildFullDataContent
 import com.example.etapa1.ui.components.DailyBitacoraContent
@@ -244,78 +246,76 @@ fun ParentHomeScreen(
                     shadowElevation = 2.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Box(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        contentAlignment = Alignment.Center
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Botón de Anuncios del Centro
-                        IconButton(
-                            onClick = onNavigateToAnnouncements,
-                            modifier = Modifier.align(Alignment.CenterStart)
+                        // Botón de Anuncios del Centro (Izquierda)
+                        Box(
+                            modifier = Modifier.widthIn(min = 40.dp),
+                            contentAlignment = Alignment.CenterStart
                         ) {
-                            BadgedBox(
-                                badge = {
-                                    if (unreadAnnouncementsCount > 0) {
-                                        Badge(
-                                            containerColor = AlertRed,
-                                            contentColor = Color.White
-                                        ) {
-                                            Text(text = unreadAnnouncementsCount.toString())
+                            IconButton(
+                                onClick = onNavigateToAnnouncements,
+                                modifier = Modifier.size(38.dp)
+                            ) {
+                                BadgedBox(
+                                    badge = {
+                                        if (unreadAnnouncementsCount > 0) {
+                                            Badge(
+                                                containerColor = AlertRed,
+                                                contentColor = Color.White
+                                            ) {
+                                                Text(text = unreadAnnouncementsCount.toString())
+                                            }
                                         }
                                     }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Notifications,
+                                        contentDescription = "Anuncios del centro",
+                                        tint = BrandBlue,
+                                        modifier = Modifier.size(22.dp)
+                                    )
                                 }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Notifications,
-                                    contentDescription = "Anuncios del centro",
-                                    tint = BrandBlue,
-                                    modifier = Modifier.size(24.dp)
-                                )
                             }
                         }
 
-                        // Título y Centro
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        // Título y Subtítulo (Centro ponderado para evitar cualquier solapamiento)
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
                             Text(
                                 text = "Sonrisas de Cristal",
-                                fontSize = 17.sp,
+                                fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = BrandBlue
+                                color = BrandBlue,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                             Text(
                                 text = "Inicio Familiar",
-                                fontSize = 12.sp,
-                                color = TextSecondary
+                                fontSize = 11.5.sp,
+                                color = TextSecondary,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                         }
 
-                        // Botón Cambiar de Hijo (si hay más de 1)
-                        if (allChildren.size > 1) {
-                            Row(
-                                modifier = Modifier
-                                    .align(Alignment.CenterEnd)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(BrandBlueContainer)
-                                    .clickable(onClick = onSwitchChild)
-                                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.SwapHoriz,
-                                    contentDescription = "Cambiar de hijo",
-                                    tint = BrandBlue,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "Cambiar",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = BrandBlue
-                                )
-                            }
+                        // Indicador y cambio de hijo activo (Derecha)
+                        Box(
+                            modifier = Modifier.widthIn(min = 40.dp),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            ActiveChildSwitcher(
+                                child = child,
+                                onSwitchClick = onSwitchChild
+                            )
                         }
                     }
                 }

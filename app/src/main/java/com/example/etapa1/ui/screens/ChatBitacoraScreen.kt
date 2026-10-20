@@ -40,8 +40,13 @@ import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material3.FloatingActionButton
+import com.example.etapa1.model.WorkerChat
+import com.example.etapa1.model.WorkerChatMessage
+import com.example.etapa1.ui.components.WorkerChatMessageBubble
+import com.example.etapa1.ui.components.ShareGroupActivityDialog
 import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -80,7 +85,6 @@ import com.example.etapa1.model.Child
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.TimelineItem
 import com.example.etapa1.ui.components.ChildAvatar
-import com.example.etapa1.ui.components.MedicalAlertBanner
 import com.example.etapa1.ui.theme.AlertRed
 import com.example.etapa1.ui.theme.AppBackground
 import com.example.etapa1.ui.theme.BorderSubtle
@@ -130,7 +134,8 @@ fun ChatBitacoraScreen(
                 fileUri = uri?.toString(),
                 fileName = name,
                 fileMimeType = mime,
-                senderRole = if (isWorkerRole) com.example.etapa1.model.UserRole.EDUCADORA else com.example.etapa1.model.UserRole.FAMILIAR
+                senderRole = if (isWorkerRole) com.example.etapa1.model.UserRole.EDUCADORA else com.example.etapa1.model.UserRole.FAMILIAR,
+                childId = child.id
             )
         }
     )
@@ -138,20 +143,24 @@ fun ChatBitacoraScreen(
 
 @Composable
 fun ChatBitacoraScreen(
-    child: Child,
-    timelineItems: List<TimelineItem>,
+    child: Child? = null,
+    workerChat: WorkerChat? = null,
+    timelineItems: List<TimelineItem> = emptyList(),
     conexionEstado: com.example.etapa1.domain.EstadoConexion = com.example.etapa1.domain.EstadoConexion.Conectado,
     isWorkerRole: Boolean = true,
+    canShareActivity: Boolean = false,
     onBack: () -> Unit,
     onChildInfoClick: () -> Unit = {},
-    onNewActivityClick: () -> Unit,
+    onNewActivityClick: () -> Unit = {},
     onAttendanceClick: () -> Unit = {},
     /** Expediente real para los teléfonos del botón de llamar; null usa los datos de ejemplo (vista previa). */
     childProfile: com.example.etapa1.model.ChildFullProfile? = null,
-    onSendMessage: (String, Uri?, String?, String?) -> Unit
+    onSendMessage: (String, Uri?, String?, String?) -> Unit,
+    onSendActivity: ((category: String, badge: String, description: String) -> Unit)? = null
 ) {
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+    var showShareActivityDialog by remember { mutableStateOf(false) }
     
     var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
     var selectedFileName by remember { mutableStateOf<String?>(null) }
@@ -188,9 +197,10 @@ fun ChatBitacoraScreen(
     }
 
     // Auto scroll to bottom when items change
-    LaunchedEffect(timelineItems.size) {
-        if (timelineItems.isNotEmpty()) {
-            listState.animateScrollToItem(timelineItems.size - 1)
+    val currentItemCount = if (workerChat != null) workerChat.messages.size else timelineItems.size
+    LaunchedEffect(currentItemCount) {
+        if (currentItemCount > 0) {
+            listState.animateScrollToItem(currentItemCount - 1)
         }
     }
 
@@ -204,7 +214,7 @@ fun ChatBitacoraScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    if (isWorkerRole) {
+                    if (isWorkerRole && child != null) {
                         Button(
                             onClick = onNewActivityClick,
                             colors = ButtonDefaults.buttonColors(
@@ -308,6 +318,17 @@ fun ChatBitacoraScreen(
                             )
                         }
 
+                        if (canShareActivity) {
+                            IconButton(onClick = { showShareActivityDialog = true }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.EventNote,
+                                    contentDescription = "Compartir actividad",
+                                    tint = BrandBlue,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+
                         OutlinedTextField(
                             value = messageText,
                             onValueChange = { messageText = it },
@@ -389,47 +410,124 @@ fun ChatBitacoraScreen(
                             )
                         }
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { onChildInfoClick() }
-                                .padding(horizontal = 4.dp, vertical = 4.dp)
-                        ) {
-                            ChildAvatar(
-                                initials = child.avatarInitials,
-                                bgColor = Color(child.avatarBgColor),
-                                size = 38.dp,
-                                showStatusDot = true,
-                                isPresent = child.isPresent
-                            )
-
-                            Spacer(modifier = Modifier.width(10.dp))
-
-                            Column {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Text(
-                                        text = child.shortName,
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = TextPrimary
+                        if (workerChat != null) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 4.dp, vertical = 4.dp)
+                            ) {
+                                if (workerChat.isGlobal || workerChat.isGroup) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(38.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(workerChat.avatarBgColor)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Groups,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                } else {
+                                    ChildAvatar(
+                                        initials = workerChat.avatarInitials,
+                                        bgColor = Color(workerChat.avatarBgColor),
+                                        size = 38.dp,
+                                        showStatusDot = false
                                     )
-                                    com.example.etapa1.ui.components.ChipConexion(estado = conexionEstado)
                                 }
-                                Text(
-                                    text = "${child.ageText} • ${child.roomText}",
-                                    fontSize = 12.sp,
-                                    color = TextSecondary
-                                )
+
+                                Spacer(modifier = Modifier.width(10.dp))
+
+                                Column {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(
+                                            text = workerChat.title,
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = TextPrimary,
+                                            maxLines = 1
+                                        )
+                                        com.example.etapa1.ui.components.ChipConexion(estado = conexionEstado)
+                                    }
+                                    Text(
+                                        text = workerChat.subtitle,
+                                        fontSize = 12.sp,
+                                        color = TextSecondary,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        } else if (child != null) {
+                            // Datos reales de la educadora asignada (vienen del servidor con el niño)
+                            val educatorName = child.educatorName?.ifBlank { null } ?: "Educadora de ${child.roomText.ifBlank { "sala" }}"
+                            val educatorInitials = child.educatorAvatarInitials?.ifBlank { null } ?: "ED"
+                            val educatorBgColor = child.educatorAvatarBgColor ?: 0xFF00897B
+                            val educatorRole = (child.educatorRole?.ifBlank { null } ?: "Educadora").substringBefore(" •").trim()
+                            val roomName = child.roomText.ifBlank { "Sala" }
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { onChildInfoClick() }
+                                    .padding(horizontal = 4.dp, vertical = 4.dp)
+                            ) {
+                                if (!isWorkerRole) {
+                                    ChildAvatar(
+                                        initials = educatorInitials,
+                                        bgColor = Color(educatorBgColor),
+                                        size = 38.dp,
+                                        showStatusDot = false
+                                    )
+                                } else {
+                                    ChildAvatar(
+                                        initials = child.avatarInitials,
+                                        bgColor = Color(child.avatarBgColor),
+                                        size = 38.dp,
+                                        showStatusDot = true,
+                                        isPresent = child.isPresent
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(10.dp))
+
+                                Column {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(
+                                            text = if (!isWorkerRole) educatorName else child.shortName,
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = TextPrimary
+                                        )
+                                        com.example.etapa1.ui.components.ChipConexion(estado = conexionEstado)
+                                    }
+                                    Text(
+                                        text = if (!isWorkerRole) {
+                                            "$educatorRole • $roomName"
+                                        } else {
+                                            "${child.ageText} • $roomName"
+                                        },
+                                        fontSize = 12.sp,
+                                        color = TextSecondary
+                                    )
+                                }
                             }
                         }
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (isWorkerRole) {
+                        if (isWorkerRole && child != null) {
                             IconButton(onClick = onAttendanceClick) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.FactCheck,
@@ -440,7 +538,7 @@ fun ChatBitacoraScreen(
                             }
                         }
                         IconButton(onClick = {
-                            if (isWorkerRole) {
+                            if (isWorkerRole && child != null) {
                                 showCallDialog = true
                             } else {
                                 val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:+34912334455"))
@@ -449,20 +547,12 @@ fun ChatBitacoraScreen(
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Phone,
-                                contentDescription = if (isWorkerRole) "Llamar a familiares" else "Llamar al centro",
+                                contentDescription = if (isWorkerRole && child != null) "Llamar a familiares" else "Llamar al centro",
                                 tint = AlertRed,
                                 modifier = Modifier.size(22.dp)
                             )
                         }
-
                     }
-                }
-            }
-
-            // Banner Alerta médica
-            if (child.allergyAlert != null) {
-                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    MedicalAlertBanner(text = child.allergyAlert)
                 }
             }
 
@@ -475,28 +565,37 @@ fun ChatBitacoraScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 contentPadding = PaddingValues(top = 10.dp, bottom = 20.dp)
             ) {
-                itemsIndexed(timelineItems, key = { _, item -> item.id }) { index, item ->
-                    val showDateHeader = if (index == 0) {
-                        item.date.isNotBlank()
-                    } else {
-                        item.date.isNotBlank() && item.date != timelineItems[index - 1].date
+                if (workerChat != null) {
+                    items(workerChat.messages, key = { it.id }) { msg ->
+                        WorkerChatMessageBubble(
+                            msg = msg,
+                            isGroupChat = workerChat.isGroup || workerChat.isGlobal
+                        )
                     }
-
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        if (showDateHeader) {
-                            DateHeaderChip(dateStr = item.date)
-                            Spacer(modifier = Modifier.height(10.dp))
+                } else {
+                    itemsIndexed(timelineItems, key = { _, item -> item.id }) { index, item ->
+                        val showDateHeader = if (index == 0) {
+                            item.date.isNotBlank()
+                        } else {
+                            item.date.isNotBlank() && item.date != timelineItems[index - 1].date
                         }
 
-                        when (item) {
-                            is TimelineItem.EventChip -> {
-                                TimelineChip(item)
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            if (showDateHeader) {
+                                DateHeaderChip(dateStr = item.date)
+                                Spacer(modifier = Modifier.height(10.dp))
                             }
-                            is TimelineItem.ChatMessage -> {
-                                ChatMessageBubble(item, isWorkerRole)
-                            }
-                            is TimelineItem.ActivityCard -> {
-                                ActivityTimelineCard(item)
+
+                            when (item) {
+                                is TimelineItem.EventChip -> {
+                                    TimelineChip(item)
+                                }
+                                is TimelineItem.ChatMessage -> {
+                                    ChatMessageBubble(item, isWorkerRole)
+                                }
+                                is TimelineItem.ActivityCard -> {
+                                    ActivityTimelineCard(item)
+                                }
                             }
                         }
                     }
@@ -505,7 +604,21 @@ fun ChatBitacoraScreen(
         }
     }
     
-    if (showCallDialog) {
+    if (showShareActivityDialog && canShareActivity) {
+        ShareGroupActivityDialog(
+            onDismiss = { showShareActivityDialog = false },
+            onSendActivity = { category, badge, description ->
+                if (onSendActivity != null) {
+                    onSendActivity(category, badge, description)
+                } else {
+                    val formatted = "[ACTIVIDAD]\nCategoría: $category\nDetalle: $badge\nObservaciones: $description"
+                    onSendMessage(formatted, null, null, null)
+                }
+            }
+        )
+    }
+
+    if (showCallDialog && child != null) {
         ParentCallDialog(
             child = child,
             profile = childProfile,
@@ -791,7 +904,7 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boole
         if (isWorkerRole) msg.senderRole == com.example.etapa1.model.UserRole.EDUCADORA
         else msg.senderRole == com.example.etapa1.model.UserRole.FAMILIAR
     } else {
-        msg.isOutgoing
+        if (isWorkerRole) msg.isOutgoing else !msg.isOutgoing
     }
     val context = LocalContext.current
     Column(
@@ -863,14 +976,14 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boole
                             Icon(
                                 imageVector = Icons.Default.InsertDriveFile,
                                 contentDescription = "Archivo adjunto",
-                                tint = if (msg.isOutgoing) Color.White else BrandBlue,
+                                tint = if (isOutgoing) Color.White else BrandBlue,
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = msg.fileName ?: "Archivo adjunto",
                                 fontSize = 12.sp,
-                                color = if (msg.isOutgoing) Color.White else BrandBlue,
+                                color = if (isOutgoing) Color.White else BrandBlue,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1
                             )
@@ -881,7 +994,7 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boole
                     Text(
                         text = msg.message,
                         fontSize = 13.5.sp,
-                        color = if (msg.isOutgoing) Color.White else TextPrimary,
+                        color = if (isOutgoing) Color.White else TextPrimary,
                         lineHeight = 18.sp
                     )
                 }

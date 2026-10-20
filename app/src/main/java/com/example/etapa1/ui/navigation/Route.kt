@@ -21,4 +21,5 @@ object Route {
     const val PARENT_GROUPS = "parent_groups"
     const val DAILY_PLAN = "daily_plan"
     const val EXPORT_LOG = "export_log"
+    const val ADMIN_PANEL = "admin_panel"
 }

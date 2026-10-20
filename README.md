@@ -32,16 +32,15 @@ Después de 5 contraseñas equivocadas seguidas la cuenta se bloquea 1 minuto.
 
 ## 2. Correr la app
 
-La dirección del servidor **no se cambia en el código** (`NetworkClient.kt`). Se pone en el archivo
-`local.properties` de la raíz (no se sube a git), por ejemplo:
+La dirección del servidor está fija en `app/src/main/java/com/example/etapa1/data/remote/NetworkClient.kt`:
 
-```properties
-sonrisas.apiUrl=http://10.0.2.2:8000/api/v1/
-# o el túnel de Cloudflare:
-# sonrisas.apiUrl=https://algo.trycloudflare.com/api/v1/
+```kotlin
+const val DEFAULT_BASE_URL = "http://10.0.2.2:8000/api/v1/"
 ```
 
-Luego en Android Studio: *Sync Gradle* y correr la app. `10.0.2.2` es la computadora vista desde el emulador.
+Para usar otro servidor (por ejemplo un túnel de Cloudflare), se cambia esa línea.
+
+Luego en Android Studio se corre la app. `10.0.2.2` es la computadora vista desde el emulador.
 
 Para probar sin servidor, poner `AppContainer.USE_MOCKS = true` en `SonrisasApplication.kt` (datos de ejemplo).
 

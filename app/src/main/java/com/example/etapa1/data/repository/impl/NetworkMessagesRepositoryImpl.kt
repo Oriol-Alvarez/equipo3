@@ -5,6 +5,7 @@ import com.example.etapa1.data.remote.CreateWorkerGroupDto
 import com.example.etapa1.data.remote.EventoServidor
 import com.example.etapa1.data.remote.RemoteSync
 import com.example.etapa1.data.remote.RemoteSync.bodyOrLog
+import com.example.etapa1.data.remote.SendBitacoraMessageDto
 import com.example.etapa1.data.remote.SendWorkerMessageDto
 import com.example.etapa1.data.remote.SonrisasApi
 import com.example.etapa1.data.remote.TokenManager
@@ -43,6 +44,10 @@ class NetworkMessagesRepositoryImpl(
     private val _parentChats = MutableStateFlow<List<ParentChatSummary>>(emptyList())
     override val parentChats: StateFlow<List<ParentChatSummary>> = _parentChats.asStateFlow()
 
+    /** Familia: un chat por hijo con su educadora (es la bitácora del niño, id "fchat_<childId>"). */
+    private val _familyChats = MutableStateFlow<List<WorkerChat>>(emptyList())
+    override val familyChats: StateFlow<List<WorkerChat>> = _familyChats.asStateFlow()
+
     private val _staffMembers = MutableStateFlow<List<WorkerMember>>(emptyList())
     override val staffMembers: StateFlow<List<WorkerMember>> = _staffMembers.asStateFlow()
 
@@ -67,14 +72,19 @@ class NetworkMessagesRepositoryImpl(
     }
 
     override fun refresh() {
-        // Los chats internos y con familias son solo del personal
-        if (tokenManager.userRole?.uppercase() == "FAMILIAR") return
+        // Los chats internos y con familias son solo del personal; la familia ve el chat con
+        // la educadora de cada uno de sus hijos.
+        if (esFamilia()) {
+            cargarChatsFamilia()
+            return
+        }
         cargarDatosIniciales()
     }
 
     override fun limpiar() {
         _workerChats.value = emptyList()
         _parentChats.value = emptyList()
+        _familyChats.value = emptyList()
         _staffMembers.value = emptyList()
         _globalChat.update { it.copy(lastMessage = "", lastMessageTime = "", unreadCount = 0, messages = emptyList()) }
     }
@@ -205,6 +215,43 @@ class NetworkMessagesRepositoryImpl(
         }
     }
 
+    private fun esFamilia() = tokenManager.userRole?.uppercase() == "FAMILIAR"
+
+    private fun idChatFamilia(childId: String) = "fchat_$childId"
+
+    private fun childIdDeChatFamilia(chatId: String): String? =
+        chatId.takeIf { it.startsWith("fchat_") }?.removePrefix("fchat_")?.takeIf { it.isNotEmpty() }
+
+    /** Familia: arma un chat por hijo con el nombre real de su educadora y el último mensaje. */
+    private fun cargarChatsFamilia() {
+        RemoteSync.launch("Cargar chats de la familia con educadoras") {
+            val hijos = api.getMyChildren().bodyOrLog("GET /parents/me/children").orEmpty()
+            val chats = hijos.map { hijo ->
+                val educadora = api.getChildEducator(hijo.id).bodyOrLog("GET /children/${hijo.id}/educator")
+                val mensajes = api.getBitacoraMessages(hijo.id).bodyOrLog("GET bitacora ${hijo.id}").orEmpty()
+                val ultimo = mensajes.lastOrNull()
+                val previo = _familyChats.value.find { it.id == idChatFamilia(hijo.id) }
+                val titulo = educadora?.name ?: hijo.educatorName ?: "Educadora de ${hijo.shortName}"
+                WorkerChat(
+                    id = idChatFamilia(hijo.id),
+                    title = titulo,
+                    subtitle = "${educadora?.role ?: hijo.educatorRole ?: "Educadora"} • ${hijo.shortName}",
+                    lastMessage = ultimo?.let {
+                        if (it.senderId == tokenManager.userId) "Yo: ${it.message}" else "${it.senderName}: ${it.message}"
+                    } ?: "Sin mensajes aún.",
+                    lastMessageTime = ultimo?.time.orEmpty(),
+                    unreadCount = previo?.unreadCount ?: 0,
+                    isGlobal = false,
+                    isGroup = false,
+                    avatarInitials = educadora?.avatarInitials ?: hijo.educatorAvatarInitials ?: titulo.take(2).uppercase(),
+                    avatarBgColor = educadora?.avatarBgColor ?: hijo.educatorAvatarBgColor ?: 0xFF00897B,
+                    messages = emptyList()
+                )
+            }
+            _familyChats.value = chats
+        }
+    }
+
     private fun observarWebSocket() {
         scope.launch {
             chatConexion.eventos.collect { evento ->
@@ -252,18 +299,16 @@ class NetworkMessagesRepositoryImpl(
                     }
 
                     is EventoServidor.NuevoMensajeBitacora -> {
-                        val isIncoming = evento.message.senderId != tokenManager.userId
-                        // Actualizar resumen en la lista de chats de padres
-                        _parentChats.update { lista ->
-                            lista.map { item ->
-                                if (item.child.id == evento.childId) {
-                                    item.copy(
-                                        lastMessage = evento.message.message,
-                                        lastMessageTime = evento.message.time.ifEmpty { horaActual() },
-                                        unreadCount = if (isIncoming) item.unreadCount + 1 else item.unreadCount
-                                    )
-                                } else item
-                            }
+                        val childId = evento.childId.ifEmpty { evento.chatId }
+                        if (childId.isNotEmpty()) {
+                            val isIncoming = evento.message.senderId != tokenManager.userId
+                            // Actualiza el resumen y sube el chat al inicio de la lista
+                            updateBitacoraChatMessage(
+                                childId = childId,
+                                text = evento.message.message,
+                                time = evento.message.time.ifEmpty { horaActual() },
+                                isOutgoing = !isIncoming
+                            )
                         }
                     }
 
@@ -287,6 +332,22 @@ class NetworkMessagesRepositoryImpl(
             time = hora,
             isOutgoing = true
         )
+
+        // Chat de la familia con la educadora: es la bitácora del niño
+        val childIdFamilia = childIdDeChatFamilia(chatId)
+        if (childIdFamilia != null) {
+            _familyChats.update { lista ->
+                lista.map { chat ->
+                    if (chat.id == chatId) {
+                        chat.copy(lastMessage = "Yo: $text", lastMessageTime = hora, messages = chat.messages + localMsg)
+                    } else chat
+                }
+            }
+            RemoteSync.launch("Enviar mensaje a la bitácora de $childIdFamilia") {
+                api.sendBitacoraMessage(childIdFamilia, SendBitacoraMessageDto(message = text, time = hora))
+            }
+            return
+        }
 
         // Actualización optimista inmediata en la UI
         if (chatId == _globalChat.value.id || chatId == "global_staff_chat") {
@@ -361,6 +422,11 @@ class NetworkMessagesRepositoryImpl(
     }
 
     override fun markWorkerChatAsRead(chatId: String) {
+        // El chat de la familia con la educadora es la bitácora del niño
+        childIdDeChatFamilia(chatId)?.let { childId ->
+            markParentChatAsRead(childId)
+            return
+        }
         if (chatId == _globalChat.value.id || chatId == "global_staff_chat") {
             _globalChat.update { it.copy(unreadCount = 0) }
         } else {
@@ -377,8 +443,102 @@ class NetworkMessagesRepositoryImpl(
         _parentChats.update { list ->
             list.map { if (it.child.id == childId) it.copy(unreadCount = 0) else it }
         }
+        _familyChats.update { list ->
+            list.map { if (it.id == idChatFamilia(childId)) it.copy(unreadCount = 0) else it }
+        }
         RemoteSync.launch("Marcar como leído el chat de bitácora de $childId") {
             api.markBitacoraChatRead(childId).bodyOrLog("PUT /chats/bitacora/$childId/read")
+        }
+    }
+
+    override fun startNewWorkerChat(staffMember: WorkerMember): WorkerChat {
+        _workerChats.value.find { !it.isGroup && it.title.equals(staffMember.name, ignoreCase = true) }
+            ?.let { return it }
+
+        // Se crea en el servidor como conversación con esa persona; mientras tanto se muestra en la lista
+        val tempId = "temp_${System.nanoTime()}"
+        val pendiente = WorkerChat(
+            id = tempId,
+            title = staffMember.name,
+            subtitle = staffMember.role,
+            lastMessage = "Inicia una conversación con ${staffMember.name}.",
+            lastMessageTime = "Ahora",
+            unreadCount = 0,
+            isGlobal = false,
+            isGroup = false,
+            membersCount = 2,
+            avatarInitials = staffMember.avatarInitials,
+            avatarBgColor = staffMember.avatarBgColor,
+            messages = emptyList()
+        )
+        _workerChats.update { listOf(pendiente) + it }
+        RemoteSync.launch("Crear chat con ${staffMember.name}") {
+            val creado = api.createWorkerGroup(CreateWorkerGroupDto(staffMember.name, listOf(staffMember.id)))
+                .bodyOrLog("POST /chats/workers")
+            _workerChats.update { lista ->
+                if (creado == null) {
+                    lista.filterNot { it.id == tempId }
+                } else {
+                    lista.map { if (it.id == tempId) it.copy(id = creado.id, lastMessage = creado.lastMessage.orEmpty()) else it }
+                }
+            }
+        }
+        return pendiente
+    }
+
+    override fun startNewParentChat(child: Child, parentName: String): ParentChatSummary {
+        _parentChats.value.find { it.child.id == child.id }?.let { return it }
+        val nuevo = ParentChatSummary(
+            child = child,
+            parentName = parentName,
+            lastMessage = "Sin mensajes aún.",
+            lastMessageTime = "",
+            unreadCount = 0
+        )
+        _parentChats.update { listOf(nuevo) + it }
+        return nuevo
+    }
+
+    override fun startNewFamilyEducatorChat(staffMember: WorkerMember): WorkerChat {
+        // La familia habla con la educadora por la bitácora de su hijo
+        return _familyChats.value.find { it.title.equals(staffMember.name, ignoreCase = true) }
+            ?: _familyChats.value.firstOrNull()
+            ?: WorkerChat(
+                id = "fchat_",
+                title = staffMember.name,
+                subtitle = staffMember.role,
+                lastMessage = "Sin mensajes aún.",
+                lastMessageTime = "",
+                avatarInitials = staffMember.avatarInitials,
+                avatarBgColor = staffMember.avatarBgColor,
+                messages = emptyList()
+            )
+    }
+
+    override fun updateBitacoraChatMessage(childId: String, text: String, time: String, isOutgoing: Boolean) {
+        val hora = time.ifEmpty { horaActual() }
+        val resumen = if (isOutgoing) "Yo: $text" else text
+
+        // Personal: el chat con la familia de ese niño sube al inicio
+        _parentChats.update { lista ->
+            val existente = lista.find { it.child.id == childId } ?: return@update lista
+            val actualizado = existente.copy(
+                lastMessage = resumen,
+                lastMessageTime = hora,
+                unreadCount = if (isOutgoing) existente.unreadCount else existente.unreadCount + 1
+            )
+            listOf(actualizado) + lista.filter { it.child.id != childId }
+        }
+
+        // Familia: el chat con la educadora de ese hijo sube al inicio
+        _familyChats.update { lista ->
+            val existente = lista.find { it.id == idChatFamilia(childId) } ?: return@update lista
+            val actualizado = existente.copy(
+                lastMessage = if (isOutgoing) "Yo: $text" else "${existente.title}: $text",
+                lastMessageTime = hora,
+                unreadCount = if (isOutgoing) existente.unreadCount else existente.unreadCount + 1
+            )
+            listOf(actualizado) + lista.filter { it.id != actualizado.id }
         }
     }
 

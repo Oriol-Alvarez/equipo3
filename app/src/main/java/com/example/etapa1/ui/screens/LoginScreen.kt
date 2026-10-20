@@ -6,12 +6,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -25,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -112,7 +115,11 @@ fun LoginScreen(
                 hasError = true
                 errorMessage = "Por favor, introduce tu correo y contraseña."
             } else {
-                val role = if (email.contains("familiar", ignoreCase = true)) UserRole.FAMILIAR else UserRole.EDUCADORA
+                val role = when {
+                    email.contains("familiar", ignoreCase = true) -> UserRole.FAMILIAR
+                    email.contains("admin", ignoreCase = true) || email.contains("direccion", ignoreCase = true) -> UserRole.ADMINISTRADOR
+                    else -> UserRole.EDUCADORA
+                }
                 onLoginSuccess(role)
             }
         }
@@ -275,6 +282,45 @@ fun LoginContent(
                     fontWeight = FontWeight.SemiBold
                 )
             }
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            Text(
+                text = "Acceso rápido de prueba:",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = TextSecondary
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                SuggestionChip(
+                    onClick = {
+                        onEmailChange("direccion@sonrisas.edu")
+                        onPasswordChange("Password123!")
+                    },
+                    label = { Text("Administrador", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = BrandBlue) }
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                SuggestionChip(
+                    onClick = {
+                        onEmailChange("educadora@sonrisas.edu")
+                        onPasswordChange("Password123!")
+                    },
+                    label = { Text("Educadora", fontSize = 11.sp) }
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                SuggestionChip(
+                    onClick = {
+                        onEmailChange("familiar@sonrisas.edu")
+                        onPasswordChange("Password123!")
+                    },
+                    label = { Text("Familiar", fontSize = 11.sp) }
+                )
+            }
+
 
         }
     }

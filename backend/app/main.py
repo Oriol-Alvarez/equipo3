@@ -16,6 +16,7 @@ from .rate_limit import limiter
 from .config import settings
 from .db import Base, SessionLocal, engine
 from .routers import (
+    admin,
     announcements,
     attendance,
     auth,
@@ -37,10 +38,26 @@ from .routers import (
 from .seed import seed_database, seed_modulos_heber, seed_salas_adicionales
 
 
+from sqlalchemy import text
+
+
+def _aplicar_migraciones_compatibilidad() -> None:
+    """Añade columnas nuevas si las tablas ya existían previamente sin necesidad de purgar volúmenes."""
+    try:
+        with engine.connect() as conn:
+            if engine.dialect.name == "postgresql":
+                conn.execute(text("ALTER TABLE child_profiles ADD COLUMN IF NOT EXISTS emergency_phone_relation VARCHAR(60);"))
+                conn.execute(text("ALTER TABLE bitacora_messages ADD COLUMN IF NOT EXISTS date VARCHAR(20) DEFAULT '';"))
+                conn.commit()
+    except Exception:
+        pass
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """Inicialización del ciclo de vida: creación de esquemas en base de datos, preparación S3 y carga de datos."""
     Base.metadata.create_all(engine)
+    _aplicar_migraciones_compatibilidad()
     almacen.preparar()
 
     with SessionLocal() as db:
@@ -93,6 +110,7 @@ app.add_middleware(
 # Inclusión de Routers (prefijo oficial /api/v1)
 # ---------------------------------------------------------------------------
 routers_list = [
+    admin.router,
     auth.router,
     rooms.router,
     children.router,

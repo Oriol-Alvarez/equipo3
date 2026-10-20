@@ -272,7 +272,7 @@ class BackendIntegrationTest {
             childId = "mateo_garcia"
         )
         eventually("la sugerencia llega con el niño real") {
-            repoFamilia.suggestions.value.any { it.subject == asunto && it.childName == "Mateo García" }
+            repoFamilia.suggestions.value.any { it.subject == asunto && it.childName == "Mateo García López" }
         }
         val id = repoFamilia.suggestions.value.first { it.subject == asunto }.id
 
@@ -280,7 +280,7 @@ class BackendIntegrationTest {
         eventually("la educadora la ve") { repoEducadora.suggestions.value.any { it.id == id } }
         repoEducadora.updateSuggestionStatus(id, SuggestionStatus.ATENDIDA, "Sí, a las 5")
         eventually("la respuesta queda firmada por quien respondió") {
-            runBlocking { familia.getSuggestions().body()!! }.first { it.id == id }.responderName == "Laura Gómez"
+            runBlocking { familia.getSuggestions().body()!! }.first { it.id == id }.responderName == "Laura Gómez (Educadora)"
         }
     }
 }

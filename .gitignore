@@ -15,3 +15,6 @@
 local.properties
 # Configuración de Firebase de cada quien (notificaciones push)
 app/google-services.json
+*.db
+# Registros de errores del compilador de Kotlin
+.kotlin/

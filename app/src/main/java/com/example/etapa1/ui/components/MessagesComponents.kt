@@ -22,9 +22,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -159,6 +162,8 @@ fun MessagesModeSwitch(
     onModeChange: (MessagesMode) -> Unit,
     workersUnreadCount: Int = 0,
     parentsUnreadCount: Int = 0,
+    workerTabLabel: String = "Personal",
+    familyTabLabel: String = "Familias",
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -176,6 +181,7 @@ fun MessagesModeSwitch(
             MessagesMode.values().forEach { mode ->
                 val isSelected = selectedMode == mode
                 val unread = if (mode == MessagesMode.TRABAJADORES) workersUnreadCount else parentsUnreadCount
+                val label = if (mode == MessagesMode.TRABAJADORES) workerTabLabel else familyTabLabel
 
                 Box(
                     modifier = Modifier
@@ -191,7 +197,7 @@ fun MessagesModeSwitch(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = mode.label,
+                            text = label,
                             fontSize = 13.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             color = if (isSelected) Color.White else BrandBlue
@@ -321,7 +327,7 @@ fun PinnedGlobalWorkerChatCard(
                 Spacer(modifier = Modifier.height(3.dp))
 
                 Text(
-                    text = chat.lastMessage,
+                    text = chat.lastMessage.ifBlank { "Canal general activo" },
                     fontSize = 12.5.sp,
                     color = if (chat.unreadCount > 0) TextPrimary else TextSecondary,
                     fontWeight = if (chat.unreadCount > 0) FontWeight.Medium else FontWeight.Normal,
@@ -426,7 +432,7 @@ fun WorkerChatItem(
                 Spacer(modifier = Modifier.height(3.dp))
 
                 Text(
-                    text = chat.lastMessage,
+                    text = chat.lastMessage.ifBlank { "Sin mensajes aún." },
                     fontSize = 12.5.sp,
                     color = if (hasUnread) TextPrimary else TextSecondary,
                     fontWeight = if (hasUnread) FontWeight.Medium else FontWeight.Normal,
@@ -522,7 +528,7 @@ fun ParentChatItem(
                 Spacer(modifier = Modifier.height(3.dp))
 
                 Text(
-                    text = chatSummary.lastMessage,
+                    text = chatSummary.lastMessage.ifBlank { "Sin mensajes aún." },
                     fontSize = 12.5.sp,
                     color = if (hasUnread) TextPrimary else TextSecondary,
                     fontWeight = if (hasUnread) FontWeight.Medium else FontWeight.Normal,
@@ -733,7 +739,9 @@ fun CreateWorkerGroupDialog(
 fun WorkerChatConversationDialog(
     chat: WorkerChat,
     onDismiss: () -> Unit,
-    onSendMessage: (String, Uri?, String?, String?) -> Unit
+    canShareActivity: Boolean = true,
+    onSendMessage: (String, Uri?, String?, String?) -> Unit,
+    onSendActivity: ((category: String, badge: String, description: String) -> Unit)? = null
 ) {
     var avisoChat by remember { mutableStateOf<AvisoChat?>(null) }
     when (avisoChat) {
@@ -798,10 +806,16 @@ fun WorkerChatConversationDialog(
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
     ) {
         Scaffold(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding(),
             containerColor = AppBackground,
             contentWindowInsets = WindowInsets(0.dp),
             bottomBar = {
@@ -890,13 +904,15 @@ fun WorkerChatConversationDialog(
                                 )
                             }
 
-                            IconButton(onClick = { showShareActivityDialog = true }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.EventNote,
-                                    contentDescription = "Compartir actividad",
-                                    tint = BrandBlue,
-                                    modifier = Modifier.size(24.dp)
-                                )
+                            if (canShareActivity) {
+                                IconButton(onClick = { showShareActivityDialog = true }) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.EventNote,
+                                        contentDescription = "Compartir actividad",
+                                        tint = BrandBlue,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
                             }
 
                             OutlinedTextField(
@@ -1073,12 +1089,16 @@ fun WorkerChatConversationDialog(
         }
     }
 
-    if (showShareActivityDialog) {
+    if (showShareActivityDialog && canShareActivity) {
         ShareGroupActivityDialog(
             onDismiss = { showShareActivityDialog = false },
             onSendActivity = { category, badge, description ->
-                val formatted = "[ACTIVIDAD]\nCategoría: $category\nDetalle: $badge\nObservaciones: $description"
-                onSendMessage(formatted, null, null, null)
+                if (onSendActivity != null) {
+                    onSendActivity(category, badge, description)
+                } else {
+                    val formatted = "[ACTIVIDAD]\nCategoría: $category\nDetalle: $badge\nObservaciones: $description"
+                    onSendMessage(formatted, null, null, null)
+                }
             }
         )
     }
@@ -1089,7 +1109,7 @@ fun WorkerChatConversationDialog(
  * y nombre destacado dentro de la burbuja.
  */
 @Composable
-private fun WorkerChatMessageBubble(
+fun WorkerChatMessageBubble(
     msg: WorkerChatMessage,
     isGroupChat: Boolean
 ) {
@@ -1691,6 +1711,37 @@ fun ShareGroupActivityDialog(
                     }
                 }
 
+                // Opciones interactivas rápidas según categoría seleccionada (igual que actividades normales)
+                val optionsForCategory = when (selectedCat) {
+                    "Alimentación" -> listOf("Consumo: TODO", "Consumo: LA MITAD", "Consumo: POCO", "Consumo: NADA")
+                    "Descanso" -> listOf("30 min", "45 min", "60 min", "90 min", "120 min")
+                    "Ánimo" -> listOf("Feliz y participativo", "Tranquilo", "Inquieto", "Cansado")
+                    "Excretoras" -> listOf("Control de esfínteres", "Pipí", "Popó", "Cambio de pañal")
+                    "Salud" -> listOf("Salud óptima", "Revisión matutina", "Medicamento suministrado")
+                    else -> listOf("Pintura y manualidades", "Cuentos y asamblea", "Música y psicomotricidad", "Juego libre")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(optionsForCategory) { opt ->
+                        val isOptSelected = badgeText == opt
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = if (isOptSelected) BrandBlue else AppBackground,
+                            border = BorderStroke(1.dp, if (isOptSelected) BrandBlue else BorderSubtle),
+                            modifier = Modifier.clickable { badgeText = opt }
+                        ) {
+                            Text(
+                                text = opt,
+                                fontSize = 11.5.sp,
+                                fontWeight = if (isOptSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isOptSelected) Color.White else TextPrimary,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                            )
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
@@ -1769,3 +1820,97 @@ fun ShareGroupActivityDialog(
 }
 
 private enum class AvisoChat { LLAMADA, INFORMACION }
+/**
+ * Elemento de candidato para iniciar un nuevo chat con una persona/familia
+ * con la que nunca antes se había hablado y no estaba en la pantalla de chats.
+ */
+@Composable
+fun NewChatCandidateItem(
+    title: String,
+    subtitle: String,
+    avatarInitials: String,
+    avatarBgColor: Color,
+    badgeText: String = "Iniciar chat",
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, Color(0xFFD0E1F9), RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(avatarBgColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = avatarInitials,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = TextPrimary
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = BrandBlueContainer,
+                modifier = Modifier.clickable(onClick = onClick)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Chat,
+                        contentDescription = badgeText,
+                        tint = BrandBlue,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = badgeText,
+                        color = BrandBlue,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.5.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+

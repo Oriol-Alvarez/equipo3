@@ -86,7 +86,8 @@ Con `USE_MOCKS = false` todo lo que se ve sale del servidor:
 
 ## Cómo probarlo
 
-Ver el `README.md` de la raíz (backend, `local.properties`, cuentas y push).
+Ver el `README.md` de la raíz (backend, cuentas y push). La dirección del servidor está fija en
+`NetworkClient.kt` (`http://10.0.2.2:8000/api/v1/`).
 
 ## Qué se verificó
 

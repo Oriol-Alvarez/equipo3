@@ -1,5 +1,7 @@
 package com.example.etapa1.data.repository.impl
 
+import com.example.etapa1.data.remote.ChatConexion
+import com.example.etapa1.data.remote.EventoServidor
 import com.example.etapa1.data.remote.RemoteSync
 import com.example.etapa1.data.remote.RemoteSync.bodyOrLog
 import com.example.etapa1.data.remote.SonrisasApi
@@ -7,6 +9,7 @@ import com.example.etapa1.data.repository.AnnouncementRepository
 import com.example.etapa1.model.Announcement
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,7 +17,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class NetworkAnnouncementRepositoryImpl(
-    private val api: SonrisasApi
+    private val api: SonrisasApi,
+    private val chatConexion: ChatConexion? = null
 ) : AnnouncementRepository {
 
     private val _announcements = MutableStateFlow<List<Announcement>>(emptyList())
@@ -25,6 +29,18 @@ class NetworkAnnouncementRepositoryImpl(
 
     init {
         refresh()
+        // Cuando el servidor avisa que hay un aviso nuevo, se vuelve a pedir la lista.
+        if (chatConexion != null) {
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                chatConexion.eventos.collect { evento ->
+                    if (evento is EventoServidor.NuevoAviso ||
+                        (evento is EventoServidor.Desconocido && evento.raw.contains("announcement"))
+                    ) {
+                        refresh()
+                    }
+                }
+            }
+        }
     }
 
     override fun refresh() {

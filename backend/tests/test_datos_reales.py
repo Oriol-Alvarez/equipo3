@@ -319,7 +319,7 @@ def test_sugerencia_usa_el_nino_real_y_quien_responde(
         headers=educadora.headers,
     )
     assert r.status_code == 200, r.text
-    assert r.json()["responderName"] == "Laura Gómez"
+    assert r.json()["responderName"] == "Laura Gómez (Educadora)"  # nombre de la cuenta en la base de datos
 
 
 def test_familia_no_envia_sugerencia_de_nino_ajeno(cliente: TestClient, familiar: Persona):
@@ -453,3 +453,20 @@ def test_envio_real_firma_y_arma_el_mensaje_de_fcm(cliente: TestClient, familiar
     cuerpos = {(_json.loads(p.data)["message"]["token"]): _json.loads(p.data) for p in fcm}
     assert "tel-real" in cuerpos
     assert "Llegó bien" in cuerpos["tel-real"]["message"]["notification"]["body"]
+
+
+def test_familia_ve_la_educadora_de_su_hijo(cliente: TestClient, familiar: Persona):
+    r = cliente.get(f"{API}/children/mateo_garcia/educator", headers=familiar.headers)
+    assert r.status_code == 200, r.text
+    educadora = r.json()
+    assert educadora["name"] == "Laura Gómez"
+    assert educadora["roomId"] == "sala_1a"
+
+    # La ficha del niño trae el mismo nombre
+    r = cliente.get(f"{API}/children/mateo_garcia", headers=familiar.headers)
+    assert r.json()["educatorName"] == "Laura Gómez"
+
+
+def test_familia_no_ve_la_educadora_de_nino_ajeno(cliente: TestClient, familiar: Persona):
+    r = cliente.get(f"{API}/children/sofia_lopez/educator", headers=familiar.headers)
+    assert r.status_code == 403

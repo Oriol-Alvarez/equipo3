@@ -193,6 +193,8 @@ def enviar_mensaje_trabajador(
     )
 
 
+
+
 @router.get("/chats/staff-global/messages", response_model=StaffGlobalChatOut)
 def chat_global_personal(
     quien: Identidad = Depends(requiere_educadora),
@@ -200,6 +202,7 @@ def chat_global_personal(
 ) -> StaffGlobalChatOut:
     """Obtiene el canal global institucional donde participan todas las trabajadoras."""
     chat = db.get(WorkerChat, "global_staff_chat")
+
     mensajes = db.scalars(select(WorkerChatMessage).where(WorkerChatMessage.chat_id == "global_staff_chat")).all() if chat else []
 
     msgs_out = [
@@ -273,6 +276,7 @@ def enviar_chat_global_personal(
 
 
 @router.put("/chats/workers/{chatId}/read", status_code=204)
+@router.post("/chats/workers/{chatId}/read", status_code=204)
 def marcar_chat_trabajador_leido(
     chatId: str,
     quien: Identidad = Depends(requiere_educadora),

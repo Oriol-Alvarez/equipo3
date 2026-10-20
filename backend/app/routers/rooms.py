@@ -73,6 +73,7 @@ def obtener_sala(
     )
 
 
+
 @router.get("/{roomId}/children", response_model=list[ChildOut])
 def listar_alumnos_de_sala(
     roomId: str,

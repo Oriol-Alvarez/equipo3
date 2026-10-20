@@ -53,19 +53,22 @@ import com.example.etapa1.ui.theme.TextSecondary
 @Composable
 fun ParentGroupsScreen(
     viewModel: FamilyGroupsViewModel,
-    onBack: () -> Unit
+    activeChildId: String? = null,
+    onBack: () -> Unit,
+    onNavigateToWorkerChat: (WorkerChat) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.useFamilyViewer()
+    LaunchedEffect(activeChildId) {
+        viewModel.useFamilyViewer(activeChildId?.let { listOf(it) })
     }
 
     ParentGroupsContent(
         groups = uiState.groups,
         isLoading = uiState.viewer == null,
         onBack = onBack,
-        onSendMessage = viewModel::sendMessage
+        onSendMessage = viewModel::sendMessage,
+        onNavigateToWorkerChat = onNavigateToWorkerChat
     )
 }
 
@@ -80,10 +83,9 @@ fun ParentGroupsContent(
         fileUri: String?,
         fileName: String?,
         fileMimeType: String?
-    ) -> Unit
+    ) -> Unit,
+    onNavigateToWorkerChat: (WorkerChat) -> Unit = {}
 ) {
-    var activeGroupId by rememberSaveable { mutableStateOf<String?>(null) }
-
     Scaffold(
         containerColor = AppBackground,
         contentWindowInsets = WindowInsets(0.dp)
@@ -146,23 +148,12 @@ fun ParentGroupsContent(
                     items(groups, key = { it.id }) { group ->
                         WorkerChatItem(
                             chat = group,
-                            onClick = { activeGroupId = group.id }
+                            onClick = { onNavigateToWorkerChat(group) }
                         )
                     }
                 }
             }
         }
-    }
-
-    val activeGroup = groups.find { it.id == activeGroupId }
-    if (activeGroup != null) {
-        WorkerChatConversationDialog(
-            chat = activeGroup,
-            onDismiss = { activeGroupId = null },
-            onSendMessage = { text, uri, name, mime ->
-                onSendMessage(activeGroup.id, text, uri?.toString(), name, mime)
-            }
-        )
     }
 }
 

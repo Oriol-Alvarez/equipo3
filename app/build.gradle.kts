@@ -1,5 +1,3 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -11,18 +9,6 @@ plugins {
 if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
 }
-
-// URL del backend. Cada quien la define en su propio local.properties (no se sube a Git):
-//   sonrisas.apiUrl=https://algo.trycloudflare.com/api/v1/
-// Si no está definida, se usa el backend local visto desde el emulador de Android.
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.inputStream().use { localProperties.load(it) }
-}
-val sonrisasApiUrl: String = localProperties.getProperty("sonrisas.apiUrl")?.trim()
-    ?.takeIf { it.isNotEmpty() }
-    ?: "http://10.0.2.2:8000/api/v1/"
 
 android {
     namespace = "com.example.etapa1"
@@ -38,8 +24,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        buildConfigField("String", "API_BASE_URL", "\"$sonrisasApiUrl\"")
     }
 
     buildTypes {

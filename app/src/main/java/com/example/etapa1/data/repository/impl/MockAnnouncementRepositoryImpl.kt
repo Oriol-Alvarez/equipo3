@@ -10,11 +10,15 @@ import kotlinx.coroutines.flow.update
 
 class MockAnnouncementRepositoryImpl : AnnouncementRepository {
 
-    private val _announcements = MutableStateFlow<List<Announcement>>(MockDataRepository.getInitialAnnouncements())
+    private val _announcements = MockDataRepository.sharedAnnouncements
     override val announcements: StateFlow<List<Announcement>> = _announcements.asStateFlow()
 
     private val _unreadCount = MutableStateFlow(_announcements.value.count { it.isUnread })
     override val unreadCount: StateFlow<Int> = _unreadCount.asStateFlow()
+
+    override fun refresh() {
+        _unreadCount.value = _announcements.value.count { it.isUnread }
+    }
 
     override fun markAsRead(id: String) {
         _announcements.update { list ->

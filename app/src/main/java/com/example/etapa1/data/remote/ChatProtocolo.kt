@@ -56,6 +56,13 @@ sealed interface EventoServidor {
         val message: FamilyGroupMessageDto
     ) : EventoServidor
 
+    /** Nuevo aviso o circular general publicado en el centro. */
+    @Serializable
+    data class NuevoAviso(
+        val id: String = "",
+        val title: String = ""
+    ) : EventoServidor
+
     /** Evento no tipado o genérico recibido desde el servidor. */
     data class Desconocido(val raw: String) : EventoServidor
 }
@@ -162,6 +169,14 @@ object ChatProtocolo {
                         json.decodeFromJsonElement<EventoServidor.NuevoMensajeGrupo>(dataObj)
                     } else {
                         json.decodeFromJsonElement<EventoServidor.NuevoMensajeGrupo>(root)
+                    }
+                }
+
+                "announcement:new", "announcement" -> {
+                    if (dataObj is JsonObject) {
+                        json.decodeFromJsonElement<EventoServidor.NuevoAviso>(dataObj)
+                    } else {
+                        json.decodeFromJsonElement<EventoServidor.NuevoAviso>(root)
                     }
                 }
 

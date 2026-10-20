@@ -12,12 +12,13 @@ from ..acceso import exigir_alumno_visible
 from ..db import get_db
 from ..deps import Identidad, requiere_familiar, usuario_actual
 from ..errors import ApiError
-from ..fichas import ficha, fichas
-from ..models import Child, ChildParent, ChildProfile
+from ..fichas import educadora_de_sala, ficha, fichas
+from ..models import Child, ChildParent, ChildProfile, Room
 from ..schemas import (
     ChildFullProfileOut,
     ChildOut,
     ChildProfileUpdate,
+    EducatorOut,
     MedicalCertificateOut,
 )
 
@@ -49,6 +50,29 @@ def obtener_alumno(
     """Obtiene la ficha básica de un alumno."""
     alumno = exigir_alumno_visible(quien, childId, db)
     return ficha(alumno, db)
+
+
+@router.get("/children/{childId}/educator", response_model=EducatorOut)
+def obtener_educador_de_alumno(
+    childId: str,
+    quien: Identidad = Depends(usuario_actual),
+    db: Session = Depends(get_db),
+) -> EducatorOut:
+    """Devuelve la educadora asignada a la sala del alumno."""
+    alumno = exigir_alumno_visible(quien, childId, db)
+    educadora = educadora_de_sala(db, alumno.room_id)
+    if educadora is None:
+        raise ApiError(404, "La sala del alumno no tiene educadora asignada", "sin_educadora")
+    sala = db.get(Room, alumno.room_id)
+    return EducatorOut(
+        id=educadora.id,
+        name=educadora.name,
+        role=educadora.role,
+        avatarInitials=educadora.initials,
+        avatarBgColor=educadora.color,
+        roomId=alumno.room_id,
+        roomName=sala.name if sala else alumno.room_id,
+    )
 
 
 @router.get("/children/{childId}/full-profile", response_model=ChildFullProfileOut)

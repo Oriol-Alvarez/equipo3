@@ -14,6 +14,7 @@ from ..schemas import (
     ClaimLostObjectOut,
     CreateLostObjectRequest,
     LostObjectOut,
+    UpdateLostObjectRequest,
 )
 
 router = APIRouter(prefix="/lost-objects", tags=["lost-objects"])
@@ -119,3 +120,44 @@ def eliminar_objeto_perdido(
     db.delete(objeto)
     db.commit()
     return Response(status_code=204)
+
+
+@router.put("/{id}", response_model=LostObjectOut)
+def modificar_objeto_perdido(
+    id: str,
+    body: UpdateLostObjectRequest,
+    _: Identidad = Depends(requiere_educadora),
+    db: Session = Depends(get_db),
+) -> LostObjectOut:
+    """Modifica un objeto perdido existente (restringido a EDUCADORA/DIRECCION/ADMIN)."""
+    objeto = db.get(LostObject, id)
+    if objeto is None:
+        raise ApiError(404, f"No existe el objeto con id {id}")
+
+    if body.title is not None:
+        objeto.title = body.title.strip()
+    if body.description is not None:
+        objeto.description = body.description.strip()
+    if body.category is not None:
+        objeto.category = body.category
+    if body.location is not None:
+        objeto.location = body.location
+    if body.room is not None:
+        objeto.room = body.room
+    if body.isClaimed is not None:
+        objeto.is_claimed = body.isClaimed
+
+    db.commit()
+    db.refresh(objeto)
+
+    return LostObjectOut(
+        id=objeto.id,
+        title=objeto.title,
+        description=objeto.description,
+        category=objeto.category,
+        location=objeto.location,
+        imageUri=objeto.image_uri,
+        room=objeto.room,
+        isClaimed=objeto.is_claimed,
+    )
+

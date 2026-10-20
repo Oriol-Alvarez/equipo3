@@ -8,6 +8,9 @@ import com.example.etapa1.model.TimelineItem
 import com.example.etapa1.model.UserRole
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class ChatBitacoraViewModel(
     private val bitacoraRepository: BitacoraRepository,
@@ -43,10 +46,20 @@ class ChatBitacoraViewModel(
         fileUri: String? = null,
         fileName: String? = null,
         fileMimeType: String? = null,
-        senderRole: UserRole? = null
+        senderRole: UserRole? = null,
+        childId: String? = null
     ) {
-        val nino = childId ?: return
+        val nino = childId ?: this.childId ?: return
         if (text.isNotBlank() || fileUri != null) {
+            // Sube el chat de la familia al inicio de la lista con el último mensaje.
+            val hora = SimpleDateFormat("hh:mm a", Locale.US).format(Date())
+            val preview = text.trim().ifEmpty { if (fileUri != null) "📷 Archivo adjunto" else "" }
+            messagesRepository?.updateBitacoraChatMessage(
+                childId = nino,
+                text = preview,
+                time = hora,
+                isOutgoing = true
+            )
             bitacoraRepository.addChatMessage(
                 childId = nino,
                 text = text.trim(),

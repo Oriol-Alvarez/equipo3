@@ -10,13 +10,46 @@ data class LoginRequestDto(
 )
 
 @Serializable
+data class AdminChildSummaryDto(
+    val id: String,
+    val fullName: String,
+    val shortName: String = "",
+    val ageText: String = "",
+    val roomText: String = "",
+    val groupText: String = "",
+    val isPresent: Boolean = false,
+    val statusText: String = "",
+    val arrivalTime: String? = null,
+    val allergyAlert: String? = null,
+    val avatarInitials: String = "MG",
+    val avatarBgColor: Long = 4294948685L,
+    val birthDate: String? = null,
+    val enrollmentDate: String? = null,
+    val studentId: String? = null,
+    val bloodType: String? = null,
+    val pediatrician: String? = null,
+    val pediatricianPhone: String? = null,
+    val emergencyPhone: String? = null,
+    val emergencyPhoneRelation: String? = null,
+    val motherName: String? = null,
+    val motherPhone: String? = null,
+    val fatherName: String? = null,
+    val fatherPhone: String? = null,
+    val authorizedPickups: List<String> = emptyList(),
+    val medicalNotes: String? = null,
+    val generalNotes: String? = null,
+    val habitsNotes: String? = null
+)
+
+@Serializable
 data class UserDto(
     val id: String,
     val email: String,
     val role: String,
     val displayName: String,
     val phone: String? = null,
-    val avatarUrl: String? = null
+    val avatarUrl: String? = null,
+    val children: List<AdminChildSummaryDto> = emptyList()
 )
 
 @Serializable
@@ -62,7 +95,22 @@ data class ChildDto(
     val avatarInitials: String = "MG",
     val avatarBgColor: Long = 4294948685L,
     val birthDate: String = "",
-    val roomId: String = ""
+    val roomId: String = "",
+    val educatorName: String? = null,
+    val educatorRole: String? = null,
+    val educatorAvatarInitials: String? = null,
+    val educatorAvatarBgColor: Long? = null
+)
+
+@Serializable
+data class EducatorDto(
+    val id: String,
+    val name: String,
+    val role: String,
+    val avatarInitials: String = "LG",
+    val avatarBgColor: Long = 4278364369L,
+    val roomId: String = "",
+    val roomName: String = ""
 )
 
 @Serializable
@@ -342,4 +390,145 @@ data class DeviceTokenRequestDto(
     val deviceToken: String,
     val platform: String = "android"
 )
+
+@Serializable
+data class CreateAnnouncementDto(
+    val title: String,
+    val summary: String,
+    val fullContent: String,
+    val author: String
+)
+
+@Serializable
+data class UpdateAnnouncementDto(
+    val title: String? = null,
+    val summary: String? = null,
+    val fullContent: String? = null,
+    val author: String? = null
+)
+
+@Serializable
+data class UpdateLostObjectDto(
+    val title: String? = null,
+    val description: String? = null,
+    val category: String? = null,
+    val location: String? = null,
+    val room: String? = null,
+    val isClaimed: Boolean? = null
+)
+
+@Serializable
+data class AdminUserCreateDto(
+    val email: String,
+    val password: String,
+    val role: String = "EDUCADORA",
+    val displayName: String,
+    val phone: String? = null
+)
+
+@Serializable
+data class AdminUserUpdateDto(
+    val displayName: String? = null,
+    val email: String? = null,
+    val phone: String? = null,
+    val role: String? = null,
+    val password: String? = null
+)
+
+@Serializable
+data class AdminLogDto(
+    val id: String,
+    val timestamp: String,
+    val category: String,
+    val title: String,
+    val description: String,
+    val actorName: String,
+    val actorRole: String? = null,
+    val childName: String? = null,
+    val roomName: String? = null
+)
+
+@Serializable
+data class AdminStatsDto(
+    val totalChildren: Int = 0,
+    val presentCount: Int = 0,
+    val absentCount: Int = 0,
+    val attendanceRate: Float = 0f,
+    val totalEducators: Int = 0,
+    val totalFamilies: Int = 0,
+    val childrenFedCount: Int = 0,
+    val breakfastCount: Int = 0,
+    val lunchCount: Int = 0,
+    val snackCount: Int = 0,
+    val childrenNappedCount: Int = 0,
+    val totalNapMinutes: Int = 0,
+    val averageNapMinutes: Int = 0,
+    val ingresosCount: Int = 0,
+    val egresosCount: Int = 0,
+    val pendingPickupsCount: Int = 0,
+    val diaperChangesCount: Int = 0,
+    val incidentsCount: Int = 0,
+    val totalSuggestions: Int = 0,
+    val pendingSuggestions: Int = 0,
+    val attendedSuggestions: Int = 0,
+    val totalLostObjects: Int = 0,
+    val claimedLostObjects: Int = 0,
+    val unclaimedLostObjects: Int = 0,
+    val totalAnnouncements: Int = 0
+)
+
+@Serializable
+data class AdminCreateChildDto(
+    val fullName: String,
+    val shortName: String? = null,
+    val ageText: String? = "2 años",
+    val roomText: String? = "Sala 1A",
+    val groupText: String? = "Maternal A",
+    val allergyAlert: String? = null,
+    val birthDate: String? = null,
+    val studentId: String? = null,
+    val bloodType: String? = null,
+    val pediatrician: String? = null,
+    val pediatricianPhone: String? = null,
+    val emergencyPhone: String? = null,
+    val emergencyPhoneRelation: String? = null,
+    val motherName: String? = null,
+    val motherPhone: String? = null,
+    val fatherName: String? = null,
+    val fatherPhone: String? = null,
+    val medicalNotes: String? = null,
+    val generalNotes: String? = null,
+    val habitsNotes: String? = null,
+    val authorizedPickups: List<String> = emptyList()
+)
+
+@Serializable
+data class AdminUpdateChildDto(
+    val fullName: String? = null,
+    val shortName: String? = null,
+    val ageText: String? = null,
+    val roomText: String? = null,
+    val groupText: String? = null,
+    val statusText: String? = null,
+    val isPresent: Boolean? = null,
+    val allergyAlert: String? = null,
+    val birthDate: String? = null,
+    val enrollmentDate: String? = null,
+    val studentId: String? = null,
+    val bloodType: String? = null,
+    val pediatrician: String? = null,
+    val pediatricianPhone: String? = null,
+    val emergencyPhone: String? = null,
+    val emergencyPhoneRelation: String? = null,
+    val motherName: String? = null,
+    val motherPhone: String? = null,
+    val fatherName: String? = null,
+    val fatherPhone: String? = null,
+    val authorizedPickups: List<String>? = null,
+    val medicalNotes: String? = null,
+    val generalNotes: String? = null,
+    val habitsNotes: String? = null
+)
+
+
 

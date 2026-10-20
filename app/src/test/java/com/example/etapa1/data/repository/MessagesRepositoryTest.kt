@@ -57,4 +57,79 @@ class MessagesRepositoryTest {
         repository.markWorkerChatAsRead(globalChatId)
         assertEquals(0, repository.globalChat.value.unreadCount)
     }
+
+    @Test
+    fun updateBitacoraChatMessage_updatesParentChatAndMovesToTop() {
+        val childId = MockDataRepository.mateoGarcia.id
+        val testText = "Hola, Mateo acaba de terminar su almuerzo."
+        val testTime = "02:30 PM"
+
+        // Caso 1: Mensaje saliente desde la educadora
+        repository.updateBitacoraChatMessage(
+            childId = childId,
+            text = testText,
+            time = testTime,
+            isOutgoing = true
+        )
+
+        val firstChat = repository.parentChats.value.first()
+        assertEquals(childId, firstChat.child.id)
+        assertEquals("Yo: $testText", firstChat.lastMessage)
+        assertEquals(testTime, firstChat.lastMessageTime)
+        assertEquals(0, firstChat.unreadCount)
+
+        // Caso 2: Mensaje entrante desde el familiar
+        val incomingText = "Muchas gracias por avisar, nos vemos a la salida."
+        val incomingTime = "02:45 PM"
+        repository.updateBitacoraChatMessage(
+            childId = childId,
+            text = incomingText,
+            time = incomingTime,
+            isOutgoing = false
+        )
+
+        val updatedFirst = repository.parentChats.value.first()
+        assertEquals(childId, updatedFirst.child.id)
+        assertEquals(incomingText, updatedFirst.lastMessage)
+        assertEquals(incomingTime, updatedFirst.lastMessageTime)
+        assertEquals(1, updatedFirst.unreadCount)
+    }
+
+    @Test
+    fun updateBitacoraChatMessage_updatesFamilyChatAndMovesToTop() {
+        val mateoChildId = MockDataRepository.mateoGarcia.id
+        val educator = MockDataRepository.getEducatorForChild(mateoChildId)
+        val textOutgoing = "¿A qué hora merendará hoy?"
+        val timeOutgoing = "03:10 PM"
+
+        // Familiar envía mensaje saliente
+        repository.updateBitacoraChatMessage(
+            childId = mateoChildId,
+            text = textOutgoing,
+            time = timeOutgoing,
+            isOutgoing = true
+        )
+
+        val familyChat = repository.familyChats.value.first()
+        assertTrue(familyChat.title.equals(educator.name, ignoreCase = true))
+        assertEquals("Yo: $textOutgoing", familyChat.lastMessage)
+        assertEquals(timeOutgoing, familyChat.lastMessageTime)
+        assertEquals(0, familyChat.unreadCount)
+
+        // Educadora responde (mensaje entrante para familiar)
+        val textIncoming = "A las 16:00 h tomamos la fruta."
+        val timeIncoming = "03:15 PM"
+        repository.updateBitacoraChatMessage(
+            childId = mateoChildId,
+            text = textIncoming,
+            time = timeIncoming,
+            isOutgoing = false
+        )
+
+        val updatedFamilyChat = repository.familyChats.value.first()
+        assertTrue(updatedFamilyChat.title.equals(educator.name, ignoreCase = true))
+        assertEquals("${educator.name}: $textIncoming", updatedFamilyChat.lastMessage)
+        assertEquals(timeIncoming, updatedFamilyChat.lastMessageTime)
+        assertEquals(1, updatedFamilyChat.unreadCount)
+    }
 }

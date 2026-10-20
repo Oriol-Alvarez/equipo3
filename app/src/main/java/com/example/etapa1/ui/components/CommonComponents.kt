@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -48,7 +49,9 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Warning
+import com.example.etapa1.model.Child
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -449,4 +452,58 @@ fun ImagePlaceholderBox(
         }
     }
 }
+
+@Composable
+fun ActiveChildSwitcher(
+    child: Child,
+    onSwitchClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onSwitchClick,
+        shape = CircleShape,
+        color = CardBackground,
+        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBlue.copy(alpha = 0.22f)),
+        shadowElevation = 1.dp,
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 4.dp, top = 2.dp, end = 8.dp, bottom = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // Mini avatar circular nítido con iniciales
+            Box(
+                modifier = Modifier
+                    .size(20.dp)
+                    .clip(CircleShape)
+                    .background(Color(child.avatarBgColor)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = child.avatarInitials,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+            Text(
+                text = child.shortName,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = BrandBlue,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 68.dp)
+            )
+            Icon(
+                imageVector = Icons.Default.SwapHoriz,
+                contentDescription = "Cambiar de alumno",
+                tint = BrandBlue.copy(alpha = 0.85f),
+                modifier = Modifier.size(14.dp)
+            )
+        }
+    }
+}
+
 

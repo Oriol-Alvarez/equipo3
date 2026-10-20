@@ -232,3 +232,23 @@ def test_elementos_diferentes_dias_ordenados_por_dia_y_hora(
     # 12/10/2026 12:20 PM debe ir ANTES de 19/10/2026 08:30 AM
     assert idx_act < idx_msg
 
+
+def test_obtener_educador_alumno_contrato(cliente: TestClient, familiar: Persona):
+    r = cliente.get("/api/v1/children/mateo_garcia/educator", headers=familiar.headers)
+    assert r.status_code == 200
+    datos = r.json()
+    assert datos["name"] == "Laura Gómez"
+    assert "Educadora" in datos["role"]
+    assert datos["roomName"] == "Sala 1A"
+    assert datos["avatarInitials"] == "LG"
+
+    # También verificar que el endpoint de hijos de familiar devuelve educatorName y roomText resuelto
+    r_hijos = cliente.get("/api/v1/parents/me/children", headers=familiar.headers)
+    assert r_hijos.status_code == 200
+    hijos = r_hijos.json()
+    mateo = next(h for h in hijos if h["id"] == "mateo_garcia")
+    assert mateo["educatorName"] == "Laura Gómez"
+    assert "Educadora" in mateo["educatorRole"]
+    assert mateo["roomText"] == "Sala 1A"
+
+

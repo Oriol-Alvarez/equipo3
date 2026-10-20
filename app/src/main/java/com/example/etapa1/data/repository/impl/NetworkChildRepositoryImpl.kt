@@ -247,7 +247,11 @@ class NetworkChildRepositoryImpl(
         avatarInitials = avatarInitials,
         avatarBgColor = avatarBgColor,
         birthDate = birthDate,
-        roomId = roomId
+        roomId = roomId,
+        educatorName = educatorName,
+        educatorRole = educatorRole,
+        educatorAvatarInitials = educatorAvatarInitials,
+        educatorAvatarBgColor = educatorAvatarBgColor
     )
 
     private fun ChildFullProfileDto.toDomain(child: Child) = ChildFullProfile(
