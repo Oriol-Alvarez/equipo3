@@ -1,10 +1,5 @@
 package com.example.etapa1.ui.screens
 
-import android.content.Intent
-import android.net.Uri
-import android.provider.OpenableColumns
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,13 +28,13 @@ import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
+<<<<<<< HEAD
+=======
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.AutoAwesome
+>>>>>>> dcf9072 (Implementar resumen semanal con IA, datos reales y observaciones manuales)
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Face
-import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NightlightRound
@@ -48,7 +43,26 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.filled.Wc
+import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.InsertDriveFile
+import androidx.compose.material3.FloatingActionButton
+import com.example.etapa1.model.WorkerChat
+import com.example.etapa1.model.WorkerChatMessage
+import com.example.etapa1.ui.components.WorkerChatMessageBubble
+import com.example.etapa1.ui.components.ShareGroupActivityDialog
+import android.content.Intent
+import android.net.Uri
+import android.provider.OpenableColumns
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.window.Dialog
+import androidx.core.content.FileProvider
 import java.io.File
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -61,7 +75,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,22 +83,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.core.content.FileProvider
-import coil.compose.AsyncImage
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.TimelineItem
-import com.example.etapa1.model.WorkerChat
 import com.example.etapa1.ui.components.ChildAvatar
-import com.example.etapa1.ui.components.ShareGroupActivityDialog
-import com.example.etapa1.ui.components.WorkerChatMessageBubble
-import com.example.etapa1.ui.state.ChatBitacoraViewModel
 import com.example.etapa1.ui.theme.AlertRed
 import com.example.etapa1.ui.theme.AppBackground
 import com.example.etapa1.ui.theme.BorderSubtle
@@ -101,6 +105,8 @@ import com.example.etapa1.ui.theme.TextPrimary
 import com.example.etapa1.ui.theme.TextSecondary
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.theme.Etapa1Theme
+import androidx.compose.runtime.collectAsState
+import com.example.etapa1.ui.state.ChatBitacoraViewModel
 
 @Composable
 fun ChatBitacoraScreen(
@@ -110,8 +116,7 @@ fun ChatBitacoraScreen(
     onBack: () -> Unit,
     onChildInfoClick: () -> Unit = {},
     onNewActivityClick: () -> Unit,
-    onAttendanceClick: () -> Unit = {},
-    onWeeklySummaryClick: () -> Unit = {}
+    onAttendanceClick: () -> Unit = {}
 ) {
     val timelineItems by viewModel.timelineItems.collectAsState()
     val conexionEstado by viewModel.conexionEstado.collectAsState()
@@ -128,7 +133,6 @@ fun ChatBitacoraScreen(
         onChildInfoClick = onChildInfoClick,
         onNewActivityClick = onNewActivityClick,
         onAttendanceClick = onAttendanceClick,
-        onWeeklySummaryClick = onWeeklySummaryClick,
         onSendMessage = { text, uri, name, mime ->
             viewModel.sendMessage(
                 text = text,
@@ -154,11 +158,15 @@ fun ChatBitacoraScreen(
     onChildInfoClick: () -> Unit = {},
     onNewActivityClick: () -> Unit = {},
     onAttendanceClick: () -> Unit = {},
-    onWeeklySummaryClick: () -> Unit = {},
+<<<<<<< HEAD
     /** Expediente real para los teléfonos del botón de llamar; null usa los datos de ejemplo (vista previa). */
     childProfile: com.example.etapa1.model.ChildFullProfile? = null,
     onSendMessage: (String, Uri?, String?, String?) -> Unit,
     onSendActivity: ((category: String, badge: String, description: String) -> Unit)? = null
+=======
+    onWeeklySummaryClick: () -> Unit = {},
+    onSendMessage: (String) -> Unit
+>>>>>>> dcf9072 (Implementar resumen semanal con IA, datos reales y observaciones manuales)
 ) {
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -468,6 +476,7 @@ fun ChatBitacoraScreen(
                                 }
                             }
                         } else if (child != null) {
+                            // Datos reales de la educadora asignada (vienen del servidor con el niño)
                             val educatorName = child.educatorName?.ifBlank { null } ?: "Educadora de ${child.roomText.ifBlank { "sala" }}"
                             val educatorInitials = child.educatorAvatarInitials?.ifBlank { null } ?: "ED"
                             val educatorBgColor = child.educatorAvatarBgColor ?: 0xFF00897B
@@ -528,14 +537,7 @@ fun ChatBitacoraScreen(
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = onWeeklySummaryClick) {
-                            Icon(
-                                imageVector = Icons.Default.AutoAwesome,
-                                contentDescription = "Resumen Semanal IA",
-                                tint = BrandBlue,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
+<<<<<<< HEAD
                         if (isWorkerRole && child != null) {
                             IconButton(onClick = onAttendanceClick) {
                                 Icon(
@@ -545,6 +547,23 @@ fun ChatBitacoraScreen(
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
+=======
+                        IconButton(onClick = onWeeklySummaryClick) {
+                            Icon(
+                                imageVector = Icons.Default.AutoAwesome,
+                                contentDescription = "Resumen Semanal IA",
+                                tint = BrandBlue,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        IconButton(onClick = onAttendanceClick) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.FactCheck,
+                                contentDescription = "Pasar Asistencia",
+                                tint = BrandBlue,
+                                modifier = Modifier.size(22.dp)
+                            )
+>>>>>>> dcf9072 (Implementar resumen semanal con IA, datos reales y observaciones manuales)
                         }
                         IconButton(onClick = {
                             if (isWorkerRole && child != null) {
@@ -666,6 +685,7 @@ fun ParentCallDialog(
 
                 var hasContacts = false
 
+                // Contacto de Emergencia guardado en el perfil del menor
                 if (childProfile.emergencyPhone.isNotBlank()) {
                     hasContacts = true
                     ContactRow(
@@ -682,6 +702,7 @@ fun ParentCallDialog(
                     )
                 }
 
+                // Madre
                 if (childProfile.motherName.isNotBlank() && childProfile.motherPhone.isNotBlank()) {
                     if (hasContacts) {
                         Spacer(modifier = Modifier.height(12.dp))
@@ -701,6 +722,7 @@ fun ParentCallDialog(
                     )
                 }
 
+                // Padre
                 if (childProfile.fatherName.isNotBlank() && childProfile.fatherPhone.isNotBlank()) {
                     if (hasContacts) {
                         Spacer(modifier = Modifier.height(12.dp))
@@ -759,7 +781,7 @@ fun ContactRow(name: String, phone: String, relation: String, onCall: () -> Unit
             modifier = Modifier
                 .size(46.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFE3F2FD)),
+                .background(Color(0xFFE3F2FD)), // Light blue
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -793,7 +815,7 @@ fun ContactRow(name: String, phone: String, relation: String, onCall: () -> Unit
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFE8F5E9))
+                .background(Color(0xFFE8F5E9)) // Light green
         ) {
             Icon(
                 imageVector = Icons.Default.Phone,
@@ -1044,6 +1066,7 @@ private fun ActivityTimelineCard(act: TimelineItem.ActivityCard) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
+                // Etiqueta lateral izquierda
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
@@ -1078,6 +1101,7 @@ private fun ActivityTimelineCard(act: TimelineItem.ActivityCard) {
 
                 Spacer(modifier = Modifier.width(10.dp))
 
+                // Descripción de la actividad
                 Text(
                     text = act.description,
                     fontSize = 12.5.sp,
@@ -1103,3 +1127,4 @@ fun ChatBitacoraScreenPreview() {
         )
     }
 }
+

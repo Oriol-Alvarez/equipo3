@@ -267,7 +267,7 @@ fun SonrisasNavHost(
                     val isGroup = currentWorkerChat.isGroup || currentWorkerChat.isGlobal
                     val isFamilyGroup = familyGroupsState.groups.any { it.id == currentWorkerChat.id }
 
-                    ChatBitacoraScreen(
+                    qChatBitacoraScreen(
                         workerChat = currentWorkerChat,
                         child = null,
                         isWorkerRole = isEducadora,
