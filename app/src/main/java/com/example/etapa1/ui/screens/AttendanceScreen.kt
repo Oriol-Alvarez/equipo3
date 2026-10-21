@@ -55,6 +55,7 @@ import com.example.etapa1.ui.components.EgresoFormSection
 import com.example.etapa1.ui.components.EgresoFormState
 import com.example.etapa1.ui.components.IngresoFormSection
 import com.example.etapa1.ui.components.IngresoFormState
+import com.example.etapa1.ui.components.nombreDeSesion
 import com.example.etapa1.ui.theme.AlertRed
 import com.example.etapa1.ui.theme.AppBackground
 import com.example.etapa1.ui.theme.BorderSubtle
@@ -128,8 +129,23 @@ fun AttendanceScreen(
     val attendanceDate = currentDateStr
     val selectedDayIndex = defaultDayIndex
 
-    val ingresoState = remember(currentTimeStr) { IngresoFormState(entryTime = currentTimeStr) }
-    val egresoState = remember(currentTimeStr) { EgresoFormState(exitTime = currentTimeStr) }
+    // El personal es quien inició sesión; el familiar que entrega o recoge se escribe en el momento
+    val personalEnSesion = nombreDeSesion(siNoHay = "")
+    val ingresoState = remember(currentTimeStr) {
+        IngresoFormState(
+            assistantName = personalEnSesion,
+            entryTime = currentTimeStr,
+            delivererName = "",
+            receiverStaffName = personalEnSesion
+        )
+    }
+    val egresoState = remember(currentTimeStr) {
+        EgresoFormState(
+            exitTime = currentTimeStr,
+            receiverTutorName = "",
+            delivererStaffName = personalEnSesion
+        )
+    }
 
     // Validación de campos obligatorios y firmas (solo el campo de observaciones puede quedar en blanco)
     val isIngresoValid = attendanceDate.isNotBlank() &&

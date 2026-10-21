@@ -485,7 +485,7 @@ data class AdminCreateChildDto(
     val shortName: String? = null,
     val ageText: String? = "2 años",
     val roomText: String? = "Sala 1A",
-    val groupText: String? = "Maternal A",
+    val groupText: String? = null,
     val allergyAlert: String? = null,
     val birthDate: String? = null,
     val studentId: String? = null,

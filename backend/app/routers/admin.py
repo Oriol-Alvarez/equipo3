@@ -9,6 +9,9 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import Identidad, requiere_direccion
 from ..errors import ApiError
+from ..fichas import fichas
+from ..horario import hoy
+from ..resumenes import a_fecha
 from ..models import (
     Activity,
     Announcement,
@@ -271,13 +274,15 @@ def crear_y_vincular_alumno_admin(
     initials = "".join([w[0] for w in body.fullName.split()[:2]]).upper() or "AL"
     short = body.shortName or body.fullName.split()[0]
 
+    room_id = _resolve_room_id(db, body.roomText)
+    sala = db.get(Room, room_id)
     child = Child(
         id=cid,
         full_name=body.fullName.strip(),
         short_name=short,
         age_text=body.ageText or "2 años",
-        room_id=_resolve_room_id(db, body.roomText),
-        group_text=body.groupText or "Maternal A",
+        room_id=room_id,
+        group_text=(body.groupText or "").strip() or (sala.level if sala else ""),
         status_text="No ha ingresado",
         is_present=False,
         allergy_alert=body.allergyAlert,
@@ -631,7 +636,10 @@ def obtener_estadisticas_admin(
 ) -> AdminStatsOverview:
     """Calcula métricas e indicadores globales: asistencia, comidas, siestas, avisos, etc."""
     total_children = db.scalar(select(func.count(Child.id))) or 0
-    present_count = db.scalar(select(func.count(Child.id)).where(Child.is_present.is_(True))) or 0
+    # Presentes HOY con la misma regla que la pantalla de la sala (registro diario del día)
+    estado_hoy = fichas(db.scalars(select(Child)).all(), db)
+    present_count = sum(1 for f in estado_hoy if f.isPresent)
+    retirados_hoy = sum(1 for f in estado_hoy if "Retirado" in (f.statusText or ""))
     absent_count = max(0, total_children - present_count)
     att_rate = round((present_count / total_children * 100), 1) if total_children > 0 else 0.0
 
@@ -641,7 +649,8 @@ def obtener_estadisticas_admin(
     total_families = db.scalar(select(func.count(Usuario.id)).where(Usuario.role == "FAMILIAR")) or 0
 
     # Cargar actividades reales registradas en la base de datos
-    all_activities = db.scalars(select(Activity)).all()
+    dia_hoy = hoy()
+    all_activities = [a for a in db.scalars(select(Activity)).all() if a_fecha(a.date) == dia_hoy]
 
     # Comida / Alimentación (datos reales introducidos por educadoras)
     food_acts = [
@@ -656,21 +665,21 @@ def obtener_estadisticas_admin(
     breakfast_count = sum(
         1
         for a in food_acts
-        if (a.meal_type and "DESAYUNO" in a.meal_type.upper())
+        if (a.meal_type and any(k in a.meal_type.upper() for k in ("DESAYUNO", "BREAKFAST")))
         or (a.title and "DESAYUNO" in a.title.upper())
         or (a.portion_option and "DESAYUNO" in a.portion_option.upper())
     )
     lunch_count = sum(
         1
         for a in food_acts
-        if (a.meal_type and "COMIDA" in a.meal_type.upper())
+        if (a.meal_type and any(k in a.meal_type.upper() for k in ("COMIDA", "LUNCH")))
         or (a.title and ("COMIDA" in a.title.upper() or "ALMUERZO" in a.title.upper()))
         or (a.portion_option and ("COMIDA" in a.portion_option.upper() or "ALMUERZO" in a.portion_option.upper()))
     )
     snack_count = sum(
         1
         for a in food_acts
-        if (a.meal_type and any(k in a.meal_type.upper() for k in ("COLACION", "COLACIÓN", "MERIENDA")))
+        if (a.meal_type and any(k in a.meal_type.upper() for k in ("SNACK", "COLACION", "COLACIÓN", "MERIENDA")))
         or (a.title and any(k in a.title.upper() for k in ("COLACION", "COLACIÓN", "MERIENDA")))
         or (a.portion_option and any(k in a.portion_option.upper() for k in ("COLACION", "COLACIÓN", "MERIENDA")))
     )
@@ -690,9 +699,10 @@ def obtener_estadisticas_admin(
     )
 
     # Asistencia Ingreso / Egreso (registros reales en puerta)
-    ingresos = db.scalar(select(func.count(AttendanceRecord.id)).where(AttendanceRecord.is_ingreso.is_(True))) or 0
-    egresos = db.scalar(select(func.count(AttendanceRecord.id)).where(AttendanceRecord.is_ingreso.is_(False))) or 0
-    pending_pickups = max(0, present_count - egresos)
+    # Ingresos y egresos de HOY (registro diario)
+    ingresos = present_count + retirados_hoy
+    egresos = retirados_hoy
+    pending_pickups = present_count
 
     # Funciones excretoras / Control de esfínteres / Pañal (100% datos reales)
     excretory_acts = [

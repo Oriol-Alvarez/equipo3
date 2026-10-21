@@ -809,7 +809,7 @@ class AdminCreateChildRequest(BaseModel):
     shortName: str | None = None
     ageText: str | None = "2 años"
     roomText: str | None = "Sala 1A"
-    groupText: str | None = "Maternal A"
+    groupText: str | None = None
     allergyAlert: str | None = None
     birthDate: str | None = None
     studentId: str | None = None

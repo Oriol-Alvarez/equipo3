@@ -187,7 +187,7 @@ fun MoreMenuScreen(
     if (mostrarNotificaciones) {
         AvisoDialog(
             titulo = "Notificaciones",
-            texto = "La configuración de notificaciones estará disponible próximamente. Por ahora los avisos y mensajes aparecen dentro de la app.",
+            texto = "La app te avisa de los anuncios nuevos del centro y, si eres parte del personal, de los mensajes sin leer, aunque esté cerrada (revisa cada 15 minutos). Para activar o desactivar estos avisos, entra a los ajustes de notificaciones de Android para Sonrisas de Cristal.",
             onDismiss = { mostrarNotificaciones = false }
         )
     }

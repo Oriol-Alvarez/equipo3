@@ -74,9 +74,6 @@ dependencies {
     // AndroidX Security (EncryptedSharedPreferences)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
-    // Firebase (para Notificaciones Push)
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.messaging)
 
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)
