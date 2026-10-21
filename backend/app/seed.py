@@ -333,12 +333,15 @@ def seed_database(db: Session) -> None:
     ]
     db.add_all(personal)
 
-    # 5. Anuncios y Circulares
+    # 5. Anuncios y Circulares (fecha real, mismo formato que los avisos publicados)
+    from datetime import timedelta as _dias
+    from .horario import ahora as _ahora
+    _formato_aviso = "%d/%m/%Y %I:%M %p"
     anuncios = [
         Announcement(
             id="ann_1",
             title="Reunión de Padres y Madres - Inicio de Curso",
-            date="Hoy, 10:00 AM",
+            date=_ahora().replace(hour=10, minute=0).strftime(_formato_aviso),
             summary="Recordatorio sobre la reunión de este viernes en el salón principal.",
             full_content="Estimadas familias,\n\nLes recordamos que este viernes 2 de Octubre a las 18:00h tendrá lugar la reunión general informativa.\n\nAtentamente,\nDirección.",
             author="Dirección General",
@@ -346,7 +349,7 @@ def seed_database(db: Session) -> None:
         Announcement(
             id="ann_2",
             title="Campaña de Vacunación contra la Gripe",
-            date="Ayer, 09:00 AM",
+            date=(_ahora() - _dias(days=1)).replace(hour=9, minute=0).strftime(_formato_aviso),
             summary="Información sobre la próxima campaña de salud.",
             full_content="Estimados padres, en colaboración con el centro de salud local, se llevará a cabo la jornada preventiva.",
             author="Servicio Médico",

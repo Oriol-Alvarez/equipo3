@@ -193,7 +193,8 @@ open class AppContainer(val context: Context) {
     /** Al iniciar sesión: pide al servidor los datos del usuario que acaba de entrar. */
     fun recargarTodo() {
         if (useMocks) return
-        roomRepository.refresh()
+        // Las salas solo las consulta el personal; para la familia el servidor responde 403
+        if (!tokenManager.userRole.equals("FAMILIAR", ignoreCase = true)) roomRepository.refresh()
         childRepository.refresh()
         attendanceRepository.refresh()
         announcementRepository.refresh()
