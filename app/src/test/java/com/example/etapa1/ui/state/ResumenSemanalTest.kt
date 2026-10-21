@@ -2,6 +2,7 @@ package com.example.etapa1.ui.state
 
 import com.example.etapa1.model.AttendanceRecord
 import com.example.etapa1.model.TimelineItem
+import com.example.etapa1.model.WeeklySummary
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -97,5 +98,43 @@ class ResumenSemanalTest {
         assertNull(CalculadoraResumenSemanal.parseFecha("Hoy"))
         assertEquals(8 * 60 + 5, CalculadoraResumenSemanal.minutosDelDia("08:05 AM"))
         assertEquals(14 * 60, CalculadoraResumenSemanal.minutosDelDia("14:00"))
+    }
+
+    private fun delServidor(id: String) = WeeklySummary(
+        id = id,
+        attendanceDaysCount = 1,
+        totalSchoolDays = 2,
+        averageArrivalTime = "08:20 AM",
+        foodIntakePercentage = "78%",
+        totalNapHours = "0h 45m",
+        averageNapDaily = "-",
+        moodSummary = "Mayormente feliz",
+        executiveSummary = "Mateo asistió 1 de 2 días.",
+        foodHighlights = listOf("Comida: comió completo 1 de 1 día"),
+        napHighlights = "",
+        pedagogicalHighlights = emptyList(),
+        healthAndSafetySummary = ""
+    )
+
+    @Test
+    fun usaElResumenDelServidorCuandoExisteParaEsaSemana() {
+        val local = CalculadoraResumenSemanal.calcular("Mateo", "n1", semanas[0], emptyList(), emptyList())
+        val v = vistaResumen(local, listOf(delServidor("2026-10-19")))
+        assertTrue(v.delServidor)
+        assertEquals("1/2 días", v.asistenciaTexto)
+        assertEquals("Llegada promedio 08:20 AM", v.asistenciaDetalle)
+        assertEquals("78%", v.alimentacionTexto)
+        assertEquals("Sin siestas registradas", v.descansoDetalle)
+        assertEquals("Mateo asistió 1 de 2 días.", v.texto)
+    }
+
+    @Test
+    fun sinResumenDelServidorUsaElCalculoLocal() {
+        val local = CalculadoraResumenSemanal.calcular("Mateo", "n1", semanas[0], emptyList(), emptyList())
+        val v = vistaResumen(local, listOf(delServidor("2026-10-12")))  // otra semana
+        assertTrue(!v.delServidor)
+        assertEquals(local.asistenciaTexto, v.asistenciaTexto)
+        assertEquals(local.texto, v.texto)
+        assertEquals("2026-10-19", semanas[0].idServidor())
     }
 }

@@ -58,7 +58,9 @@ import com.example.etapa1.model.AttendanceRecord
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.TimelineItem
+import com.example.etapa1.model.WeeklySummary
 import com.example.etapa1.ui.state.CalculadoraResumenSemanal
+import com.example.etapa1.ui.state.vistaResumen
 import com.example.etapa1.ui.theme.AppBackground
 import com.example.etapa1.ui.theme.BorderSubtle
 import com.example.etapa1.ui.theme.BrandBlue
@@ -80,7 +82,9 @@ fun WeeklySummaryScreen(
     /** Abre la exportación oficial en PDF; null si el rol no puede exportar. */
     onExportClick: (() -> Unit)? = null,
     /** Recibe el mensaje ya armado (semana + observaciones) para enviarlo a la bitácora. */
-    onSaveManualObservations: (String) -> Unit = {}
+    onSaveManualObservations: (String) -> Unit = {},
+    /** Resúmenes semanales calculados por el servidor (los mismos que ve la familia). */
+    serverSummaries: List<WeeklySummary> = emptyList()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val semanas = remember { CalculadoraResumenSemanal.semanas() }
@@ -89,13 +93,16 @@ fun WeeklySummaryScreen(
     val context = LocalContext.current
 
     // Todo sale de los registros reales del niño en la semana elegida
-    val resumen = remember(timelineItems, attendanceRecords, selectedTab, child.id) {
-        CalculadoraResumenSemanal.calcular(
-            nombre = child.shortName.ifBlank { child.fullName },
-            childId = child.id,
-            semana = semanas[selectedTab],
-            timeline = timelineItems,
-            asistencias = attendanceRecords
+    val resumen = remember(timelineItems, attendanceRecords, serverSummaries, selectedTab, child.id) {
+        vistaResumen(
+            local = CalculadoraResumenSemanal.calcular(
+                nombre = child.shortName.ifBlank { child.fullName },
+                childId = child.id,
+                semana = semanas[selectedTab],
+                timeline = timelineItems,
+                asistencias = attendanceRecords
+            ),
+            delServidor = serverSummaries
         )
     }
 

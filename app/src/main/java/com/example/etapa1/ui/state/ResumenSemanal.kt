@@ -2,6 +2,7 @@ package com.example.etapa1.ui.state
 
 import com.example.etapa1.model.AttendanceRecord
 import com.example.etapa1.model.TimelineItem
+import com.example.etapa1.model.WeeklySummary
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -224,4 +225,59 @@ object CalculadoraResumenSemanal {
             else -> "${h}h ${m}m"
         }
     }
+}
+
+/** Lo que muestra la pantalla del resumen: el del servidor si existe para esa semana; si no, el cálculo local. */
+data class ResumenVista(
+    val semana: SemanaEscolar,
+    val texto: String,
+    val asistenciaTexto: String,
+    val asistenciaDetalle: String,
+    val alimentacionTexto: String,
+    val alimentacionDetalle: String,
+    val descansoTexto: String,
+    val descansoDetalle: String,
+    val animoTexto: String,
+    val animoDetalle: String,
+    val delServidor: Boolean
+)
+
+fun ResumenSemanal.aVista() = ResumenVista(
+    semana = semana,
+    texto = texto,
+    asistenciaTexto = asistenciaTexto,
+    asistenciaDetalle = asistenciaDetalle,
+    alimentacionTexto = alimentacionTexto,
+    alimentacionDetalle = alimentacionDetalle,
+    descansoTexto = descansoTexto,
+    descansoDetalle = descansoDetalle,
+    animoTexto = animoTexto,
+    animoDetalle = animoDetalle,
+    delServidor = false
+)
+
+/** Id con el que el servidor identifica la semana: el lunes en formato YYYY-MM-DD. */
+fun SemanaEscolar.idServidor(): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(lunes)
+
+/**
+ * Usa el resumen semanal calculado por el servidor (el mismo que ve la familia en su inicio)
+ * para que ambos coincidan; si aún no llegó o no hay conexión, usa el cálculo local.
+ */
+fun vistaResumen(local: ResumenSemanal, delServidor: List<WeeklySummary>): ResumenVista {
+    val s = delServidor.firstOrNull { it.id == local.semana.idServidor() } ?: return local.aVista()
+    fun dato(valor: String, siNoHay: String) = valor.trim().takeUnless { it.isEmpty() || it == "-" } ?: siNoHay
+    val llegada = dato(s.averageArrivalTime, "")
+    return ResumenVista(
+        semana = local.semana,
+        texto = dato(s.executiveSummary, local.texto),
+        asistenciaTexto = "${s.attendanceDaysCount}/${s.totalSchoolDays} días",
+        asistenciaDetalle = if (llegada.isNotEmpty()) "Llegada promedio $llegada" else "Sin ingresos registrados",
+        alimentacionTexto = dato(s.foodIntakePercentage, "Sin datos"),
+        alimentacionDetalle = s.foodHighlights.firstOrNull { it.isNotBlank() } ?: "Sin comidas registradas",
+        descansoTexto = dato(s.totalNapHours, "Sin datos"),
+        descansoDetalle = dato(s.averageNapDaily, "Sin siestas registradas"),
+        animoTexto = dato(s.moodSummary, "Sin datos"),
+        animoDetalle = "Comportamiento semanal",
+        delServidor = true
+    )
 }

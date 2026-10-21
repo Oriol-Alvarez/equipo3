@@ -327,10 +327,18 @@ fun SonrisasNavHost(
                 val asistenciaRepo = app?.container?.attendanceRepository
                 LaunchedEffect(selectedChild.id) { asistenciaRepo?.refresh() }
                 val asistencias = asistenciaRepo?.attendanceRecords?.collectAsState()?.value.orEmpty()
+                // Resúmenes del servidor (los mismos de la pestaña de la familia); se recargan al entrar
+                val fichaRepo = app?.container?.childRepository
+                LaunchedEffect(selectedChild.id) { fichaRepo?.cargarDetalle(selectedChild.id) }
+                val cambiosFicha = fichaRepo?.cambios?.collectAsState()?.value ?: 0
+                val resumenesServidor = remember(cambiosFicha, selectedChild.id) {
+                    fichaRepo?.getWeeklySummariesForChild(selectedChild).orEmpty()
+                }
                 WeeklySummaryScreen(
                     child = selectedChild,
                     timelineItems = items,
                     attendanceRecords = asistencias,
+                    serverSummaries = resumenesServidor,
                     onBack = { nav.popBackStack() },
                     onChatClick = { nav.popBackStack() },
                     onExportClick = if (isEducadora) {
