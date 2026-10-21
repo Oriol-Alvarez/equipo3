@@ -30,15 +30,25 @@ class SyncWorker(
             }
 
             // Llamada rápida a la API para revisar mensajes o notificaciones no leídas
-            val response = app.container.api.getStaffMembers() // Usado solo como Ping de prueba
+            val response = app.container.api.getAnnouncements()
             if (response.isSuccessful) {
-                // Aquí consumiríamos un endpoint /notifications/unread real para saber qué alertar
-                // Por propósitos de la demostración, dispararemos una notificación de aviso general si el túnel responde
-                PushNotificationHelper.showNotification(
-                    context = applicationContext,
-                    title = "¡Nueva Notificación!",
-                    body = "Tienes una actualización de tu Estancia Infantil."
-                )
+                val announcements = response.body()
+                if (!announcements.isNullOrEmpty()) {
+                    val latestAnnouncement = announcements.first()
+                    val lastKnownId = app.container.tokenManager.lastAnnouncementId
+
+                    // Si el anuncio más reciente tiene un ID diferente al que teníamos guardado
+                    // significa que hay un anuncio nuevo.
+                    if (latestAnnouncement.id != lastKnownId) {
+                        PushNotificationHelper.showNotification(
+                            context = applicationContext,
+                            title = "Nuevo Anuncio: ${latestAnnouncement.title}",
+                            body = latestAnnouncement.summary
+                        )
+                        // Guardamos el nuevo ID para no repetir la notificación
+                        app.container.tokenManager.lastAnnouncementId = latestAnnouncement.id
+                    }
+                }
                 return Result.success()
             }
             return Result.retry()

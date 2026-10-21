@@ -53,6 +53,10 @@ class TokenManager(context: Context) {
         get() = prefs.getString("fcm_device_token", null)
         set(value) = prefs.edit().putString("fcm_device_token", value).apply()
 
+    var lastAnnouncementId: String?
+        get() = prefs.getString("last_announcement_id", null)
+        set(value) = prefs.edit().putString("last_announcement_id", value).apply()
+
     fun clear() {
         prefs.edit().clear().apply()
     }

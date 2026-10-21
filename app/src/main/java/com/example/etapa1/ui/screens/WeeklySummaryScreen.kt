@@ -48,13 +48,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.etapa1.model.AttendanceRecord
 import com.example.etapa1.model.Child
 import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.TimelineItem
+import com.example.etapa1.ui.state.CalculadoraResumenSemanal
 import com.example.etapa1.ui.theme.AppBackground
 import com.example.etapa1.ui.theme.BorderSubtle
 import com.example.etapa1.ui.theme.BrandBlue
@@ -71,38 +75,28 @@ fun WeeklySummaryScreen(
     timelineItems: List<TimelineItem>,
     onBack: () -> Unit,
     onChatClick: () -> Unit = {},
+    /** Registros de asistencia del servidor (ingresos/egresos). */
+    attendanceRecords: List<AttendanceRecord> = emptyList(),
+    /** Abre la exportación oficial en PDF; null si el rol no puede exportar. */
+    onExportClick: (() -> Unit)? = null,
+    /** Recibe el mensaje ya armado (semana + observaciones) para enviarlo a la bitácora. */
     onSaveManualObservations: (String) -> Unit = {}
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Semana actual", "15 - 19 Sep", "8 - 12 Sep", "1 - 5")
+    val semanas = remember { CalculadoraResumenSemanal.semanas() }
+    val tabs = semanas.map { it.etiqueta }
     var manualObservations by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
-    // Calcular datos reales dinámicamente a partir de timelineItems y el alumno
-    val entryCount = timelineItems.count { it is TimelineItem.EventChip && it.iconType == "entry" }
-    val attendanceText = if (entryCount > 0) "$entryCount/5 días" else "5/5 días"
-    val arrivalStr = child.arrivalTime ?: "08:15 AM"
-    val attendanceSubtitle = "100% • Entrada $arrivalStr"
-
-    val activityCards = timelineItems.filterIsInstance<TimelineItem.ActivityCard>()
-    val foodActivities = activityCards.filter { it.category.contains("Alimentación", true) }
-    val foodPercentage = if (foodActivities.isNotEmpty()) "92%" else "90%"
-    val foodSubtitle = "Aceptación general"
-
-    val napChips = timelineItems.filter { it is TimelineItem.EventChip && it.iconType == "nap" }
-    val napText = if (napChips.isNotEmpty()) "6h 15m" else "6h 00m"
-    val napSubtitle = "Prom. 1h 15m/día"
-
-    val moodChips = timelineItems.filter { it is TimelineItem.EventChip && it.iconType == "mood" }
-    val generalMood = if (moodChips.isNotEmpty()) "Muy participativo y sociable" else "Tranquilo y participativo"
-
-    // Resumen de IA generado en tiempo real con base en las actividades y chats reales
-    val aiGeneratedSummary = remember(timelineItems) {
-        val lastFood = foodActivities.lastOrNull()?.description ?: "buen apetito y autonomía."
-        val chats = timelineItems.filterIsInstance<TimelineItem.ChatMessage>()
-        val lastChatMsg = chats.lastOrNull()?.message ?: ""
-        val chatContext = if (lastChatMsg.isNotEmpty()) " Destaca en el chat: \"$lastChatMsg\"." else ""
-        
-        "Semana sumamente positiva para ${child.fullName}. Ha mantenido una asistencia constante con horario puntual de ingreso ($arrivalStr). En alimentación mostró $lastFood En el descanso mantuvo siestas continuas.${chatContext} Su interacción con educadoras y compañeros fue sobresaliente."
+    // Todo sale de los registros reales del niño en la semana elegida
+    val resumen = remember(timelineItems, attendanceRecords, selectedTab, child.id) {
+        CalculadoraResumenSemanal.calcular(
+            nombre = child.shortName.ifBlank { child.fullName },
+            childId = child.id,
+            semana = semanas[selectedTab],
+            timeline = timelineItems,
+            asistencias = attendanceRecords
+        )
     }
 
     Scaffold(
@@ -153,7 +147,7 @@ fun WeeklySummaryScreen(
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { /* Exportar PDF */ }) {
+                        if (onExportClick != null) IconButton(onClick = onExportClick) {
                             Icon(
                                 imageVector = Icons.Default.Description,
                                 contentDescription = "Exportar PDF",
@@ -242,14 +236,14 @@ fun WeeklySummaryScreen(
                         }
 
                         Text(
-                            text = "Semana del 22 al 26 de Septiembre, 2026",
+                            text = resumen.semana.rango,
                             fontSize = 12.sp,
                             color = TextSecondary,
                             fontWeight = FontWeight.Medium
                         )
 
                         Text(
-                            text = aiGeneratedSummary,
+                            text = resumen.texto,
                             fontSize = 13.5.sp,
                             color = TextPrimary,
                             lineHeight = 19.sp
@@ -265,16 +259,16 @@ fun WeeklySummaryScreen(
                     MetricCard(
                         modifier = Modifier.weight(1f),
                         title = "Asistencia",
-                        mainValue = attendanceText,
-                        subtitle = attendanceSubtitle,
+                        mainValue = resumen.asistenciaTexto,
+                        subtitle = resumen.asistenciaDetalle,
                         icon = Icons.Default.CheckCircle,
                         iconTint = StatusPresentGreen
                     )
                     MetricCard(
                         modifier = Modifier.weight(1f),
                         title = "Alimentación",
-                        mainValue = foodPercentage,
-                        subtitle = foodSubtitle,
+                        mainValue = resumen.alimentacionTexto,
+                        subtitle = resumen.alimentacionDetalle,
                         icon = Icons.Default.Restaurant,
                         iconTint = Color(0xFFE65100)
                     )
@@ -287,16 +281,16 @@ fun WeeklySummaryScreen(
                     MetricCard(
                         modifier = Modifier.weight(1f),
                         title = "Descanso",
-                        mainValue = napText,
-                        subtitle = napSubtitle,
+                        mainValue = resumen.descansoTexto,
+                        subtitle = resumen.descansoDetalle,
                         icon = Icons.Default.NightlightRound,
                         iconTint = BrandBlue
                     )
                     MetricCard(
                         modifier = Modifier.weight(1f),
                         title = "Estado General",
-                        mainValue = generalMood,
-                        subtitle = "Comportamiento semanal",
+                        mainValue = resumen.animoTexto,
+                        subtitle = resumen.animoDetalle,
                         icon = Icons.Default.Face,
                         iconTint = StatusPresentGreen
                     )
@@ -353,9 +347,14 @@ fun WeeklySummaryScreen(
                 // Botón Guardar y Enviar Observaciones
                 Button(
                     onClick = {
-                        onSaveManualObservations(manualObservations)
+                        val texto = manualObservations.trim()
+                        onSaveManualObservations(
+                            "📝 Observaciones de la semana (${resumen.semana.rango.removePrefix("Semana del ")}):\n$texto"
+                        )
+                        Toast.makeText(context, "Observaciones enviadas a la bitácora", Toast.LENGTH_SHORT).show()
                         onBack()
                     },
+                    enabled = manualObservations.isNotBlank(),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
