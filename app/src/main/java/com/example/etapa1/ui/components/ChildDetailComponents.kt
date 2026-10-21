@@ -1,5 +1,9 @@
 package com.example.etapa1.ui.components
 
+import android.net.Uri
+import android.provider.OpenableColumns
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,6 +32,13 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.UploadFile
+import androidx.compose.material.icons.filled.Verified
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.example.etapa1.ui.theme.StatusPresentGreenBg
 import androidx.compose.material.icons.filled.FamilyRestroom
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -48,6 +59,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -270,25 +282,96 @@ fun ChildFullDataContent(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(10.dp))
                         .background(AlertRed.copy(alpha = 0.1f))
-                        .border(1.dp, AlertRed.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
-                        .padding(8.dp)
+                        .border(1.dp, AlertRed.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                        .padding(10.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = AlertRed,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = child.allergyAlert,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = AlertRed
-                        )
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = AlertRed,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = child.allergyAlert,
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AlertRed
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        val context = LocalContext.current
+                        var certificadoSubidoName by remember { mutableStateOf<String?>(null) }
+                        val fileLauncher = rememberLauncherForActivityResult(
+                            contract = ActivityResultContracts.GetContent()
+                        ) { uri: Uri? ->
+                            uri?.let {
+                                context.contentResolver.query(it, null, null, null, null)?.use { cursor ->
+                                    val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                                    if (nameIndex != -1 && cursor.moveToFirst()) {
+                                        certificadoSubidoName = cursor.getString(nameIndex)
+                                    }
+                                }
+                                if (certificadoSubidoName == null) {
+                                    certificadoSubidoName = "Certificado_Alergia_Salud.pdf"
+                                }
+                            }
+                        }
+
+                        if (certificadoSubidoName != null) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(StatusPresentGreenBg)
+                                    .padding(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Verified,
+                                    contentDescription = "Certificado Acreditado",
+                                    tint = StatusPresentGreen,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Alergia validada con: $certificadoSubidoName",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = StatusPresentGreen
+                                )
+                            }
+                        } else {
+                            Button(
+                                onClick = { fileLauncher.launch("*/*") },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = BrandBlue,
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.UploadFile,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Subir certificado de salud para validar alergia",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(6.dp))
