@@ -64,7 +64,11 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
 
-    // Tareas en segundo plano (Sincronización de notificaciones sin Firebase)
+    // Firebase Cloud Messaging (Push Notifications)
+    implementation(platform("com.google.firebase:firebase-bom:33.9.0"))
+    implementation("com.google.firebase:firebase-messaging-ktx")
+
+    // Revisión periódica de anuncios y mensajes cuando la app está cerrada (respaldo sin Firebase)
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     // AndroidX Security (EncryptedSharedPreferences)

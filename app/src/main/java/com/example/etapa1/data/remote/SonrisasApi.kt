@@ -6,6 +6,7 @@ import okhttp3.RequestBody
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.PATCH
 import retrofit2.http.POST
@@ -41,6 +42,28 @@ interface SonrisasApi {
 
     @GET("children/{childId}")
     suspend fun getChild(@Path("childId") childId: String): Response<ChildDto>
+
+    @GET("children/{childId}/full-profile")
+    suspend fun getChildFullProfile(@Path("childId") childId: String): Response<ChildFullProfileDto>
+
+    @PUT("children/{childId}/full-profile")
+    suspend fun updateChildFullProfile(
+        @Path("childId") childId: String,
+        @Body request: ChildProfileUpdateDto
+    ): Response<ChildFullProfileDto>
+
+    @GET("children/{childId}/weekly-summaries")
+    suspend fun getWeeklySummaries(@Path("childId") childId: String): Response<List<WeeklySummaryDto>>
+
+    @PUT("children/{childId}/weekly-summaries/{summaryId}/feedback")
+    suspend fun sendWeeklySummaryFeedback(
+        @Path("childId") childId: String,
+        @Path("summaryId") summaryId: String,
+        @Body request: WeeklySummaryFeedbackDto
+    ): Response<WeeklySummaryDto>
+
+    @GET("children/{childId}/bitacoras")
+    suspend fun getBitacoras(@Path("childId") childId: String): Response<List<BitacoraDiaDto>>
 
     @GET("children/{childId}/educator")
     suspend fun getChildEducator(@Path("childId") childId: String): Response<EducatorDto>
@@ -89,6 +112,12 @@ interface SonrisasApi {
         @Query("search") search: String? = null
     ): Response<List<LostItemDto>>
 
+    @POST("lost-objects")
+    suspend fun createLostObject(@Body request: CreateLostObjectDto): Response<LostItemDto>
+
+    @DELETE("lost-objects/{id}")
+    suspend fun deleteLostObject(@Path("id") id: String): Response<Unit>
+
     @PATCH("lost-objects/{id}/claim")
     suspend fun claimLostObject(@Path("id") id: String): Response<Unit>
 
@@ -132,7 +161,8 @@ interface SonrisasApi {
     @GET("daily-plans")
     suspend fun getDailyPlans(
         @Query("from") from: String? = null,
-        @Query("to") to: String? = null
+        @Query("to") to: String? = null,
+        @Query("roomId") roomId: String? = null
     ): Response<List<DailyPlanDto>>
 
     @PUT("daily-plans/{date}")
@@ -198,6 +228,15 @@ interface SonrisasApi {
     @GET("rooms/{roomId}/parent-chats")
     suspend fun getParentChatsByRoom(@Path("roomId") roomId: String): Response<List<ParentChatSummaryDto>>
 
+    @POST("chats/workers")
+    suspend fun createWorkerGroup(@Body request: CreateWorkerGroupDto): Response<WorkerChatDto>
+
+    @PUT("chats/workers/{chatId}/read")
+    suspend fun markWorkerChatRead(@Path("chatId") chatId: String): Response<Unit>
+
+    @PUT("chats/bitacora/{childId}/read")
+    suspend fun markBitacoraChatRead(@Path("childId") childId: String): Response<Unit>
+
     @GET("chats/bitacora/{childId}/messages")
     suspend fun getBitacoraMessages(@Path("childId") childId: String): Response<List<BitacoraMessageDto>>
 
@@ -219,6 +258,25 @@ interface SonrisasApi {
         @Body request: CreateActivityDto
     ): Response<NewActivityResponseDto>
 
+    @POST("children/{childId}/timeline/events")
+    suspend fun createTimelineEvent(
+        @Path("childId") childId: String,
+        @Body request: QuickEventDto
+    ): Response<TimelineItemDto>
+
+    // ---------------------------------------------------------------- notificaciones push fcm
+    @POST("notifications/device-token")
+    suspend fun registerDeviceToken(
+        @Body request: DeviceTokenRequestDto
+    ): Response<Map<String, String>>
+
+    /** Al cerrar sesión. Lleva el token explícito porque la sesión se borra en ese momento. */
+    @POST("notifications/device-token/unregister")
+    suspend fun unregisterDeviceToken(
+        @Header("Authorization") authorization: String,
+        @Body request: DeviceTokenRequestDto
+    ): Response<Unit>
+
     // ---------------------------------------------------------------- Gestión de Avisos
     @POST("announcements")
     suspend fun createAnnouncement(@Body request: CreateAnnouncementDto): Response<AnnouncementDto>
@@ -233,17 +291,12 @@ interface SonrisasApi {
     suspend fun deleteAnnouncement(@Path("id") id: String): Response<Unit>
 
     // ---------------------------------------------------------------- Gestión de Objetos Perdidos
-    @POST("lost-objects")
-    suspend fun createLostObject(@Body request: CreateLostObjectDto): Response<LostItemDto>
-
+    // (createLostObject y deleteLostObject ya están arriba, en Objetos perdidos)
     @PUT("lost-objects/{id}")
     suspend fun updateLostObject(
         @Path("id") id: String,
         @Body request: UpdateLostObjectDto
     ): Response<LostItemDto>
-
-    @DELETE("lost-objects/{id}")
-    suspend fun deleteLostObject(@Path("id") id: String): Response<Unit>
 
     // ---------------------------------------------------------------- Gestión de Sugerencias
     @DELETE("suggestions/{id}")

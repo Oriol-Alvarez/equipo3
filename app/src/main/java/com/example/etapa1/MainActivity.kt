@@ -13,9 +13,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.data.remote.PushNotificationHelper
+import com.example.etapa1.data.remote.SyncWorker
 import com.example.etapa1.ui.navigation.SonrisasApp
 import com.example.etapa1.ui.theme.Etapa1Theme
-import com.google.firebase.messaging.FirebaseMessaging
 
 class MainActivity : ComponentActivity() {
 
@@ -33,22 +33,10 @@ class MainActivity : ComponentActivity() {
             requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
 
-        val app = applicationContext as? SonrisasApplication
-        if (app != null) {
-            try {
-                FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-                    if (task.isSuccessful && task.result != null) {
-                        PushNotificationHelper.registerDeviceToken(
-                            api = app.container.api,
-                            tokenManager = app.container.tokenManager,
-                            deviceToken = task.result
-                        )
-                    }
-                }
-            } catch (_: Exception) {
-                // Firebase sin configurar en desarrollo
-            }
-        }
+        // El teléfono se registra para notificaciones push al iniciar sesión (SonrisasApp).
+        // Además, cada 15 min se revisan anuncios y mensajes aunque la app esté cerrada
+        // (funciona aunque Firebase no esté configurado).
+        SyncWorker.setupPeriodicSync(this)
 
         setContent {
             Etapa1Theme {
