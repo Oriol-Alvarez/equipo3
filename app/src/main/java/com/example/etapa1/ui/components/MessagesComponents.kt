@@ -1423,9 +1423,9 @@ fun WorkerChatMessageBubble(
                             } else {
                                 Text(
                                     text = msg.message,
-                                    fontSize = 13.5.sp,
+                                    fontSize = 15.sp,
                                     color = TextPrimary,
-                                    lineHeight = 18.sp
+                                    lineHeight = 22.sp
                                 )
                             }
                         }

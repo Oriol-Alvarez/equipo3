@@ -975,7 +975,7 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boole
                             model = msg.fileUri,
                             contentDescription = "Imagen adjunta",
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .width(250.dp)
                                 .height(200.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
@@ -1008,9 +1008,9 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boole
                 if (msg.message.isNotBlank()) {
                     Text(
                         text = msg.message,
-                        fontSize = 13.5.sp,
+                        fontSize = 15.sp,
                         color = if (isOutgoing) Color.White else TextPrimary,
-                        lineHeight = 18.sp
+                        lineHeight = 22.sp
                     )
                 }
             }
