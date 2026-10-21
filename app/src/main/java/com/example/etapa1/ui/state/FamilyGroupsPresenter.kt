@@ -88,7 +88,15 @@ object FamilyGroupsPresenter {
     fun previewOf(message: FamilyGroupMessage, viewerId: String): String {
         val author = if (message.senderId == viewerId) "Tú" else message.senderName.substringBefore(" (")
         val body = when {
-            message.text.isNotBlank() -> message.text
+            message.text.isNotBlank() -> {
+                val act = com.example.etapa1.ui.components.parseGroupActivityMessage(message.text)
+                if (act != null) {
+                    val (cat, badge, _) = act
+                    if (badge.isNotBlank()) "📋 Actividad: $cat • $badge" else "📋 Actividad: $cat"
+                } else {
+                    message.text
+                }
+            }
             message.attachment?.isImage == true -> "📷 Foto"
             message.attachment != null -> "📎 ${message.attachment.name ?: "Archivo"}"
             else -> ""

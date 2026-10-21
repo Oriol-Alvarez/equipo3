@@ -2431,25 +2431,6 @@ private fun ChildManagementCard(
                 }
             }
 
-            // Allergy Alert Pill
-            if (!child.allergyAlert.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = AlertRed.copy(alpha = 0.1f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AlertRed.copy(alpha = 0.3f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Warning, contentDescription = null, tint = AlertRed, modifier = Modifier.size(13.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Alergia: ${child.allergyAlert}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AlertRed)
-                    }
-                }
-            }
-
             // Backend Data Card
             Spacer(modifier = Modifier.height(8.dp))
             Surface(
@@ -2698,8 +2679,10 @@ private fun AdminEditChildDialog(
             ) {
                 OutlinedTextField(
                     value = fullName,
-                    onValueChange = { fullName = it },
+                    onValueChange = { },
                     label = { Text("Nombre Completo") },
+                    supportingText = { Text("Registro oficial escolar (No modificable)", color = TextSecondary) },
+                    readOnly = true,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -2724,6 +2707,7 @@ private fun AdminEditChildDialog(
                     value = bloodType,
                     onValueChange = { bloodType = it },
                     label = { Text("Grupo Sanguíneo") },
+                    placeholder = { Text("Ej: O+, A+, B+...") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -2731,7 +2715,8 @@ private fun AdminEditChildDialog(
                 OutlinedTextField(
                     value = pediatrician,
                     onValueChange = { pediatrician = it },
-                    label = { Text("Pediatra") },
+                    label = { Text("Pediatra / Hospital") },
+                    placeholder = { Text("Ej: Dra. Sofía Morales") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -2740,14 +2725,7 @@ private fun AdminEditChildDialog(
                     value = emergencyPhone,
                     onValueChange = { emergencyPhone = it },
                     label = { Text("Teléfono de Emergencia") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = allergyAlert,
-                    onValueChange = { allergyAlert = it },
-                    label = { Text("Alerta de Alergia") },
+                    placeholder = { Text("+52 55 1234 5678") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -2755,7 +2733,8 @@ private fun AdminEditChildDialog(
                 OutlinedTextField(
                     value = medicalNotes,
                     onValueChange = { medicalNotes = it },
-                    label = { Text("Notas Médicas / Observaciones") },
+                    label = { Text("Notas Médicas / Alergias y Cuidados") },
+                    placeholder = { Text("Esquema de vacunación, alergias o cuidados...") },
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -2764,21 +2743,18 @@ private fun AdminEditChildDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (fullName.isNotBlank()) {
-                        onConfirm(
-                            child.id,
-                            fullName.trim(),
-                            roomText.trim().ifBlank { null },
-                            bloodType.trim().ifBlank { null },
-                            pediatrician.trim().ifBlank { null },
-                            emergencyPhone.trim().ifBlank { null },
-                            medicalNotes.trim().ifBlank { null },
-                            allergyAlert.trim().ifBlank { null },
-                            birthDate.trim().ifBlank { null }
-                        )
-                    }
-                },
-                enabled = fullName.isNotBlank()
+                    onConfirm(
+                        child.id,
+                        fullName.trim(),
+                        roomText.trim().ifBlank { null },
+                        bloodType.trim().ifBlank { null },
+                        pediatrician.trim().ifBlank { null },
+                        emergencyPhone.trim().ifBlank { null },
+                        medicalNotes.trim().ifBlank { null },
+                        null,
+                        birthDate.trim().ifBlank { null }
+                    )
+                }
             ) {
                 Text("Guardar Expediente")
             }

@@ -3,6 +3,7 @@ package com.example.etapa1.ui.state
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.etapa1.data.repository.WeeklyObservationsRepository
+import com.example.etapa1.model.ObservationAuthorRole
 import com.example.etapa1.model.WEEKLY_OBSERVATION_MAX_LENGTH
 import com.example.etapa1.model.WeeklyObservation
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,13 +16,19 @@ data class WeeklyObservationsUiState(
     /** null mientras la pantalla todavía no indica qué semana se está viendo. */
     val selection: ObservationsSelection? = null,
     val observations: List<WeeklyObservation> = emptyList(),
+    val educatorObservations: List<WeeklyObservation> = emptyList(),
+    val familyObservations: List<WeeklyObservation> = emptyList(),
     val canWrite: Boolean = false,
+    val canWriteAsEducator: Boolean = false,
+    val canWriteAsFamily: Boolean = false,
     val draft: String = "",
     val maxLength: Int = WEEKLY_OBSERVATION_MAX_LENGTH,
     val emptyMessage: String = "",
+    val emptyEducatorMessage: String = "",
+    val emptyFamilyMessage: String = "",
     val readOnlyHint: String? = null,
     val errorMessage: String? = null,
-    /** Se muestra un momento después de guardar para confirmar a la familia. */
+    /** Se muestra un momento después de guardar para confirmar la acción. */
     val savedMessage: String? = null
 )
 
@@ -52,9 +59,15 @@ class WeeklyObservationsViewModel(
             WeeklyObservationsUiState(
                 selection = current,
                 observations = WeeklyObservationsPresenter.observationsFor(all, current.childId, current.weekKey),
+                educatorObservations = WeeklyObservationsPresenter.educatorObservations(all, current.childId, current.weekKey),
+                familyObservations = WeeklyObservationsPresenter.familyObservations(all, current.childId, current.weekKey),
                 canWrite = WeeklyObservationsPresenter.canWrite(current),
+                canWriteAsEducator = WeeklyObservationsPresenter.canWriteAsEducator(current),
+                canWriteAsFamily = WeeklyObservationsPresenter.canWriteAsFamily(current),
                 draft = currentDraft,
                 emptyMessage = WeeklyObservationsPresenter.emptyMessage(current),
+                emptyEducatorMessage = WeeklyObservationsPresenter.emptyMessageForStaff(current),
+                emptyFamilyMessage = WeeklyObservationsPresenter.emptyMessageForFamily(current),
                 readOnlyHint = WeeklyObservationsPresenter.readOnlyHint(current),
                 errorMessage = currentFeedback.error,
                 savedMessage = currentFeedback.saved
@@ -90,6 +103,7 @@ class WeeklyObservationsViewModel(
             feedback.value = Feedback(error = "No puedes agregar observaciones en esta semana.")
             return false
         }
+        val isEducator = current.viewerRole == ObservationAuthorRole.EDUCADORA
         return repository.addObservation(
             childId = current.childId,
             weekKey = current.weekKey,
@@ -99,7 +113,13 @@ class WeeklyObservationsViewModel(
         ).fold(
             onSuccess = {
                 draft.value = ""
-                feedback.value = Feedback(saved = "Observación guardada. La educadora ya puede verla.")
+                feedback.value = Feedback(
+                    saved = if (isEducator) {
+                        "Observación guardada. La familia ya puede verla."
+                    } else {
+                        "Observación guardada. La educadora ya puede verla."
+                    }
+                )
                 true
             },
             onFailure = {

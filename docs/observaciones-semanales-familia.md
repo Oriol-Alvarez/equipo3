@@ -4,11 +4,15 @@ Responsable: Heberto Camilo Doria Gutiérrez. Rama: `heber`.
 
 ## Qué hace
 
-- **Familia**: en su inicio → pestaña **Resumen Semanal**, debajo del resumen aparece
-  "Observaciones de la familia". En la **semana actual** puede escribir una observación
-  (hasta 500 caracteres) y guardarla. En semanas pasadas solo puede leer lo que escribió.
-- **Educadora**: en la ficha del niño → **Resumen Semanal** ve las observaciones que dejó la
-  familia en cada semana. No escribe aquí: sus observaciones son otra tarea (Alex).
+- **Trabajadores / Educadoras**: en la ficha del niño → pestaña **Resumen Semanal**, disponen del
+  apartado **"Observaciones de los trabajadores"**. En la **semana actual** pueden escribir observaciones
+  (hasta 500 caracteres) y guardarlas para que las familias las lean. También pueden consultar las
+  observaciones que dejó la familia en su respectivo apartado.
+- **Familia**: en su inicio → pestaña **Resumen Semanal**, ve el apartado **"Observaciones de los trabajadores"**
+  (solo lectura) y el apartado **"Observaciones de la familia"**, donde en la **semana actual** puede escribir
+  una observación (hasta 500 caracteres) y guardarla. En semanas pasadas ambos apartados quedan como histórico de consulta.
+- Se eliminó la tarjeta de confirmación de lectura y reacciones emoji del resumen semanal para enfocar
+  la interacción directamente en la retroalimentación bidireccional mediante observaciones.
 - Cada observación muestra quién la escribió, su rol y la fecha y hora.
 - Ejemplo incluido: una observación de la mamá de Mateo en la semana del 15 al 19 de septiembre.
 

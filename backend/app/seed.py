@@ -43,7 +43,7 @@ def seed_database(db: Session) -> None:
             password_hash=pwd,
             role="DIRECCION",
             display_name="Laura Méndez (Dirección)",
-            phone="+34 600 111 222",
+            phone="+52 55 1234 0001",
             avatar_url="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
         ),
         Usuario(
@@ -52,7 +52,7 @@ def seed_database(db: Session) -> None:
             password_hash=pwd,
             role="EDUCADORA",
             display_name="Laura Gómez (Educadora)",
-            phone="+34 600 333 444",
+            phone="+52 55 1234 0002",
             avatar_url="https://images.unsplash.com/photo-1580894732454-d6771d479d2a?w=150",
         ),
         Usuario(
@@ -61,7 +61,7 @@ def seed_database(db: Session) -> None:
             password_hash=pwd,
             role="EDUCADORA",
             display_name="Carlos Ruiz (Educador)",
-            phone="+34 600 555 666",
+            phone="+52 55 1234 0003",
             avatar_url="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
         ),
         Usuario(
@@ -70,7 +70,7 @@ def seed_database(db: Session) -> None:
             password_hash=pwd,
             role="FAMILIAR",
             display_name="María López Fernández",
-            phone="+34 611 222 333",
+            phone="+52 55 1234 5678",
             avatar_url="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
         ),
         Usuario(
@@ -79,7 +79,7 @@ def seed_database(db: Session) -> None:
             password_hash=pwd,
             role="FAMILIAR",
             display_name="Roberto Martínez Ruiz",
-            phone="+34 633 444 555",
+            phone="+52 55 8765 4321",
             avatar_url="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
         ),
         Usuario(
@@ -88,7 +88,7 @@ def seed_database(db: Session) -> None:
             password_hash=pwd,
             role="FAMILIAR",
             display_name="Ana López Navarro",
-            phone="+34 655 666 777",
+            phone="+52 55 5678 1234",
             avatar_url="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
         ),
     ]
@@ -120,7 +120,7 @@ def seed_database(db: Session) -> None:
             status_text="08:15 AM • Presente",
             is_present=True,
             arrival_time="08:15 AM",
-            allergy_alert="Alergia a Nuez (No Certificado)",
+            allergy_alert=None,
             avatar_initials="MG",
             avatar_bg_color=4294948685,
         ),
@@ -148,7 +148,7 @@ def seed_database(db: Session) -> None:
             status_text="No ha ingresado",
             is_present=False,
             arrival_time=None,
-            allergy_alert="Intolerancia a la lactosa",
+            allergy_alert=None,
             avatar_initials="LM",
             avatar_bg_color=4287665326,
         ),
@@ -176,26 +176,26 @@ def seed_database(db: Session) -> None:
     db.add(ChildParent(child_id="lucas_martinez", parent_user_id="usr_familia_martinez"))
     db.add(ChildParent(child_id="sofia_lopez", parent_user_id="usr_familia_lopez"))
 
-    # Expedientes completos de todos los alumnos
+    # Expedientes completos de todos los alumnos (formato y datos México)
     mateo_profile = ChildProfile(
         child_id="mateo_garcia",
         birth_date="14/04/2024",
         enrollment_date="01/09/2025",
-        student_id="EST-MATE-2026",
+        student_id="CURP-GARM240414HDFRLA01",
         blood_type="O+",
-        pediatrician="Dra. Sofía Morales",
-        pediatrician_phone="+34 912 345 678",
-        emergency_phone="+34 611 999 888",
+        pediatrician="Dra. Sofía Morales (Hospital Infantil)",
+        pediatrician_phone="+52 55 1234 5678",
+        emergency_phone="+52 55 9876 5432",
         emergency_phone_relation="Abuela materna (Rosa)",
         mother_name="María López Fernández",
-        mother_phone="+34 611 222 333",
+        mother_phone="+52 55 1234 5678",
         father_name="Carlos García Ramos",
-        father_phone="+34 622 333 444",
+        father_phone="+52 55 3333 4444",
         authorized_pickups=json.dumps([
-            "Rosa Fernández (Abuela materna) - DNI 12345678A",
-            "Carlos García Ramos (Padre) - DNI 87654321B",
+            "Rosa Fernández (Abuela materna) - CURP: FERA750312MDFRNS01 • Tel: +52 55 4444 5555",
+            "Carlos García Ramos (Padre) - CURP: GARC820715HDFRRL02 • Tel: +52 55 3333 4444",
         ]),
-        medical_notes="Alergia a Nuez (No Certificado). Se requiere extremo cuidado en meriendas.",
+        medical_notes="Esquema de vacunación completo conforme a Cartilla Nacional de Salud. Sin alergias registradas.",
         general_notes="Muy sociable y participativo. Se adapta muy bien a las rutinas.",
         habits_notes="Duerme con su mantita de apego.",
         medical_certificate_uri="https://cdn.sonrisas.edu/certificates/cert_mateo_2026.pdf",
@@ -208,21 +208,21 @@ def seed_database(db: Session) -> None:
         child_id="lucia_garcia",
         birth_date="10/08/2025",
         enrollment_date="01/09/2026",
-        student_id="EST-LUCI-2026",
+        student_id="CURP-GARL250810MDFRLA02",
         blood_type="O+",
-        pediatrician="Dra. Sofía Morales",
-        pediatrician_phone="+34 912 345 678",
-        emergency_phone="+34 611 999 888",
+        pediatrician="Dra. Sofía Morales (Hospital Infantil)",
+        pediatrician_phone="+52 55 1234 5678",
+        emergency_phone="+52 55 9876 5432",
         emergency_phone_relation="Abuela materna (Rosa)",
         mother_name="María López Fernández",
-        mother_phone="+34 611 222 333",
+        mother_phone="+52 55 1234 5678",
         father_name="Carlos García Ramos",
-        father_phone="+34 622 333 444",
+        father_phone="+52 55 3333 4444",
         authorized_pickups=json.dumps([
-            "Rosa Fernández (Abuela materna) - DNI 12345678A",
-            "Carlos García Ramos (Padre) - DNI 87654321B",
+            "Rosa Fernández (Abuela materna) - CURP: FERA750312MDFRNS01 • Tel: +52 55 4444 5555",
+            "Carlos García Ramos (Padre) - CURP: GARC820715HDFRRL02 • Tel: +52 55 3333 4444",
         ]),
-        medical_notes="Sin alergias conocidas. Calendario de vacunación al día.",
+        medical_notes="Esquema de vacunación completo al día. Sin alergias conocidas.",
         general_notes="Comenzando a dar sus primeros pasos de forma alegre.",
         habits_notes="Toma biberón de 180ml a media mañana.",
     )
@@ -232,21 +232,21 @@ def seed_database(db: Session) -> None:
         child_id="lucas_martinez",
         birth_date="22/02/2024",
         enrollment_date="01/09/2025",
-        student_id="EST-LUCA-2026",
+        student_id="CURP-MASL240222HDFRSN03",
         blood_type="A+",
-        pediatrician="Dr. Manuel Benítez",
-        pediatrician_phone="+34 913 456 789",
-        emergency_phone="+34 644 111 222",
+        pediatrician="Dr. Manuel Benítez (Clínica Pedregal)",
+        pediatrician_phone="+52 55 2222 3333",
+        emergency_phone="+52 55 8888 9999",
         emergency_phone_relation="Tío (Javier)",
         mother_name="Elena Sánchez Gil",
-        mother_phone="+34 633 888 999",
+        mother_phone="+52 55 7777 8888",
         father_name="Roberto Martínez Ruiz",
-        father_phone="+34 633 444 555",
+        father_phone="+52 55 6666 7777",
         authorized_pickups=json.dumps([
-            "Elena Sánchez Gil (Madre) - DNI 33445566C",
-            "Roberto Martínez Ruiz (Padre) - DNI 55667788D",
+            "Elena Sánchez Gil (Madre) - CURP: SAGE850918MDFLNN03 • Tel: +52 55 7777 8888",
+            "Roberto Martínez Ruiz (Padre) - CURP: MARR830422HDFRRB04 • Tel: +52 55 6666 7777",
         ]),
-        medical_notes="Intolerancia a la lactosa. Sustituir lácteos por bebida vegetal.",
+        medical_notes="Intolerancia leve a la lactosa (sustituir lácteos enteros por leche deslactosada o vegetal). Cartilla Nacional al día.",
         general_notes="Le gusta la música y construir torres de bloques.",
         habits_notes="Usa chupete únicamente para conciliar el sueño.",
     )
@@ -256,21 +256,21 @@ def seed_database(db: Session) -> None:
         child_id="sofia_lopez",
         birth_date="15/05/2024",
         enrollment_date="01/09/2025",
-        student_id="EST-SOFI-2026",
+        student_id="CURP-LOGS240515MDFPZ04",
         blood_type="B+",
-        pediatrician="Dra. Elena Castro",
-        pediatrician_phone="+34 914 567 890",
-        emergency_phone="+34 655 222 111",
+        pediatrician="Dra. Elena Castro (Hospital Ángeles)",
+        pediatrician_phone="+52 55 3333 4444",
+        emergency_phone="+52 55 1212 3434",
         emergency_phone_relation="Abuelo (Fernando)",
         mother_name="Ana López Navarro",
-        mother_phone="+34 655 666 777",
+        mother_phone="+52 55 5656 7878",
         father_name="David Gómez Prieto",
-        father_phone="+34 655 999 000",
+        father_phone="+52 55 4343 2121",
         authorized_pickups=json.dumps([
-            "Ana López Navarro (Madre) - DNI 77889900E",
-            "Fernando López (Abuelo) - DNI 11223344F",
+            "Ana López Navarro (Madre) - CURP: LONA861105MDFPRD05 • Tel: +52 55 5656 7878",
+            "Fernando López (Abuelo) - CURP: LOPF580214HDFRRN06 • Tel: +52 55 1212 3434",
         ]),
-        medical_notes="Sin incidencias médicas registradas.",
+        medical_notes="Salud general óptima. Esquema de vacunación nacional al día. Sin alergias registradas.",
         general_notes="Muy sociable y curiosa, disfruta de las actividades de dibujo.",
         habits_notes="Duerme siesta regular de 13:30 a 15:00.",
     )
@@ -615,6 +615,135 @@ ALUMNOS_OTRAS_SALAS = [
     ("leonardo_castro", "Leonardo Castro Paz", "Leonardo C.", "3 años y 2 meses", "sala_3c", "LC", 4284513675),
 ]
 
+PERFILES_OTRAS_SALAS = {
+    "emilia_ramos": {
+        "birth_date": "15/06/2024",
+        "enrollment_date": "01/09/2025",
+        "student_id": "CURP-RACE240615MDFMX01",
+        "blood_type": "A+",
+        "pediatrician": "Dra. Sofía Morales (Hospital Infantil)",
+        "pediatrician_phone": "+52 55 1234 5678",
+        "emergency_phone": "+52 55 5555 1111",
+        "emergency_phone_relation": "Abuela (Gabriela)",
+        "mother_name": "Gabriela Cruz Mendoza",
+        "mother_phone": "+52 55 5555 1234",
+        "father_name": "Fernando Ramos Silva",
+        "father_phone": "+52 55 5555 5678",
+        "authorized_pickups": json.dumps([
+            "Gabriela Cruz Mendoza (Madre) - CURP: CRMG880420MDFRND01 • Tel: +52 55 5555 1234",
+            "Fernando Ramos Silva (Padre) - CURP: RASF851012HDFMSN02 • Tel: +52 55 5555 5678",
+        ]),
+        "medical_notes": "Esquema de vacunación completo conforme a Cartilla Nacional de Salud. Sin alergias registradas.",
+        "general_notes": "Le encanta pintar con los dedos y jugar en el patio.",
+        "habits_notes": "Toma siesta regular de 13:00 a 14:30.",
+    },
+    "diego_herrera": {
+        "birth_date": "12/03/2024",
+        "enrollment_date": "01/09/2025",
+        "student_id": "CURP-HESD240312HDFRT02",
+        "blood_type": "O+",
+        "pediatrician": "Dr. Manuel Benítez (Clínica Pedregal)",
+        "pediatrician_phone": "+52 55 2222 3333",
+        "emergency_phone": "+52 55 5555 2222",
+        "emergency_phone_relation": "Tía (Patricia)",
+        "mother_name": "Patricia Soto Vargas",
+        "mother_phone": "+52 55 5555 2345",
+        "father_name": "Javier Herrera Beltrán",
+        "father_phone": "+52 55 5555 6789",
+        "authorized_pickups": json.dumps([
+            "Patricia Soto Vargas (Madre) - CURP: SOVP870914MDFTT03 • Tel: +52 55 5555 2345",
+            "Javier Herrera Beltrán (Padre) - CURP: HEBJ840523HDFRL04 • Tel: +52 55 5555 6789",
+        ]),
+        "medical_notes": "Salud general óptima. Esquema de vacunación nacional al día. Sin alergias.",
+        "general_notes": "Muy curioso, disfruta de los juegos de construcción.",
+        "habits_notes": "Le gusta escuchar cuentos antes de dormir.",
+    },
+    "valentina_ruiz": {
+        "birth_date": "20/09/2024",
+        "enrollment_date": "01/09/2025",
+        "student_id": "CURP-RUMV240920MDFZ03",
+        "blood_type": "O+",
+        "pediatrician": "Dra. Elena Castro (Hospital Ángeles)",
+        "pediatrician_phone": "+52 55 3333 4444",
+        "emergency_phone": "+52 55 5555 3333",
+        "emergency_phone_relation": "Abuelo (Arturo)",
+        "mother_name": "Mónica Mora Delgado",
+        "mother_phone": "+52 55 5555 3456",
+        "father_name": "Alejandro Ruiz Fuentes",
+        "father_phone": "+52 55 5555 7890",
+        "authorized_pickups": json.dumps([
+            "Mónica Mora Delgado (Madre) - CURP: MODM891102MDFRL05 • Tel: +52 55 5555 3456",
+            "Alejandro Ruiz Fuentes (Padre) - CURP: RUFA860818HDFNT06 • Tel: +52 55 5555 7890",
+        ]),
+        "medical_notes": "Sin alergias. Cartilla Nacional de Vacunación al día.",
+        "general_notes": "Muy alegre, participa activamente en rondas musicales.",
+        "habits_notes": "Usa vaso entrenador para agua.",
+    },
+    "santiago_flores": {
+        "birth_date": "05/10/2023",
+        "enrollment_date": "01/09/2025",
+        "student_id": "CURP-FOVS231005HDFLN04",
+        "blood_type": "B+",
+        "pediatrician": "Dr. Manuel Benítez (Clínica Pedregal)",
+        "pediatrician_phone": "+52 55 2222 3333",
+        "emergency_phone": "+52 55 5555 4444",
+        "emergency_phone_relation": "Tío (Rodrigo)",
+        "mother_name": "Claudia Vega Pineda",
+        "mother_phone": "+52 55 5555 4567",
+        "father_name": "Mauricio Flores Garza",
+        "father_phone": "+52 55 5555 8901",
+        "authorized_pickups": json.dumps([
+            "Claudia Vega Pineda (Madre) - CURP: VEPC850325MDFGN07 • Tel: +52 55 5555 4567",
+            "Mauricio Flores Garza (Padre) - CURP: FOGM830712HDFR08 • Tel: +52 55 5555 8901",
+        ]),
+        "medical_notes": "Esquema de vacunación completo. Sin alergias registradas.",
+        "general_notes": "Le gustan las actividades al aire libre y armar rompecabezas.",
+        "habits_notes": "Duerme siesta de 13:30 a 15:00.",
+    },
+    "regina_navarro": {
+        "birth_date": "18/11/2023",
+        "enrollment_date": "01/09/2025",
+        "student_id": "CURP-NADR231118MDFVT05",
+        "blood_type": "A+",
+        "pediatrician": "Dra. Sofía Morales (Hospital Infantil)",
+        "pediatrician_phone": "+52 55 1234 5678",
+        "emergency_phone": "+52 55 5555 5555",
+        "emergency_phone_relation": "Abuela (Silvia)",
+        "mother_name": "Silvia Díaz Romo",
+        "mother_phone": "+52 55 5555 5678",
+        "father_name": "Jorge Navarro Campos",
+        "father_phone": "+52 55 5555 9012",
+        "authorized_pickups": json.dumps([
+            "Silvia Díaz Romo (Madre) - CURP: DIRS861208MDFMZ09 • Tel: +52 55 5555 5678",
+            "Jorge Navarro Campos (Padre) - CURP: NACJ840619HDFRP10 • Tel: +52 55 5555 9012",
+        ]),
+        "medical_notes": "Salud excelente, Cartilla Nacional al día. Sin alergias conocidas.",
+        "general_notes": "Sociable, le encantan los títeres y el baile.",
+        "habits_notes": "Se alimenta sola con cubiertos de aprendizaje.",
+    },
+    "leonardo_castro": {
+        "birth_date": "08/08/2023",
+        "enrollment_date": "01/09/2025",
+        "student_id": "CURP-CAPL230808HDFZZ06",
+        "blood_type": "O+",
+        "pediatrician": "Dra. Elena Castro (Hospital Ángeles)",
+        "pediatrician_phone": "+52 55 3333 4444",
+        "emergency_phone": "+52 55 5555 6666",
+        "emergency_phone_relation": "Tía (Lorena)",
+        "mother_name": "Lorena Paz Rangel",
+        "mother_phone": "+52 55 5555 6789",
+        "father_name": "Eduardo Castro Meza",
+        "father_phone": "+52 55 5555 0123",
+        "authorized_pickups": json.dumps([
+            "Lorena Paz Rangel (Madre) - CURP: PARL870115MDFTZ11 • Tel: +52 55 5555 6789",
+            "Eduardo Castro Meza (Padre) - CURP: CAME850530HDFRC12 • Tel: +52 55 5555 0123",
+        ]),
+        "medical_notes": "Cartilla Nacional completa. Sin restricciones médicas ni alergias.",
+        "general_notes": "Muy colaborativo y ordenado con sus juguetes.",
+        "habits_notes": "Duerme con peluche favorito durante la siesta.",
+    },
+}
+
 
 def seed_salas_adicionales(db: Session) -> None:
     """Agrega los alumnos de las salas 2B y 3C si aún no existen (también en bases ya creadas)."""
@@ -622,25 +751,33 @@ def seed_salas_adicionales(db: Session) -> None:
         return
     agregados = False
     for child_id, nombre, corto, edad, sala, iniciales, color in ALUMNOS_OTRAS_SALAS:
-        if db.get(Child, child_id) is not None:
-            continue
-        db.add(
-            Child(
-                id=child_id,
-                full_name=nombre,
-                short_name=corto,
-                age_text=edad,
-                room_id=sala,
-                group_text=f"Grupo {'Sala 2B' if sala == 'sala_2b' else 'Sala 3C'}",
-                status_text="No ha ingresado",
-                is_present=False,
-                arrival_time=None,
-                allergy_alert=None,
-                avatar_initials=iniciales,
-                avatar_bg_color=color,
+        if db.get(Child, child_id) is None:
+            db.add(
+                Child(
+                    id=child_id,
+                    full_name=nombre,
+                    short_name=corto,
+                    age_text=edad,
+                    room_id=sala,
+                    group_text=f"Grupo {'Sala 2B' if sala == 'sala_2b' else 'Sala 3C'}",
+                    status_text="No ha ingresado",
+                    is_present=False,
+                    arrival_time=None,
+                    allergy_alert=None,
+                    avatar_initials=iniciales,
+                    avatar_bg_color=color,
+                )
             )
-        )
-        db.add(ChildProfile(child_id=child_id))
-        agregados = True
+            agregados = True
+
+        profile = db.get(ChildProfile, child_id)
+        p_data = PERFILES_OTRAS_SALAS.get(child_id, {})
+        if profile is None:
+            db.add(ChildProfile(child_id=child_id, **p_data))
+            agregados = True
+        elif not profile.student_id:
+            for k, v in p_data.items():
+                setattr(profile, k, v)
+            agregados = True
     if agregados:
         db.commit()

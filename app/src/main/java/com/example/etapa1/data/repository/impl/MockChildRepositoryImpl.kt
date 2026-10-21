@@ -28,7 +28,9 @@ class MockChildRepositoryImpl : ChildRepository {
     }
 
     override fun cargarDetalle(childId: String) {
-        // En memoria todo está disponible de inmediato
+        _weeklySummaries.remove(childId)
+        _childProfiles.remove(childId)
+        _cambios.value += 1
     }
 
     private val _parentChildren = MutableStateFlow<List<Child>>(MockDataRepository.parentChildren)

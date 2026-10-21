@@ -21,12 +21,17 @@ class WeeklyObservationsPresenterTest {
         viewerName = "Quien ve"
     )
 
-    private fun observation(id: String, childId: String, week: String) = WeeklyObservation(
+    private fun observation(
+        id: String,
+        childId: String,
+        week: String,
+        role: ObservationAuthorRole = ObservationAuthorRole.FAMILIA
+    ) = WeeklyObservation(
         id = id,
         childId = childId,
         weekKey = week,
-        authorRole = ObservationAuthorRole.FAMILIA,
-        authorName = "Mamá",
+        authorRole = role,
+        authorName = if (role == ObservationAuthorRole.FAMILIA) "Mamá" else "Laura Gómez",
         text = "Texto $id",
         time = "10:00 AM"
     )
@@ -46,28 +51,57 @@ class WeeklyObservationsPresenterTest {
     }
 
     @Test
+    fun separates_educator_and_family_observations() {
+        val obs1 = observation("1", "mateo_garcia", currentWeek, ObservationAuthorRole.EDUCADORA)
+        val obs2 = observation("2", "mateo_garcia", currentWeek, ObservationAuthorRole.FAMILIA)
+        val obs3 = observation("3", "mateo_garcia", currentWeek, ObservationAuthorRole.EDUCADORA)
+        val all = listOf(obs1, obs2, obs3)
+
+        val educator = WeeklyObservationsPresenter.educatorObservations(all, "mateo_garcia", currentWeek)
+        val family = WeeklyObservationsPresenter.familyObservations(all, "mateo_garcia", currentWeek)
+
+        assertEquals(listOf("1", "3"), educator.map { it.id })
+        assertEquals(listOf("2"), family.map { it.id })
+    }
+
+    @Test
     fun family_canWriteOnlyInCurrentWeek() {
-        assertTrue(WeeklyObservationsPresenter.canWrite(selection(ObservationAuthorRole.FAMILIA, isCurrentWeek = true)))
-        assertFalse(WeeklyObservationsPresenter.canWrite(selection(ObservationAuthorRole.FAMILIA, isCurrentWeek = false)))
+        val current = selection(ObservationAuthorRole.FAMILIA, isCurrentWeek = true)
+        val past = selection(ObservationAuthorRole.FAMILIA, isCurrentWeek = false)
+
+        assertTrue(WeeklyObservationsPresenter.canWrite(current))
+        assertTrue(WeeklyObservationsPresenter.canWriteAsFamily(current))
+        assertFalse(WeeklyObservationsPresenter.canWriteAsEducator(current))
+
+        assertFalse(WeeklyObservationsPresenter.canWrite(past))
+        assertFalse(WeeklyObservationsPresenter.canWriteAsFamily(past))
     }
 
     @Test
-    fun educadora_onlyReadsFamilyObservations() {
-        assertFalse(WeeklyObservationsPresenter.canWrite(selection(ObservationAuthorRole.EDUCADORA, isCurrentWeek = true)))
-        assertEquals(
-            "La familia no ha escrito observaciones en esta semana.",
-            WeeklyObservationsPresenter.emptyMessage(selection(ObservationAuthorRole.EDUCADORA, isCurrentWeek = true))
-        )
-        assertEquals(null, WeeklyObservationsPresenter.readOnlyHint(selection(ObservationAuthorRole.EDUCADORA, isCurrentWeek = true)))
+    fun educadora_canWriteOnlyInCurrentWeek() {
+        val current = selection(ObservationAuthorRole.EDUCADORA, isCurrentWeek = true)
+        val past = selection(ObservationAuthorRole.EDUCADORA, isCurrentWeek = false)
+
+        assertTrue(WeeklyObservationsPresenter.canWrite(current))
+        assertTrue(WeeklyObservationsPresenter.canWriteAsEducator(current))
+        assertFalse(WeeklyObservationsPresenter.canWriteAsFamily(current))
+
+        assertFalse(WeeklyObservationsPresenter.canWrite(past))
+        assertFalse(WeeklyObservationsPresenter.canWriteAsEducator(past))
     }
 
     @Test
-    fun family_pastWeek_showsWhyItCannotWrite() {
+    fun pastWeek_showsWhyItCannotWrite() {
         assertEquals(
             "Solo puedes agregar observaciones en la semana actual.",
             WeeklyObservationsPresenter.readOnlyHint(selection(ObservationAuthorRole.FAMILIA, isCurrentWeek = false))
         )
+        assertEquals(
+            "Solo puedes agregar observaciones en la semana actual.",
+            WeeklyObservationsPresenter.readOnlyHint(selection(ObservationAuthorRole.EDUCADORA, isCurrentWeek = false))
+        )
         assertEquals(null, WeeklyObservationsPresenter.readOnlyHint(selection(ObservationAuthorRole.FAMILIA, isCurrentWeek = true)))
+        assertEquals(null, WeeklyObservationsPresenter.readOnlyHint(selection(ObservationAuthorRole.EDUCADORA, isCurrentWeek = true)))
     }
 
     @Test

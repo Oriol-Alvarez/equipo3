@@ -41,6 +41,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -199,34 +200,44 @@ fun MoreMenuScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
         ) {
             // Header Top Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Surface(
+                color = CardBackground,
+                shadowElevation = 2.dp,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "Más",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = BrandBlue,
-                    modifier = Modifier.weight(1f)
-                )
-
-                if (activeChild != null && onSwitchChild != null) {
-                    ActiveChildSwitcher(
-                        child = activeChild,
-                        onSwitchClick = onSwitchChild
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Más",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = BrandBlue,
+                        textAlign = TextAlign.Center
                     )
+
+                    if (activeChild != null && onSwitchChild != null) {
+                        Box(
+                            modifier = Modifier.align(Alignment.CenterEnd)
+                        ) {
+                            ActiveChildSwitcher(
+                                child = activeChild,
+                                onSwitchClick = onSwitchChild
+                            )
+                        }
+                    }
                 }
             }
 
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+                    .fillMaxWidth()
                     .padding(horizontal = 20.dp, vertical = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {

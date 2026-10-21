@@ -95,11 +95,13 @@ class ParentHomeViewModel(
         authorizedPickups: List<String>,
         medicalCertificateUri: String?,
         medicalCertificateName: String?,
-        medicalCertificateDate: String?
+        medicalCertificateDate: String?,
+        bloodType: String = _uiState.value.fullProfile.bloodType
     ) {
         val currentChild = _uiState.value.selectedChild
         val currentProfile = _uiState.value.fullProfile
         val updated = currentProfile.copy(
+            bloodType = bloodType.trim(),
             pediatrician = pediatrician.trim(),
             pediatricianPhone = pediatricianPhone.trim(),
             medicalNotes = medicalNotes.trim(),

@@ -218,7 +218,7 @@ fun ChildFullDataContent(
         // Card 1: Identificación y Matrícula
         SectionDetailCard(title = "Datos Personales y Escolares", icon = Icons.Default.Badge) {
             DetailRowItem(label = "Nombre completo", value = child.fullName)
-            DetailRowItem(label = "Matrícula / ID", value = fullProfile.studentId)
+            DetailRowItem(label = "CURP / Matrícula", value = fullProfile.studentId)
             DetailRowItem(label = "Fecha de nacimiento", value = "${fullProfile.birthDate} (${child.ageText})")
             DetailRowItem(label = "Fecha de ingreso", value = fullProfile.enrollmentDate)
             DetailRowItem(label = "Sala y nivel", value = "${child.roomText} • ${child.groupText}")
@@ -265,37 +265,11 @@ fun ChildFullDataContent(
         }
 
         // Card 3: Ficha Médica
-        SectionDetailCard(title = "Salud y Cuidados Especiales", icon = Icons.Default.LocalHospital) {
-            if (child.allergyAlert != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(AlertRed.copy(alpha = 0.1f))
-                        .border(1.dp, AlertRed.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
-                        .padding(8.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = AlertRed,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = child.allergyAlert,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = AlertRed
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(6.dp))
-            }
-            DetailRowItem(label = "Grupo sanguíneo", value = fullProfile.bloodType)
-            DetailRowItem(label = "Pediatra de referencia", value = "${fullProfile.pediatrician} (${fullProfile.pediatricianPhone})")
-            DetailRowItem(label = "Observaciones médicas", value = fullProfile.medicalNotes)
+        SectionDetailCard(title = "Salud y Cuidados Médicos", icon = Icons.Default.LocalHospital) {
+            DetailRowItem(label = "Grupo sanguíneo", value = fullProfile.bloodType.ifBlank { "O+" })
+            DetailRowItem(label = "Cartilla de salud", value = "Esquema de vacunación completo al día")
+            DetailRowItem(label = "Pediatra de cabecera", value = "${fullProfile.pediatrician} (${fullProfile.pediatricianPhone})")
+            DetailRowItem(label = "Observaciones médicas", value = fullProfile.medicalNotes.ifBlank { "Sin incidencias médicas ni alergias registradas." })
 
             if (!fullProfile.medicalCertificateName.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(6.dp))
@@ -724,13 +698,6 @@ fun WeeklySummaryContent(
                         lineHeight = 18.sp
                     )
                 }
-
-                // Confirmación de lectura y Reacciones de la Familia
-                WeeklySummaryReadAndReactionCard(
-                    summary = currentSummary,
-                    onToggleReadStatus = onToggleReadStatus?.let { callback -> { callback(currentSummary) } },
-                    onSelectReaction = onSelectReaction?.let { callback -> { reaction -> callback(currentSummary, reaction) } }
-                )
             }
         } else {
             Text(
@@ -1015,7 +982,7 @@ fun IngresoEgresoCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 Column {
                     Text(
-                        text = "I. Registro de Ingreso",
+                        text = "Registro de Ingreso",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -1073,7 +1040,7 @@ fun IngresoEgresoCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 Column {
                     Text(
-                        text = "II. Registro de Egreso",
+                        text = "Registro de Egreso",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary

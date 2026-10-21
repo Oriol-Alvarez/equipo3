@@ -77,7 +77,6 @@ import com.example.etapa1.ui.components.ChildAvatar
 import com.example.etapa1.ui.components.ChildFullDataContent
 import com.example.etapa1.ui.components.DailyBitacoraContent
 import com.example.etapa1.ui.components.EditChildProfileDialog
-import com.example.etapa1.ui.components.MedicalAlertBanner
 import com.example.etapa1.ui.components.WeeklySummaryContent
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.etapa1.model.ObservationAuthorRole
@@ -163,7 +162,7 @@ fun ParentHomeScreen(
         },
         onToggleWeeklySummaryReadStatus = { summary -> viewModel.toggleWeeklySummaryReadStatus(summary) },
         onSetWeeklySummaryReaction = { summary, reaction -> viewModel.setWeeklySummaryReaction(summary, reaction) },
-        onUpdateProfile = { ped, pedPhone, medNotes, habits, emergPhone, emergRelation, pickups, uri, certName, certDate ->
+        onUpdateProfile = { ped, pedPhone, medNotes, habits, emergPhone, emergRelation, pickups, uri, certName, certDate, bloodType ->
             viewModel.updateChildProfile(
                 pediatrician = ped,
                 pediatricianPhone = pedPhone,
@@ -174,7 +173,8 @@ fun ParentHomeScreen(
                 authorizedPickups = pickups,
                 medicalCertificateUri = uri,
                 medicalCertificateName = certName,
-                medicalCertificateDate = certDate
+                medicalCertificateDate = certDate,
+                bloodType = bloodType
             )
         }
     )
@@ -215,8 +215,9 @@ fun ParentHomeScreen(
         authorizedPickups: List<String>,
         medicalCertificateUri: String?,
         medicalCertificateName: String?,
-        medicalCertificateDate: String?
-    ) -> Unit = { _, _, _, _, _, _, _, _, _, _ -> }
+        medicalCertificateDate: String?,
+        bloodType: String
+    ) -> Unit = { _, _, _, _, _, _, _, _, _, _, _ -> }
 ) {
     var selectedTab by remember { mutableIntStateOf(0) } // 0 = Datos del Niño, 1 = Bitácora Diaria, 2 = Resumen Semanal
     var selectedDayIndex by remember { mutableIntStateOf(0) }
@@ -403,46 +404,42 @@ fun ParentHomeScreen(
                             }
                         }
 
-                        // Alerta médica si la tiene
-                        if (child.allergyAlert != null) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            MedicalAlertBanner(
-                                text = child.allergyAlert,
-                                onClick = { selectedTab = 0 }
-                            )
-                        }
-
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        // Fila de Accesos Rápidos: Chat y Llamar al Centro
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            QuickActionButton(
-                                icon = Icons.AutoMirrored.Filled.Chat,
-                                label = "Chat",
-                                badgeCount = unreadMessagesCount,
-                                modifier = Modifier.weight(1f),
-                                onClick = onNavigateToChat
-                            )
-
-                            QuickActionButton(
-                                icon = Icons.Default.Groups,
-                                label = "Grupos",
-                                modifier = Modifier.weight(1f),
-                                onClick = onNavigateToGroups
-                            )
-
-                            QuickActionButton(
-                                icon = Icons.Default.Phone,
-                                label = "Llamar al Centro",
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:+34912334455"))
+                        // Acceso Rápido: Llamar al Centro (solo llamada para rol familiar)
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .clickable {
+                                    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:+525555123456"))
                                     context.startActivity(intent)
-                                }
-                            )
+                                },
+                            color = BrandBlueContainer.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 11.dp, horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Phone,
+                                    contentDescription = "Llamar al Centro",
+                                    tint = BrandBlue,
+                                    modifier = Modifier.size(19.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Llamar al Centro",
+                                    fontSize = 13.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = BrandBlue,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
                     }
                 }
@@ -583,7 +580,7 @@ fun ParentHomeScreen(
                 child = child,
                 fullProfile = fullProfile,
                 onDismiss = { showEditDialog = false },
-                onSave = { ped, pedPhone, medNotes, habits, emergPhone, emergRelation, pickups, certUri, certName, certDate ->
+                onSave = { ped, pedPhone, medNotes, habits, emergPhone, emergRelation, pickups, certUri, certName, certDate, bloodType ->
                     onUpdateProfile(
                         ped,
                         pedPhone,
@@ -594,7 +591,8 @@ fun ParentHomeScreen(
                         pickups,
                         certUri,
                         certName,
-                        certDate
+                        certDate,
+                        bloodType
                     )
                     showEditDialog = false
                 }

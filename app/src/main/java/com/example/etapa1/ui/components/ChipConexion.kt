@@ -33,7 +33,8 @@ import com.example.etapa1.domain.EstadoConexion
 @Composable
 fun ChipConexion(
     estado: EstadoConexion,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    compact: Boolean = false
 ) {
     val (texto, puntoColor) = when (estado) {
         EstadoConexion.Conectado -> "En línea" to Color(0xFF2E7D32)
@@ -51,22 +52,27 @@ fun ChipConexion(
         label = "pulso"
     )
 
+    val horizontalPadding = if (compact) 6.dp else 8.dp
+    val verticalPadding = if (compact) 2.dp else 3.dp
+    val dotSize = if (compact) 5.dp else 7.dp
+    val fontSize = if (compact) 9.5.sp else 11.sp
+
     Row(
         modifier = modifier
             .background(Color(0xFFE2E8F0).copy(alpha = 0.85f), CircleShape)
-            .padding(horizontal = 8.dp, vertical = 3.dp),
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
+            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+        horizontalArrangement = Arrangement.spacedBy(if (compact) 4.dp else 5.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             Modifier
-                .size(7.dp)
+                .size(dotSize)
                 .alpha(pulso)
                 .background(puntoColor, CircleShape)
         )
         Text(
             text = texto,
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = fontSize),
             color = Color(0xFF1E293B)
         )
     }

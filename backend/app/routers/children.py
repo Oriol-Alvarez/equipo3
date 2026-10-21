@@ -133,6 +133,8 @@ def actualizar_expediente(
         perfil = ChildProfile(child_id=childId)
         db.add(perfil)
 
+    if body.bloodType is not None:
+        perfil.blood_type = body.bloodType
     if body.pediatrician is not None:
         perfil.pediatrician = body.pediatrician
     if body.pediatricianPhone is not None:

@@ -17,11 +17,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.NightlightRound
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.filled.Wc
@@ -30,10 +28,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -46,7 +42,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.etapa1.model.ActivityCategory
+import com.example.etapa1.model.ExcretionType
 import com.example.etapa1.model.FoodConsumptionOption
+import com.example.etapa1.model.MealType
 import com.example.etapa1.model.MoodState
 import com.example.etapa1.ui.theme.AlertRed
 import com.example.etapa1.ui.theme.AppBackground
@@ -55,7 +53,6 @@ import com.example.etapa1.ui.theme.BrandBlue
 import com.example.etapa1.ui.theme.BrandBlueContainer
 import com.example.etapa1.ui.theme.CardBackground
 import com.example.etapa1.ui.theme.StatusPresentGreen
-import com.example.etapa1.ui.theme.TextMuted
 import com.example.etapa1.ui.theme.TextPrimary
 import com.example.etapa1.ui.theme.TextSecondary
 
@@ -64,7 +61,7 @@ import com.example.etapa1.ui.theme.TextSecondary
  */
 @Composable
 fun ActivityCategoryGrid(
-    selectedCategory: ActivityCategory,
+    selectedCategory: ActivityCategory?,
     onCategorySelected: (ActivityCategory) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -154,100 +151,124 @@ private fun CategoryCardTile(
 // -------------------------------------------------------------
 @Composable
 fun AlimentacionSectionContent(
-    desayunoOption: FoodConsumptionOption,
-    onDesayunoChange: (FoodConsumptionOption) -> Unit,
-    colacionOption: FoodConsumptionOption,
-    onColacionChange: (FoodConsumptionOption) -> Unit,
-    comidaOption: FoodConsumptionOption,
-    onComidaChange: (FoodConsumptionOption) -> Unit,
+    selectedMeal: MealType?,
+    onMealChange: (MealType) -> Unit,
+    consumptionOption: FoodConsumptionOption?,
+    onConsumptionChange: (FoodConsumptionOption) -> Unit,
     observaciones: String,
     onObservacionesChange: (String) -> Unit
 ) {
     SectionCardContainer(
         title = "Alimentación",
         icon = Icons.Default.Restaurant,
-        subtitle = "La niña o el niño consumió los alimentos durante el:"
+        subtitle = "Registra los alimentos consumidos en el momento de la actividad:"
     ) {
-        MealConsumptionRow(
-            mealName = "Desayuno",
-            selectedOption = desayunoOption,
-            onOptionSelected = onDesayunoChange
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        MealConsumptionRow(
-            mealName = "Colación",
-            selectedOption = colacionOption,
-            onOptionSelected = onColacionChange
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        MealConsumptionRow(
-            mealName = "Comida",
-            selectedOption = comidaOption,
-            onOptionSelected = onComidaChange
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        OutlinedTextField(
-            value = observaciones,
-            onValueChange = onObservacionesChange,
-            label = { Text("Observaciones Generales", fontSize = 12.sp) },
-            placeholder = { Text("Detalle de apetito, alimentos rechazados, etc.", fontSize = 12.sp) },
-            modifier = Modifier.fillMaxWidth().height(86.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = AppBackground,
-                unfocusedContainerColor = AppBackground,
-                focusedBorderColor = BrandBlue,
-                unfocusedBorderColor = BorderSubtle
-            )
-        )
-    }
-}
-
-@Composable
-private fun MealConsumptionRow(
-    mealName: String,
-    selectedOption: FoodConsumptionOption,
-    onOptionSelected: (FoodConsumptionOption) -> Unit
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = mealName,
+            text = "Selecciona la comida a registrar:",
             fontSize = 12.5.sp,
             fontWeight = FontWeight.SemiBold,
             color = TextPrimary
         )
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            FoodConsumptionOption.values().forEach { option ->
-                val isSelected = selectedOption == option
+            val meals = listOf(
+                Pair(MealType.DESAYUNO, "Desayuno"),
+                Pair(MealType.COLACION, "Colación"),
+                Pair(MealType.COMIDA, "Comida")
+            )
+            meals.forEach { (meal, label) ->
+                val isSelected = selectedMeal == meal
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (isSelected) BrandBlue else BrandBlueContainer)
-                        .border(1.dp, if (isSelected) BrandBlue else Color(0xFFD4E3F7), RoundedCornerShape(8.dp))
-                        .clickable { onOptionSelected(option) }
-                        .padding(vertical = 7.dp),
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (isSelected) BrandBlue else AppBackground)
+                        .border(
+                            1.5.dp,
+                            if (isSelected) BrandBlue else BorderSubtle,
+                            RoundedCornerShape(10.dp)
+                        )
+                        .clickable { onMealChange(meal) }
+                        .padding(vertical = 11.dp, horizontal = 4.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = option.label,
-                        fontSize = 11.sp,
+                        text = label,
+                        fontSize = 12.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) Color.White else BrandBlue,
+                        color = if (isSelected) Color.White else TextPrimary,
                         textAlign = TextAlign.Center
                     )
+                }
+            }
+        }
+
+        AnimatedVisibility(visible = selectedMeal != null) {
+            Column(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+                Text(
+                    text = "Consumo en ${selectedMeal?.label?.lowercase() ?: ""}:",
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    val consumptionOptions = listOf(
+                        FoodConsumptionOption.TODO to "Comió todo",
+                        FoodConsumptionOption.POCO to "Comió poco",
+                        FoodConsumptionOption.NADA to "No comió",
+                        FoodConsumptionOption.PIDIO_MAS to "Pidió más"
+                    )
+                    consumptionOptions.forEach { (option, label) ->
+                        val isSelected = consumptionOption == option
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) BrandBlue else BrandBlueContainer)
+                                .border(1.dp, if (isSelected) BrandBlue else Color(0xFFD4E3F7), RoundedCornerShape(8.dp))
+                                .clickable { onConsumptionChange(option) }
+                                .padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 10.5.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) Color.White else BrandBlue,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
+                AnimatedVisibility(visible = consumptionOption != null) {
+                    Column(modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
+                        OutlinedTextField(
+                            value = observaciones,
+                            onValueChange = onObservacionesChange,
+                            label = { Text("Observaciones de la comida", fontSize = 12.sp) },
+                            placeholder = { Text("Apetito, alimentos aceptados o rechazados, toma de líquidos...", fontSize = 12.sp) },
+                            modifier = Modifier.fillMaxWidth().height(86.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = AppBackground,
+                                unfocusedContainerColor = AppBackground,
+                                focusedBorderColor = BrandBlue,
+                                unfocusedBorderColor = BorderSubtle
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -259,7 +280,7 @@ private fun MealConsumptionRow(
 // -------------------------------------------------------------
 @Composable
 fun DescansoSectionContent(
-    durmio: Boolean,
+    durmio: Boolean?,
     onDurmioChange: (Boolean) -> Unit,
     minutosSiesta: String,
     onMinutosSiestaChange: (String) -> Unit,
@@ -270,8 +291,60 @@ fun DescansoSectionContent(
         title = "Descanso",
         icon = Icons.Default.NightlightRound
     ) {
+        Text(
+            text = "¿Durmió durante el tiempo de descanso?",
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = TextPrimary
+        )
 
-        AnimatedVisibility(visible = durmio) {
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val isSi = durmio == true
+            val isNo = durmio == false
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isSi) BrandBlue else AppBackground)
+                    .border(1.dp, if (isSi) BrandBlue else BorderSubtle, RoundedCornerShape(8.dp))
+                    .clickable { onDurmioChange(true) }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Sí durmió",
+                    fontSize = 12.5.sp,
+                    fontWeight = if (isSi) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isSi) Color.White else TextPrimary
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isNo) BrandBlue else AppBackground)
+                    .border(1.dp, if (isNo) BrandBlue else BorderSubtle, RoundedCornerShape(8.dp))
+                    .clickable { onDurmioChange(false) }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No durmió",
+                    fontSize = 12.5.sp,
+                    fontWeight = if (isNo) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isNo) Color.White else TextPrimary
+                )
+            }
+        }
+
+        AnimatedVisibility(visible = durmio == true) {
             Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
                 Text(
                     text = "Tiempo de siesta (minutos)",
@@ -311,22 +384,24 @@ fun DescansoSectionContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
-
-        OutlinedTextField(
-            value = comentarios,
-            onValueChange = onComentariosChange,
-            label = { Text("Comentarios de descanso", fontSize = 12.sp) },
-            placeholder = { Text("Si durmió tranquilo, si despertó de buen humor...", fontSize = 12.sp) },
-            modifier = Modifier.fillMaxWidth().height(86.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = AppBackground,
-                unfocusedContainerColor = AppBackground,
-                focusedBorderColor = BrandBlue,
-                unfocusedBorderColor = BorderSubtle
-            )
-        )
+        AnimatedVisibility(visible = durmio != null) {
+            Column(modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
+                OutlinedTextField(
+                    value = comentarios,
+                    onValueChange = onComentariosChange,
+                    label = { Text("Comentarios de descanso", fontSize = 12.sp) },
+                    placeholder = { Text("Si durmió tranquilo, si despertó de buen humor...", fontSize = 12.sp) },
+                    modifier = Modifier.fillMaxWidth().height(86.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = AppBackground,
+                        unfocusedContainerColor = AppBackground,
+                        focusedBorderColor = BrandBlue,
+                        unfocusedBorderColor = BorderSubtle
+                    )
+                )
+            }
+        }
     }
 }
 
@@ -335,119 +410,173 @@ fun DescansoSectionContent(
 // -------------------------------------------------------------
 @Composable
 fun FuncionesExcretorasSectionContent(
+    selectedType: ExcretionType?,
+    onTypeChange: (ExcretionType) -> Unit,
     controlNoAplica: Boolean,
     onControlNoAplicaChange: (Boolean) -> Unit,
-    aviso: Boolean,
+    aviso: Boolean?,
     onAvisoChange: (Boolean) -> Unit,
-    vecesPipi: Int,
-    onPipiChange: (Int) -> Unit,
-    vecesPopo: Int,
-    onPopoChange: (Int) -> Unit,
     observaciones: String,
     onObservacionesChange: (String) -> Unit
 ) {
     SectionCardContainer(
         title = "Funciones Excretoras",
-        icon = Icons.Default.Wc
+        icon = Icons.Default.Wc,
+        subtitle = "Registra el evento excretor de forma individual en el momento que ocurre:"
     ) {
         Text(
-            text = "Control de esfínteres",
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
-            color = BrandBlue
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-                .background(AppBackground)
-                .clickable { onControlNoAplicaChange(!controlNoAplica) }
-                .padding(horizontal = 10.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Checkbox(
-                checked = controlNoAplica,
-                onCheckedChange = onControlNoAplicaChange,
-                colors = CheckboxDefaults.colors(checkedColor = BrandBlue)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = "No aplica (usa pañal)",
-                fontSize = 12.5.sp,
-                color = TextPrimary
-            )
-        }
-
-        AnimatedVisibility(visible = !controlNoAplica) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "¿Avisó?",
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = TextPrimary
-                )
-                YesNoSegmentSelector(
-                    selected = aviso,
-                    onSelect = onAvisoChange
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        Text(
-            text = "Pipí y/o Popó — Número de veces",
+            text = "Tipo de evento a registrar:",
             fontSize = 12.5.sp,
-            fontWeight = FontWeight.Bold,
-            color = BrandBlue
+            fontWeight = FontWeight.SemiBold,
+            color = TextPrimary
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            NumberCounterCard(
-                label = "Pipí",
-                count = vecesPipi,
-                onIncrement = { onPipiChange(vecesPipi + 1) },
-                onDecrement = { if (vecesPipi > 0) onPipiChange(vecesPipi - 1) },
-                modifier = Modifier.weight(1f)
-            )
-
-            NumberCounterCard(
-                label = "Popó",
-                count = vecesPopo,
-                onIncrement = { onPopoChange(vecesPopo + 1) },
-                onDecrement = { if (vecesPopo > 0) onPopoChange(vecesPopo - 1) },
-                modifier = Modifier.weight(1f)
-            )
+            ExcretionType.values().forEach { type ->
+                val isSelected = selectedType == type
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (isSelected) BrandBlue else AppBackground)
+                        .border(
+                            1.5.dp,
+                            if (isSelected) BrandBlue else BorderSubtle,
+                            RoundedCornerShape(10.dp)
+                        )
+                        .clickable { onTypeChange(type) }
+                        .padding(vertical = 12.dp, horizontal = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = type.label,
+                        fontSize = 12.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = if (isSelected) Color.White else TextPrimary,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        AnimatedVisibility(visible = selectedType != null) {
+            Column(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+                Text(
+                    text = "Control de esfínteres:",
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
 
-        OutlinedTextField(
-            value = observaciones,
-            onValueChange = onObservacionesChange,
-            label = { Text("Observaciones", fontSize = 12.sp) },
-            placeholder = { Text("Consistencia, cambio de pañal, incidentes...", fontSize = 12.sp) },
-            modifier = Modifier.fillMaxWidth().height(86.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = AppBackground,
-                unfocusedContainerColor = AppBackground,
-                focusedBorderColor = BrandBlue,
-                unfocusedBorderColor = BorderSubtle
-            )
-        )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val isSiSelected = !controlNoAplica && aviso == true
+                    val isNoSelected = !controlNoAplica && aviso == false
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isSiSelected) BrandBlue else AppBackground)
+                            .border(1.dp, if (isSiSelected) BrandBlue else BorderSubtle, RoundedCornerShape(8.dp))
+                            .clickable {
+                                onControlNoAplicaChange(false)
+                                onAvisoChange(true)
+                            }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Sí",
+                            fontSize = 13.sp,
+                            fontWeight = if (isSiSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSiSelected) Color.White else TextPrimary
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isNoSelected) BrandBlue else AppBackground)
+                            .border(1.dp, if (isNoSelected) BrandBlue else BorderSubtle, RoundedCornerShape(8.dp))
+                            .clickable {
+                                onControlNoAplicaChange(false)
+                                onAvisoChange(false)
+                            }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No",
+                            fontSize = 13.sp,
+                            fontWeight = if (isNoSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isNoSelected) Color.White else TextPrimary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (controlNoAplica) BrandBlueContainer else AppBackground)
+                        .border(1.dp, if (controlNoAplica) BrandBlue else BorderSubtle, RoundedCornerShape(8.dp))
+                        .clickable {
+                            val nuevo = !controlNoAplica
+                            onControlNoAplicaChange(nuevo)
+                        }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = controlNoAplica,
+                        onCheckedChange = { isChecked ->
+                            onControlNoAplicaChange(isChecked)
+                        },
+                        colors = CheckboxDefaults.colors(checkedColor = BrandBlue)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "No aplica porque usa pañal",
+                        fontSize = 12.5.sp,
+                        fontWeight = if (controlNoAplica) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (controlNoAplica) BrandBlue else TextPrimary
+                    )
+                }
+
+                val sphincterChosen = controlNoAplica || aviso != null
+                AnimatedVisibility(visible = sphincterChosen) {
+                    Column(modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
+                        OutlinedTextField(
+                            value = observaciones,
+                            onValueChange = onObservacionesChange,
+                            label = { Text("Observaciones del evento", fontSize = 12.sp) },
+                            placeholder = { Text("Consistencia, cambio de pañal, orinal, incidentes...", fontSize = 12.sp) },
+                            modifier = Modifier.fillMaxWidth().height(86.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = AppBackground,
+                                unfocusedContainerColor = AppBackground,
+                                focusedBorderColor = BrandBlue,
+                                unfocusedBorderColor = BorderSubtle
+                            )
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -456,7 +585,7 @@ fun FuncionesExcretorasSectionContent(
 // -------------------------------------------------------------
 @Composable
 fun EstadoAnimoSectionContent(
-    selectedMood: MoodState,
+    selectedMood: MoodState?,
     onMoodChange: (MoodState) -> Unit,
     lloro: Boolean,
     onLloroChange: (Boolean) -> Unit,
@@ -501,8 +630,16 @@ fun EstadoAnimoSectionContent(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = mood.emoji, fontSize = 28.sp)
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(if (isSelected) Color.White else Color(0xFFF1F5F9)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = mood.emoji, fontSize = 20.sp)
+                        }
+                        Spacer(modifier = Modifier.height(5.dp))
                         Text(
                             text = mood.label,
                             fontSize = 12.sp,
@@ -514,39 +651,43 @@ fun EstadoAnimoSectionContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        AnimatedVisibility(visible = selectedMood != null) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-            text = "¿Durante las actividades?",
-            fontSize = 12.5.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = TextPrimary
-        )
+                Text(
+                    text = "¿Durante las actividades?",
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
 
-        Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-        ActivityYesNoRow(label = "¿Lloró?", value = lloro, onChange = onLloroChange)
-        Spacer(modifier = Modifier.height(6.dp))
-        ActivityYesNoRow(label = "¿Peleó?", value = peleo, onChange = onPeleoChange)
-        Spacer(modifier = Modifier.height(6.dp))
-        ActivityYesNoRow(label = "¿Participó?", value = participo, onChange = onParticipoChange)
+                ActivityYesNoRow(label = "¿Lloró?", value = lloro, onChange = onLloroChange)
+                Spacer(modifier = Modifier.height(6.dp))
+                ActivityYesNoRow(label = "¿Peleó?", value = peleo, onChange = onPeleoChange)
+                Spacer(modifier = Modifier.height(6.dp))
+                ActivityYesNoRow(label = "¿Participó?", value = participo, onChange = onParticipoChange)
 
-        Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-        OutlinedTextField(
-            value = observaciones,
-            onValueChange = onObservacionesChange,
-            label = { Text("Observaciones de conducta", fontSize = 12.sp) },
-            placeholder = { Text("Actitud frente a los compañeros y maestras...", fontSize = 12.sp) },
-            modifier = Modifier.fillMaxWidth().height(86.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = AppBackground,
-                unfocusedContainerColor = AppBackground,
-                focusedBorderColor = BrandBlue,
-                unfocusedBorderColor = BorderSubtle
-            )
-        )
+                OutlinedTextField(
+                    value = observaciones,
+                    onValueChange = onObservacionesChange,
+                    label = { Text("Observaciones de conducta", fontSize = 12.sp) },
+                    placeholder = { Text("Actitud frente a los compañeros y maestras...", fontSize = 12.sp) },
+                    modifier = Modifier.fillMaxWidth().height(86.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = AppBackground,
+                        unfocusedContainerColor = AppBackground,
+                        focusedBorderColor = BrandBlue,
+                        unfocusedBorderColor = BorderSubtle
+                    )
+                )
+            }
+        }
     }
 }
 
@@ -555,7 +696,7 @@ fun EstadoAnimoSectionContent(
 // -------------------------------------------------------------
 @Composable
 fun AccidentesSectionContent(
-    tuvoAccidente: Boolean,
+    tuvoAccidente: Boolean?,
     onTuvoAccidenteChange: (Boolean) -> Unit,
     descripcion: String,
     onDescripcionChange: (String) -> Unit,
@@ -566,43 +707,95 @@ fun AccidentesSectionContent(
         title = "Accidentes",
         icon = Icons.Default.WarningAmber
     ) {
+        Text(
+            text = "¿Se registró algún accidente o incidente?",
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = TextPrimary
+        )
 
+        Spacer(modifier = Modifier.height(8.dp))
 
-        Column(modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
-            OutlinedTextField(
-                value = descripcion,
-                onValueChange = onDescripcionChange,
-                label = { Text("Descripción breve del accidente", fontSize = 12.sp) },
-                placeholder = { Text("Ej. Raspón leve en la rodilla izquierda jugando...", fontSize = 12.sp) },
-                modifier = Modifier.fillMaxWidth().height(86.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = AppBackground,
-                    unfocusedContainerColor = AppBackground,
-                    focusedBorderColor = AlertRed,
-                    unfocusedBorderColor = BorderSubtle
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val isSi = tuvoAccidente == true
+            val isNo = tuvoAccidente == false
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isSi) AlertRed else AppBackground)
+                    .border(1.dp, if (isSi) AlertRed else BorderSubtle, RoundedCornerShape(8.dp))
+                    .clickable { onTuvoAccidenteChange(true) }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Sí, ocurrió un accidente",
+                    fontSize = 12.sp,
+                    fontWeight = if (isSi) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isSi) Color.White else TextPrimary
                 )
-            )
+            }
 
-            Spacer(modifier = Modifier.height(10.dp))
-
-            OutlinedTextField(
-                value = folio,
-                onValueChange = onFolioChange,
-                label = { Text("Folio de reporte de accidentes", fontSize = 12.sp) },
-                placeholder = { Text("Ej. ACC-2026-089", fontSize = 12.sp) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = AppBackground,
-                    unfocusedContainerColor = AppBackground,
-                    focusedBorderColor = BrandBlue,
-                    unfocusedBorderColor = BorderSubtle
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isNo) StatusPresentGreen else AppBackground)
+                    .border(1.dp, if (isNo) StatusPresentGreen else BorderSubtle, RoundedCornerShape(8.dp))
+                    .clickable { onTuvoAccidenteChange(false) }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No hubo accidentes",
+                    fontSize = 12.sp,
+                    fontWeight = if (isNo) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isNo) Color.White else TextPrimary
                 )
-            )
+            }
         }
 
+        AnimatedVisibility(visible = tuvoAccidente == true) {
+            Column(modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
+                OutlinedTextField(
+                    value = descripcion,
+                    onValueChange = onDescripcionChange,
+                    label = { Text("Descripción breve del accidente", fontSize = 12.sp) },
+                    placeholder = { Text("Ej. Raspón leve en la rodilla izquierda jugando...", fontSize = 12.sp) },
+                    modifier = Modifier.fillMaxWidth().height(86.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = AppBackground,
+                        unfocusedContainerColor = AppBackground,
+                        focusedBorderColor = AlertRed,
+                        unfocusedBorderColor = BorderSubtle
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedTextField(
+                    value = folio,
+                    onValueChange = onFolioChange,
+                    label = { Text("Folio de reporte de accidentes", fontSize = 12.sp) },
+                    placeholder = { Text("Ej. ACC-2026-089", fontSize = 12.sp) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = AppBackground,
+                        unfocusedContainerColor = AppBackground,
+                        focusedBorderColor = BrandBlue,
+                        unfocusedBorderColor = BorderSubtle
+                    )
+                )
+            }
+        }
     }
 }
 
@@ -611,7 +804,7 @@ fun AccidentesSectionContent(
 // -------------------------------------------------------------
 @Composable
 fun SaludSectionContent(
-    presentoProblema: Boolean,
+    presentoProblema: Boolean?,
     onPresentoProblemaChange: (Boolean) -> Unit,
     cualProblema: String,
     onCualProblemaChange: (String) -> Unit,
@@ -624,61 +817,114 @@ fun SaludSectionContent(
         title = "Salud",
         icon = Icons.Default.LocalHospital
     ) {
+        Text(
+            text = "¿Presentó algún problema de salud o síntoma?",
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = TextPrimary
+        )
 
+        Spacer(modifier = Modifier.height(8.dp))
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val isSi = presentoProblema == true
+            val isNo = presentoProblema == false
 
-        Column(modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
-            OutlinedTextField(
-                value = cualProblema,
-                onValueChange = onCualProblemaChange,
-                label = { Text("¿Cuál?", fontSize = 12.sp) },
-                placeholder = { Text("Fiebre 37.8°C, vómito, cólico...", fontSize = 12.sp) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = AppBackground,
-                    unfocusedContainerColor = AppBackground,
-                    focusedBorderColor = BrandBlue,
-                    unfocusedBorderColor = BorderSubtle
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isSi) AlertRed else AppBackground)
+                    .border(1.dp, if (isSi) AlertRed else BorderSubtle, RoundedCornerShape(8.dp))
+                    .clickable { onPresentoProblemaChange(true) }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Sí, presentó síntomas",
+                    fontSize = 12.sp,
+                    fontWeight = if (isSi) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isSi) Color.White else TextPrimary
                 )
-            )
+            }
 
-            Spacer(modifier = Modifier.height(10.dp))
-
-            OutlinedTextField(
-                value = atencionProporcionada,
-                onValueChange = onAtencionProporcionadaChange,
-                label = { Text("Atención proporcionada", fontSize = 12.sp) },
-                placeholder = { Text("Toma de temperatura, aviso a padres, reposo...", fontSize = 12.sp) },
-                modifier = Modifier.fillMaxWidth().height(86.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = AppBackground,
-                    unfocusedContainerColor = AppBackground,
-                    focusedBorderColor = BrandBlue,
-                    unfocusedBorderColor = BorderSubtle
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isNo) StatusPresentGreen else AppBackground)
+                    .border(1.dp, if (isNo) StatusPresentGreen else BorderSubtle, RoundedCornerShape(8.dp))
+                    .clickable { onPresentoProblemaChange(false) }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No, estado óptimo",
+                    fontSize = 12.sp,
+                    fontWeight = if (isNo) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isNo) Color.White else TextPrimary
                 )
-            )
+            }
         }
 
+        AnimatedVisibility(visible = presentoProblema == true) {
+            Column(modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
+                OutlinedTextField(
+                    value = cualProblema,
+                    onValueChange = onCualProblemaChange,
+                    label = { Text("¿Cuál?", fontSize = 12.sp) },
+                    placeholder = { Text("Fiebre 37.8°C, vómito, cólico...", fontSize = 12.sp) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = AppBackground,
+                        unfocusedContainerColor = AppBackground,
+                        focusedBorderColor = BrandBlue,
+                        unfocusedBorderColor = BorderSubtle
+                    )
+                )
 
-        Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-        OutlinedTextField(
-            value = observaciones,
-            onValueChange = onObservacionesChange,
-            label = { Text("Observaciones Generales", fontSize = 12.sp) },
-            placeholder = { Text("Indicaciones de medicamentos o seguimiento...", fontSize = 12.sp) },
-            modifier = Modifier.fillMaxWidth().height(86.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = AppBackground,
-                unfocusedContainerColor = AppBackground,
-                focusedBorderColor = BrandBlue,
-                unfocusedBorderColor = BorderSubtle
-            )
-        )
+                OutlinedTextField(
+                    value = atencionProporcionada,
+                    onValueChange = onAtencionProporcionadaChange,
+                    label = { Text("Atención proporcionada", fontSize = 12.sp) },
+                    placeholder = { Text("Toma de temperatura, aviso a padres, reposo...", fontSize = 12.sp) },
+                    modifier = Modifier.fillMaxWidth().height(86.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = AppBackground,
+                        unfocusedContainerColor = AppBackground,
+                        focusedBorderColor = BrandBlue,
+                        unfocusedBorderColor = BorderSubtle
+                    )
+                )
+            }
+        }
+
+        AnimatedVisibility(visible = presentoProblema != null) {
+            Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
+                OutlinedTextField(
+                    value = observaciones,
+                    onValueChange = onObservacionesChange,
+                    label = { Text("Observaciones Generales", fontSize = 12.sp) },
+                    placeholder = { Text("Indicaciones de medicamentos o seguimiento...", fontSize = 12.sp) },
+                    modifier = Modifier.fillMaxWidth().height(86.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = AppBackground,
+                        unfocusedContainerColor = AppBackground,
+                        focusedBorderColor = BrandBlue,
+                        unfocusedBorderColor = BorderSubtle
+                    )
+                )
+            }
+        }
     }
 }
 
@@ -739,7 +985,7 @@ fun SectionCardContainer(
 
 @Composable
 fun YesNoSegmentSelector(
-    selected: Boolean,
+    selected: Boolean?,
     onSelect: (Boolean) -> Unit
 ) {
     Row(
@@ -749,10 +995,13 @@ fun YesNoSegmentSelector(
             .border(1.dp, Color(0xFFD4E3F7), RoundedCornerShape(8.dp))
             .padding(2.dp)
     ) {
+        val isYes = selected == true
+        val isNo = selected == false
+
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(6.dp))
-                .background(if (selected) BrandBlue else Color.Transparent)
+                .background(if (isYes) BrandBlue else Color.Transparent)
                 .clickable { onSelect(true) }
                 .padding(horizontal = 14.dp, vertical = 6.dp),
             contentAlignment = Alignment.Center
@@ -760,15 +1009,15 @@ fun YesNoSegmentSelector(
             Text(
                 text = "Sí",
                 fontSize = 12.sp,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) Color.White else BrandBlue
+                fontWeight = if (isYes) FontWeight.Bold else FontWeight.Medium,
+                color = if (isYes) Color.White else BrandBlue
             )
         }
 
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(6.dp))
-                .background(if (!selected) BrandBlue else Color.Transparent)
+                .background(if (isNo) BrandBlue else Color.Transparent)
                 .clickable { onSelect(false) }
                 .padding(horizontal = 14.dp, vertical = 6.dp),
             contentAlignment = Alignment.Center
@@ -776,8 +1025,8 @@ fun YesNoSegmentSelector(
             Text(
                 text = "No",
                 fontSize = 12.sp,
-                fontWeight = if (!selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (!selected) Color.White else BrandBlue
+                fontWeight = if (isNo) FontWeight.Bold else FontWeight.Medium,
+                color = if (isNo) Color.White else BrandBlue
             )
         }
     }
@@ -807,72 +1056,3 @@ private fun ActivityYesNoRow(
     }
 }
 
-@Composable
-private fun NumberCounterCard(
-    label: String,
-    count: Int,
-    onIncrement: () -> Unit,
-    onDecrement: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(AppBackground)
-            .border(1.dp, BorderSubtle, RoundedCornerShape(10.dp))
-            .padding(horizontal = 8.dp, vertical = 8.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = label,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = TextPrimary
-            )
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    onClick = onDecrement,
-                    modifier = Modifier
-                        .size(26.dp)
-                        .clip(CircleShape)
-                        .background(BrandBlueContainer)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Remove,
-                        contentDescription = "Restar",
-                        tint = BrandBlue,
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
-
-                Text(
-                    text = "$count",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = BrandBlue,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-
-                IconButton(
-                    onClick = onIncrement,
-                    modifier = Modifier
-                        .size(26.dp)
-                        .clip(CircleShape)
-                        .background(BrandBlue)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Sumar",
-                        tint = Color.White,
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
-            }
-        }
-    }
-}

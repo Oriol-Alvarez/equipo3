@@ -14,7 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.FamilyRestroom
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
@@ -95,21 +96,25 @@ fun WeeklyObservationsSection(
     onSubmit: () -> Unit
 ) {
     val viewer = state.selection
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+    Column(
+        modifier = Modifier.padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // 1. Apartado de Observaciones de los Trabajadores / Educadoras
         SectionDetailCard(
-            title = "Observaciones de la familia",
-            icon = Icons.Default.Edit
+            title = "Observaciones de los trabajadores",
+            icon = Icons.Default.Badge
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (state.observations.isEmpty()) {
+                if (state.educatorObservations.isEmpty()) {
                     Text(
-                        text = state.emptyMessage,
+                        text = state.emptyEducatorMessage,
                         fontSize = 13.sp,
                         color = TextSecondary,
                         lineHeight = 18.sp
                     )
                 } else {
-                    state.observations.forEach { observation ->
+                    state.educatorObservations.forEach { observation ->
                         ObservationItem(
                             observation = observation,
                             isOwn = viewer != null &&
@@ -119,55 +124,124 @@ fun WeeklyObservationsSection(
                     }
                 }
 
-                state.readOnlyHint?.let { hint ->
-                    Text(text = hint, fontSize = 12.sp, color = TextMuted)
-                }
-
-                if (state.canWrite) {
-                    OutlinedTextField(
-                        value = state.draft,
-                        onValueChange = onDraftChange,
-                        label = { Text("Escribe una observación de esta semana", fontSize = 12.sp) },
-                        placeholder = {
-                            Text(
-                                "Ej. En casa durmió mejor y empezó a decir nuevas palabras.",
-                                fontSize = 12.sp
-                            )
-                        },
-                        supportingText = {
-                            Text(
-                                text = "${state.draft.length}/${state.maxLength}",
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.End,
-                                fontSize = 11.sp
-                            )
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = AppBackground,
-                            unfocusedContainerColor = AppBackground,
-                            focusedBorderColor = BrandBlue,
-                            unfocusedBorderColor = BorderSubtle
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 110.dp)
+                if (state.canWriteAsEducator) {
+                    ObservationDraftField(
+                        draft = state.draft,
+                        onDraftChange = onDraftChange,
+                        maxLength = state.maxLength,
+                        label = "Escribe una observación pedagógica o del desarrollo",
+                        placeholder = "Ej. Mostró gran interés en las actividades plásticas y colaboró muy bien con sus compañeros.",
+                        errorMessage = state.errorMessage,
+                        savedMessage = state.savedMessage,
+                        buttonText = "Guardar observación del personal",
+                        onSubmit = onSubmit
                     )
-
-                    state.errorMessage?.let { Text(text = it, fontSize = 12.sp, color = AlertRed) }
-                    state.savedMessage?.let { Text(text = it, fontSize = 12.sp, color = StatusPresentGreen) }
-
-                    Button(
-                        onClick = onSubmit,
-                        enabled = state.draft.isNotBlank(),
-                        colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.align(Alignment.End)
-                    ) {
-                        Text("Guardar observación", color = Color.White)
+                } else if (viewer?.viewerRole == ObservationAuthorRole.EDUCADORA && !state.canWrite) {
+                    state.readOnlyHint?.let { hint ->
+                        Text(text = hint, fontSize = 12.sp, color = TextMuted)
                     }
                 }
             }
+        }
+
+        // 2. Apartado de Observaciones de la Familia
+        SectionDetailCard(
+            title = "Observaciones de la familia",
+            icon = Icons.Default.FamilyRestroom
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (state.familyObservations.isEmpty()) {
+                    Text(
+                        text = state.emptyFamilyMessage,
+                        fontSize = 13.sp,
+                        color = TextSecondary,
+                        lineHeight = 18.sp
+                    )
+                } else {
+                    state.familyObservations.forEach { observation ->
+                        ObservationItem(
+                            observation = observation,
+                            isOwn = viewer != null &&
+                                observation.authorName == viewer.viewerName &&
+                                observation.authorRole == viewer.viewerRole
+                        )
+                    }
+                }
+
+                if (state.canWriteAsFamily) {
+                    ObservationDraftField(
+                        draft = state.draft,
+                        onDraftChange = onDraftChange,
+                        maxLength = state.maxLength,
+                        label = "Escribe una observación de esta semana",
+                        placeholder = "Ej. En casa durmió mejor y empezó a decir nuevas palabras.",
+                        errorMessage = state.errorMessage,
+                        savedMessage = state.savedMessage,
+                        buttonText = "Guardar observación de la familia",
+                        onSubmit = onSubmit
+                    )
+                } else if (viewer?.viewerRole == ObservationAuthorRole.FAMILIA && !state.canWrite) {
+                    state.readOnlyHint?.let { hint ->
+                        Text(text = hint, fontSize = 12.sp, color = TextMuted)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ObservationDraftField(
+    draft: String,
+    onDraftChange: (String) -> Unit,
+    maxLength: Int,
+    label: String,
+    placeholder: String,
+    errorMessage: String?,
+    savedMessage: String?,
+    buttonText: String,
+    onSubmit: () -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = draft,
+            onValueChange = onDraftChange,
+            label = { Text(label, fontSize = 12.sp) },
+            placeholder = { Text(placeholder, fontSize = 12.sp) },
+            supportingText = {
+                Text(
+                    text = "${draft.length}/$maxLength",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.End,
+                    fontSize = 11.sp
+                )
+            },
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = AppBackground,
+                unfocusedContainerColor = AppBackground,
+                focusedBorderColor = BrandBlue,
+                unfocusedBorderColor = BorderSubtle
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 110.dp)
+        )
+
+        errorMessage?.let { Text(text = it, fontSize = 12.sp, color = AlertRed) }
+        savedMessage?.let { Text(text = it, fontSize = 12.sp, color = StatusPresentGreen) }
+
+        Button(
+            onClick = onSubmit,
+            enabled = draft.isNotBlank(),
+            colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text(buttonText, color = Color.White)
         }
     }
 }
@@ -229,22 +303,33 @@ fun WeeklyObservationsSectionPreview() {
         viewerRole = ObservationAuthorRole.FAMILIA,
         viewerName = "María López (Mamá de Mateo)"
     )
+    val obsFamily = WeeklyObservation(
+        id = "p1",
+        childId = selection.childId,
+        weekKey = selection.weekKey,
+        authorRole = ObservationAuthorRole.FAMILIA,
+        authorName = selection.viewerName,
+        text = "Esta semana durmió mejor en casa.",
+        time = "24/09 08:10 PM"
+    )
+    val obsEducator = WeeklyObservation(
+        id = "p2",
+        childId = selection.childId,
+        weekKey = selection.weekKey,
+        authorRole = ObservationAuthorRole.EDUCADORA,
+        authorName = "Laura Gómez (Educadora)",
+        text = "Mateo se adaptó perfectamente a las actividades del grupo.",
+        time = "24/09 03:30 PM"
+    )
     Etapa1Theme {
         WeeklyObservationsSection(
             state = WeeklyObservationsUiState(
                 selection = selection,
-                observations = listOf(
-                    WeeklyObservation(
-                        id = "p1",
-                        childId = selection.childId,
-                        weekKey = selection.weekKey,
-                        authorRole = ObservationAuthorRole.FAMILIA,
-                        authorName = selection.viewerName,
-                        text = "Esta semana durmió mejor en casa.",
-                        time = "24/09 08:10 PM"
-                    )
-                ),
+                observations = listOf(obsEducator, obsFamily),
+                educatorObservations = listOf(obsEducator),
+                familyObservations = listOf(obsFamily),
                 canWrite = true,
+                canWriteAsFamily = true,
                 draft = "Empezó a decir \"agua\"."
             ),
             onDraftChange = {},

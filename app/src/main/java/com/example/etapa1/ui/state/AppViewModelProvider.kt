@@ -37,7 +37,9 @@ object AppViewModelProvider {
         initializer {
             NewActivityViewModel(
                 sonrisasApplication().container.bitacoraRepository,
-                sonrisasApplication().container.familyGroupsRepository
+                sonrisasApplication().container.familyGroupsRepository,
+                sonrisasApplication().container.childRepository,
+                sonrisasApplication().container.dailyLogRepository
             )
         }
         initializer {

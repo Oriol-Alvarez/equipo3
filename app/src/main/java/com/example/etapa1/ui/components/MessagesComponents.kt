@@ -36,8 +36,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.EventNote
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.GroupAdd
@@ -50,6 +52,7 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.InsertDriveFile
@@ -58,6 +61,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.HorizontalDivider
+import com.example.etapa1.model.TimelineItem
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -327,7 +332,7 @@ fun PinnedGlobalWorkerChatCard(
                 Spacer(modifier = Modifier.height(3.dp))
 
                 Text(
-                    text = chat.lastMessage.ifBlank { "Canal general activo" },
+                    text = formatActivityPreview(chat.lastMessage.ifBlank { "Canal general activo" }),
                     fontSize = 12.5.sp,
                     color = if (chat.unreadCount > 0) TextPrimary else TextSecondary,
                     fontWeight = if (chat.unreadCount > 0) FontWeight.Medium else FontWeight.Normal,
@@ -432,7 +437,7 @@ fun WorkerChatItem(
                 Spacer(modifier = Modifier.height(3.dp))
 
                 Text(
-                    text = chat.lastMessage.ifBlank { "Sin mensajes aún." },
+                    text = formatActivityPreview(chat.lastMessage.ifBlank { "Sin mensajes aún." }),
                     fontSize = 12.5.sp,
                     color = if (hasUnread) TextPrimary else TextSecondary,
                     fontWeight = if (hasUnread) FontWeight.Medium else FontWeight.Normal,
@@ -528,7 +533,7 @@ fun ParentChatItem(
                 Spacer(modifier = Modifier.height(3.dp))
 
                 Text(
-                    text = chatSummary.lastMessage.ifBlank { "Sin mensajes aún." },
+                    text = formatActivityPreview(chatSummary.lastMessage.ifBlank { "Sin mensajes aún." }),
                     fontSize = 12.5.sp,
                     color = if (hasUnread) TextPrimary else TextSecondary,
                     fontWeight = if (hasUnread) FontWeight.Medium else FontWeight.Normal,
@@ -1049,13 +1054,15 @@ fun WorkerChatConversationDialog(
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = { avisoChat = AvisoChat.LLAMADA }) {
-                                Icon(
-                                    imageVector = Icons.Default.Phone,
-                                    contentDescription = "Llamar",
-                                    tint = TextSecondary,
-                                    modifier = Modifier.size(22.dp)
-                                )
+                            if (!(chat.isGroup || chat.isGlobal)) {
+                                IconButton(onClick = { avisoChat = AvisoChat.LLAMADA }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Phone,
+                                        contentDescription = "Llamar",
+                                        tint = TextSecondary,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
                             }
                             IconButton(onClick = { avisoChat = AvisoChat.INFORMACION }) {
                                 Icon(
@@ -1105,39 +1112,47 @@ fun WorkerChatConversationDialog(
 }
 
 /**
- * Burbuja de mensaje para trabajadores. En grupos muestra avatar del remitente (WhatsApp style)
- * y nombre destacado dentro de la burbuja.
+ * Burbuja de mensaje para trabajadores y chats grupales o individuales.
+ * Si el mensaje corresponde a una actividad registrada ([ACTIVIDAD]), se renderiza mediante
+ * [ActivityTimelineCard], viéndose exactamente igual que en el expediente individual.
  */
 @Composable
 fun WorkerChatMessageBubble(
     msg: WorkerChatMessage,
     isGroupChat: Boolean
 ) {
+    // Si el mensaje es una actividad, mostrar la tarjeta uniforme y limpia
+    val actData = remember(msg.message) { parseGroupActivityMessage(msg.message) }
+    if (actData != null) {
+        val (category, badge, desc) = actData
+        ActivityTimelineCard(
+            time = msg.time,
+            category = category,
+            portionLabel = badge,
+            description = desc,
+            authorName = if (isGroupChat) (if (msg.isOutgoing) "Tú" else msg.senderName) else null,
+            modifier = Modifier.fillMaxWidth()
+        )
+        return
+    }
+
     val context = LocalContext.current
     if (msg.isOutgoing) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.End
         ) {
-            Text(
-                text = msg.time,
-                fontSize = 10.sp,
-                color = TextMuted,
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-            )
-
-            Box(
+            Surface(
+                shape = RoundedCornerShape(
+                    topStart = 16.dp,
+                    topEnd = 16.dp,
+                    bottomStart = 16.dp,
+                    bottomEnd = 4.dp
+                ),
+                color = ChatOutgoingBubble,
+                shadowElevation = 1.dp,
                 modifier = Modifier
-                    .widthIn(max = 280.dp)
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = 16.dp,
-                            topEnd = 16.dp,
-                            bottomStart = 16.dp,
-                            bottomEnd = 4.dp
-                        )
-                    )
-                    .background(ChatOutgoingBubble)
+                    .widthIn(min = 70.dp, max = 300.dp)
                     .clickable(enabled = msg.fileUri != null) {
                         msg.fileUri?.let { uriString ->
                             try {
@@ -1151,9 +1166,10 @@ fun WorkerChatMessageBubble(
                             }
                         }
                     }
-                    .padding(horizontal = 14.dp, vertical = 10.dp)
             ) {
-                Column {
+                Column(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp)
+                ) {
                     if (msg.fileUri != null) {
                         if (msg.fileMimeType?.startsWith("image/") == true) {
                             AsyncImage(
@@ -1161,7 +1177,7 @@ fun WorkerChatMessageBubble(
                                 contentDescription = "Imagen adjunta",
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(200.dp)
+                                    .height(190.dp)
                                     .clip(RoundedCornerShape(8.dp))
                                     .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
                                 contentScale = ContentScale.Crop
@@ -1169,7 +1185,7 @@ fun WorkerChatMessageBubble(
                         } else {
                             Row(
                                 modifier = Modifier
-                                    .fillMaxWidth(0.8f)
+                                    .fillMaxWidth()
                                     .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -1185,23 +1201,41 @@ fun WorkerChatMessageBubble(
                                     fontSize = 12.sp,
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold,
-                                    maxLines = 1
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
                     }
+
                     if (msg.message.isNotBlank()) {
-                        val actData = remember(msg.message) { parseGroupActivityMessage(msg.message) }
-                        if (actData != null) {
-                            GroupActivityCardBubble(actData, isOutgoing = true)
-                        } else {
-                            Text(
-                                text = msg.message,
-                                fontSize = 13.5.sp,
-                                color = Color.White,
-                                lineHeight = 18.sp
-                            )
-                        }
+                        Text(
+                            text = msg.message,
+                            fontSize = 14.sp,
+                            color = Color.White,
+                            lineHeight = 19.sp
+                        )
+                    }
+
+                    // Hora de envío y estado de entrega integrado en la esquina inferior
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .padding(top = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = msg.time,
+                            fontSize = 10.5.sp,
+                            color = Color.White.copy(alpha = 0.75f)
+                        )
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Icon(
+                            imageVector = Icons.Default.DoneAll,
+                            contentDescription = "Entregado",
+                            tint = Color.White.copy(alpha = 0.85f),
+                            modifier = Modifier.size(13.dp)
+                        )
                     }
                 }
             }
@@ -1233,137 +1267,18 @@ fun WorkerChatMessageBubble(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Column(horizontalAlignment = Alignment.Start) {
-                    Text(
-                        text = msg.time,
-                        fontSize = 10.sp,
-                        color = TextMuted,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .widthIn(max = 280.dp)
-                            .clip(
-                                RoundedCornerShape(
-                                    topStart = 16.dp,
-                                    topEnd = 16.dp,
-                                    bottomStart = 4.dp,
-                                    bottomEnd = 16.dp
-                                )
-                            )
-                            .background(CardBackground)
-                            .border(
-                                width = 1.dp,
-                                color = BorderSubtle,
-                                shape = RoundedCornerShape(16.dp)
-                            )
-                            .clickable(enabled = msg.fileUri != null) {
-                                msg.fileUri?.let { uriString ->
-                                    try {
-                                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                                            setDataAndType(Uri.parse(uriString), msg.fileMimeType ?: "*/*")
-                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                        }
-                                        context.startActivity(intent)
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                    }
-                                }
-                            }
-                            .padding(horizontal = 14.dp, vertical = 10.dp)
-                    ) {
-                        Column {
-                            Text(
-                                text = msg.senderName,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(avatarColor),
-                                modifier = Modifier.padding(bottom = 3.dp)
-                            )
-                            if (msg.fileUri != null) {
-                                if (msg.fileMimeType?.startsWith("image/") == true) {
-                                    AsyncImage(
-                                        model = msg.fileUri,
-                                        contentDescription = "Imagen adjunta",
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(200.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                } else {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth(0.8f)
-                                            .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.InsertDriveFile,
-                                            contentDescription = "Archivo adjunto",
-                                            tint = BrandBlue,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = msg.fileName ?: "Archivo adjunto",
-                                            fontSize = 12.sp,
-                                            color = BrandBlue,
-                                            fontWeight = FontWeight.Bold,
-                                            maxLines = 1
-                                        )
-                                    }
-                                }
-                            }
-                            if (msg.message.isNotBlank()) {
-                                val actData = remember(msg.message) { parseGroupActivityMessage(msg.message) }
-                                if (actData != null) {
-                                    GroupActivityCardBubble(actData, isOutgoing = false)
-                                } else {
-                                    Text(
-                                        text = msg.message,
-                                        fontSize = 13.5.sp,
-                                        color = TextPrimary,
-                                        lineHeight = 18.sp
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            // Chat individual (1 a 1), exactamente igual a ChatBitacoraScreen
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text(
-                    text = msg.time,
-                    fontSize = 10.sp,
-                    color = TextMuted,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                )
-
-                Box(
+                Surface(
+                    shape = RoundedCornerShape(
+                        topStart = 16.dp,
+                        topEnd = 16.dp,
+                        bottomStart = 4.dp,
+                        bottomEnd = 16.dp
+                    ),
+                    color = CardBackground,
+                    border = BorderStroke(1.dp, BorderSubtle),
+                    shadowElevation = 1.dp,
                     modifier = Modifier
-                        .widthIn(max = 280.dp)
-                        .clip(
-                            RoundedCornerShape(
-                                topStart = 16.dp,
-                                topEnd = 16.dp,
-                                bottomStart = 4.dp,
-                                bottomEnd = 16.dp
-                            )
-                        )
-                        .background(CardBackground)
-                        .border(
-                            width = 1.dp,
-                            color = BorderSubtle,
-                            shape = RoundedCornerShape(16.dp)
-                        )
+                        .widthIn(min = 70.dp, max = 300.dp)
                         .clickable(enabled = msg.fileUri != null) {
                             msg.fileUri?.let { uriString ->
                                 try {
@@ -1377,9 +1292,18 @@ fun WorkerChatMessageBubble(
                                 }
                             }
                         }
-                        .padding(horizontal = 14.dp, vertical = 10.dp)
                 ) {
-                    Column {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp)
+                    ) {
+                        Text(
+                            text = msg.senderName,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(avatarColor),
+                            modifier = Modifier.padding(bottom = 3.dp)
+                        )
+
                         if (msg.fileUri != null) {
                             if (msg.fileMimeType?.startsWith("image/") == true) {
                                 AsyncImage(
@@ -1387,7 +1311,7 @@ fun WorkerChatMessageBubble(
                                     contentDescription = "Imagen adjunta",
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(200.dp)
+                                        .height(190.dp)
                                         .clip(RoundedCornerShape(8.dp))
                                         .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
                                     contentScale = ContentScale.Crop
@@ -1395,7 +1319,7 @@ fun WorkerChatMessageBubble(
                             } else {
                                 Row(
                                     modifier = Modifier
-                                        .fillMaxWidth(0.8f)
+                                        .fillMaxWidth()
                                         .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -1411,23 +1335,132 @@ fun WorkerChatMessageBubble(
                                         fontSize = 12.sp,
                                         color = BrandBlue,
                                         fontWeight = FontWeight.Bold,
-                                        maxLines = 1
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
                         }
+
                         if (msg.message.isNotBlank()) {
-                            val actData = remember(msg.message) { parseGroupActivityMessage(msg.message) }
-                            if (actData != null) {
-                                GroupActivityCardBubble(actData, isOutgoing = false)
-                            } else {
-                                Text(
-                                    text = msg.message,
-                                    fontSize = 13.5.sp,
-                                    color = TextPrimary,
-                                    lineHeight = 18.sp
-                                )
+                            Text(
+                                text = msg.message,
+                                fontSize = 14.sp,
+                                color = TextPrimary,
+                                lineHeight = 19.sp
+                            )
+                        }
+
+                        // Hora de recepción abajo a la derecha
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.End)
+                                .padding(top = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = msg.time,
+                                fontSize = 10.5.sp,
+                                color = TextMuted
+                            )
+                        }
+                    }
+                }
+            }
+        } else {
+            // Chat individual (1 a 1)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(
+                        topStart = 16.dp,
+                        topEnd = 16.dp,
+                        bottomStart = 4.dp,
+                        bottomEnd = 16.dp
+                    ),
+                    color = CardBackground,
+                    border = BorderStroke(1.dp, BorderSubtle),
+                    shadowElevation = 1.dp,
+                    modifier = Modifier
+                        .widthIn(min = 70.dp, max = 300.dp)
+                        .clickable(enabled = msg.fileUri != null) {
+                            msg.fileUri?.let { uriString ->
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                                        setDataAndType(Uri.parse(uriString), msg.fileMimeType ?: "*/*")
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
                             }
+                        }
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp)
+                    ) {
+                        if (msg.fileUri != null) {
+                            if (msg.fileMimeType?.startsWith("image/") == true) {
+                                AsyncImage(
+                                    model = msg.fileUri,
+                                    contentDescription = "Imagen adjunta",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(190.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.InsertDriveFile,
+                                        contentDescription = "Archivo adjunto",
+                                        tint = BrandBlue,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = msg.fileName ?: "Archivo adjunto",
+                                        fontSize = 12.sp,
+                                        color = BrandBlue,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        }
+
+                        if (msg.message.isNotBlank()) {
+                            Text(
+                                text = msg.message,
+                                fontSize = 14.sp,
+                                color = TextPrimary,
+                                lineHeight = 19.sp
+                            )
+                        }
+
+                        // Hora de recepción abajo a la derecha
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.End)
+                                .padding(top = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = msg.time,
+                                fontSize = 10.5.sp,
+                                color = TextMuted
+                            )
                         }
                     }
                 }
@@ -1457,95 +1490,283 @@ private fun getWorkerSenderInfo(senderId: String, senderName: String): Pair<Stri
     return Pair(initials, color)
 }
 
+data class ActivityCategoryStyle(
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val primaryColor: Color,
+    val containerColor: Color,
+    val borderColor: Color
+)
+
+fun getActivityCategoryStyle(category: String): ActivityCategoryStyle {
+    val cat = category.trim().lowercase()
+    return when {
+        cat.contains("aliment") || cat.contains("comida") || cat.contains("desayuno") -> ActivityCategoryStyle(
+            icon = Icons.Default.Restaurant,
+            primaryColor = Color(0xFFE65100),
+            containerColor = Color(0xFFFFF3E0),
+            borderColor = Color(0xFFFFCC80)
+        )
+        cat.contains("descanso") || cat.contains("siesta") || cat.contains("sueño") -> ActivityCategoryStyle(
+            icon = Icons.Default.NightlightRound,
+            primaryColor = Color(0xFF5E35B1),
+            containerColor = Color(0xFFEDE7F6),
+            borderColor = Color(0xFFD1C4E9)
+        )
+        cat.contains("excretor") || cat.contains("esfínter") || cat.contains("pañal") || cat.contains("pipi") || cat.contains("popo") -> ActivityCategoryStyle(
+            icon = Icons.Default.Wc,
+            primaryColor = Color(0xFF0288D1),
+            containerColor = Color(0xFFE1F5FE),
+            borderColor = Color(0xFFB3E5FC)
+        )
+        cat.contains("ánimo") || cat.contains("animo") || cat.contains("humor") || cat.contains("feliz") -> ActivityCategoryStyle(
+            icon = Icons.Default.Face,
+            primaryColor = Color(0xFF00897B),
+            containerColor = Color(0xFFE0F2F1),
+            borderColor = Color(0xFFB2DFDB)
+        )
+        cat.contains("accidente") -> ActivityCategoryStyle(
+            icon = Icons.Default.WarningAmber,
+            primaryColor = Color(0xFFD32F2F),
+            containerColor = Color(0xFFFFEBEE),
+            borderColor = Color(0xFFFFCDD2)
+        )
+        cat.contains("salud") || cat.contains("medic") || cat.contains("fiebre") -> ActivityCategoryStyle(
+            icon = Icons.Default.LocalHospital,
+            primaryColor = Color(0xFFC2185B),
+            containerColor = Color(0xFFFCE4EC),
+            borderColor = Color(0xFFF8BBD0)
+        )
+        cat.contains("pedagóg") || cat.contains("educat") || cat.contains("taller") -> ActivityCategoryStyle(
+            icon = Icons.AutoMirrored.Filled.MenuBook,
+            primaryColor = Color(0xFF6A1B9A),
+            containerColor = Color(0xFFF3E5F5),
+            borderColor = Color(0xFFE1BEE7)
+        )
+        else -> ActivityCategoryStyle(
+            icon = Icons.AutoMirrored.Filled.EventNote,
+            primaryColor = Color(0xFF1565C0),
+            containerColor = Color(0xFFE8F1FC),
+            borderColor = Color(0xFFBBDEFB)
+        )
+    }
+}
+
+fun formatActivityDescription(description: String, portionLabel: String): String {
+    val trimmedDesc = description.trim()
+    val trimmedBadge = portionLabel.trim()
+
+    if (trimmedBadge.isNotEmpty() && trimmedDesc.startsWith(trimmedBadge, ignoreCase = true)) {
+        val remaining = trimmedDesc.substring(trimmedBadge.length).trim().removePrefix(".").trim()
+        if (remaining.isNotEmpty()) {
+            return remaining
+        }
+    }
+    return trimmedDesc
+}
+
+fun formatActivityPreview(raw: String): String {
+    val trimmed = raw.trim()
+    val isYo = trimmed.startsWith("Yo: ")
+    val content = if (isYo) trimmed.removePrefix("Yo: ").trim() else trimmed
+    val parsed = parseGroupActivityMessage(content) ?: return raw
+    val (cat, badge, _) = parsed
+    val previewBody = if (badge.isNotBlank()) "📋 Actividad: $cat • $badge" else "📋 Actividad: $cat"
+    return if (isYo) "Yo: $previewBody" else previewBody
+}
+
 /**
  * Parsea un mensaje estructurado de actividad para grupos o chats.
  */
 fun parseGroupActivityMessage(raw: String): Triple<String, String, String>? {
-    if (!raw.startsWith("[ACTIVIDAD]")) return null
+    val trimmedRaw = raw.trim()
+    if (!trimmedRaw.startsWith("[ACTIVIDAD]", ignoreCase = true)) return null
     var cat = "Actividad"
     var badge = ""
     var desc = ""
-    val lines = raw.lines()
+    val lines = trimmedRaw.lines()
     for (line in lines) {
         val trimmed = line.trim()
         when {
-            trimmed.startsWith("Categoría:") -> cat = trimmed.removePrefix("Categoría:").trim()
-            trimmed.startsWith("Detalle:") -> badge = trimmed.removePrefix("Detalle:").trim()
-            trimmed.startsWith("Observaciones:") -> desc = trimmed.removePrefix("Observaciones:").trim()
+            trimmed.startsWith("Categoría:", ignoreCase = true) -> cat = trimmed.substringAfter(":").trim()
+            trimmed.startsWith("Categoria:", ignoreCase = true) -> cat = trimmed.substringAfter(":").trim()
+            trimmed.startsWith("Detalle:", ignoreCase = true) -> badge = trimmed.substringAfter(":").trim()
+            trimmed.startsWith("Observaciones:", ignoreCase = true) -> desc = trimmed.substringAfter(":").trim()
+            trimmed.startsWith("Observación:", ignoreCase = true) -> desc = trimmed.substringAfter(":").trim()
+            trimmed.startsWith("Descripción:", ignoreCase = true) -> desc = trimmed.substringAfter(":").trim()
+            trimmed.startsWith("Descripcion:", ignoreCase = true) -> desc = trimmed.substringAfter(":").trim()
         }
     }
     if (desc.isEmpty() && lines.size > 1) {
-        desc = lines.filter { !it.startsWith("[ACTIVIDAD]") && !it.startsWith("Categoría:") && !it.startsWith("Detalle:") }
-            .joinToString("\n").trim()
+        desc = lines.filter {
+            val l = it.trim().lowercase()
+            !l.startsWith("[actividad]") &&
+                !l.startsWith("categoría:") &&
+                !l.startsWith("categoria:") &&
+                !l.startsWith("detalle:")
+        }.joinToString("\n").trim()
     }
     return Triple(cat, badge, desc)
 }
 
 /**
- * Tarjeta visual estilizada de actividad renderizada dentro de la burbuja del chat grupal.
+ * Tarjeta visual estilizada y uniforme de actividad.
+ * Se utiliza de forma idéntica en el chat individual del menor y en los chats grupales,
+ * asegurando un diseño limpio, profesional y consistente en toda la aplicación.
  */
 @Composable
-fun GroupActivityCardBubble(
-    activityData: Triple<String, String, String>,
-    isOutgoing: Boolean
+fun ActivityTimelineCard(
+    time: String,
+    category: String,
+    portionLabel: String,
+    description: String,
+    authorName: String? = null,
+    modifier: Modifier = Modifier
 ) {
-    val (category, badge, desc) = activityData
-    val (catIcon, catColor) = when (category) {
-        "Alimentación" -> Pair(Icons.Default.Restaurant, Color(0xFFE65100))
-        "Descanso", "Siesta" -> Pair(Icons.Default.NightlightRound, Color(0xFF5E35B1))
-        "Funciones Excretoras", "Excretoras" -> Pair(Icons.Default.Wc, Color(0xFF0288D1))
-        "Estado de Ánimo", "Ánimo" -> Pair(Icons.Default.Face, Color(0xFF00897B))
-        "Salud" -> Pair(Icons.Default.LocalHospital, Color(0xFFC2185B))
-        else -> Pair(Icons.AutoMirrored.Filled.EventNote, Color(0xFF1E88E5))
+    val style = remember(category) { getActivityCategoryStyle(category) }
+    val cleanDescription = remember(description, portionLabel) {
+        formatActivityDescription(description, portionLabel)
     }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        contentAlignment = Alignment.Center
+    ) {
         Surface(
-            shape = RoundedCornerShape(10.dp),
-            color = if (isOutgoing) Color.White.copy(alpha = 0.22f) else BrandBlueContainer,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 6.dp)
+            shape = RoundedCornerShape(16.dp),
+            color = CardBackground,
+            border = BorderStroke(1.dp, BorderSubtle),
+            shadowElevation = 1.dp,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp)
             ) {
-                Icon(
-                    imageVector = catIcon,
-                    contentDescription = null,
-                    tint = if (isOutgoing) Color.White else catColor,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = category,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isOutgoing) Color.White else catColor
-                )
-                if (badge.isNotBlank()) {
-                    Spacer(modifier = Modifier.width(6.dp))
+                // Header: Icono + Categoría / Tiempo + Badge
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Contenedor suave con color temático según la categoría
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(style.containerColor)
+                            .border(1.dp, style.borderColor.copy(alpha = 0.5f), RoundedCornerShape(10.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = style.icon,
+                            contentDescription = null,
+                            tint = style.primaryColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = category,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = time,
+                                fontSize = 11.5.sp,
+                                color = TextMuted
+                            )
+                            if (!authorName.isNullOrBlank()) {
+                                Text(
+                                    text = "• $authorName",
+                                    fontSize = 11.5.sp,
+                                    color = TextSecondary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+
+                    if (portionLabel.isNotBlank()) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = style.containerColor,
+                            border = BorderStroke(1.dp, style.borderColor.copy(alpha = 0.6f))
+                        ) {
+                            Text(
+                                text = portionLabel,
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = style.primaryColor,
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+
+                if (cleanDescription.isNotBlank()) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(top = 10.dp, bottom = 8.dp),
+                        thickness = 0.8.dp,
+                        color = BorderSubtle.copy(alpha = 0.7f)
+                    )
+
                     Text(
-                        text = "• $badge",
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = if (isOutgoing) Color.White.copy(alpha = 0.9f) else TextSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        text = cleanDescription,
+                        fontSize = 13.sp,
+                        color = TextPrimary,
+                        lineHeight = 18.5.sp
                     )
                 }
             }
         }
-        if (desc.isNotBlank()) {
-            Text(
-                text = desc,
-                fontSize = 13.5.sp,
-                color = if (isOutgoing) Color.White else TextPrimary,
-                lineHeight = 18.sp
-            )
-        }
     }
+}
+
+@Composable
+fun ActivityTimelineCard(
+    act: TimelineItem.ActivityCard,
+    modifier: Modifier = Modifier
+) {
+    ActivityTimelineCard(
+        time = act.time,
+        category = act.category,
+        portionLabel = act.portionLabel,
+        description = act.description,
+        modifier = modifier
+    )
+}
+
+/**
+ * Tarjeta visual estilizada de actividad mantenida para compatibilidad.
+ */
+@Composable
+fun GroupActivityCardBubble(
+    activityData: Triple<String, String, String>,
+    isOutgoing: Boolean = false
+) {
+    val (category, badge, desc) = activityData
+    ActivityTimelineCard(
+        time = "Ahora",
+        category = category,
+        portionLabel = badge,
+        description = desc
+    )
 }
 
 /**

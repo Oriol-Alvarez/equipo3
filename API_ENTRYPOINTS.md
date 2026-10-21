@@ -257,18 +257,18 @@
     "childId": "mateo_garcia",
     "birthDate": "14/04/2024",
     "enrollmentDate": "01/09/2025",
-    "studentId": "EST-MATE-2026",
+    "studentId": "CURP-GARM240414HDFRLA01",
     "bloodType": "O+",
     "pediatrician": "Dra. Sofía Morales",
-    "pediatricianPhone": "+52 555 111 222",
-    "emergencyPhone": "+52 555 333 444",
+    "pediatricianPhone": "+52 55 1234 5678",
+    "emergencyPhone": "+52 55 9876 5432",
     "motherName": "María López Fernández",
-    "motherPhone": "+52 555 123 456",
+    "motherPhone": "+52 55 1234 5678",
     "fatherName": "Carlos García Ramos",
-    "fatherPhone": "+52 555 987 654",
+    "fatherPhone": "+52 55 3333 4444",
     "authorizedPickups": [
-      "Rosa Fernández (Abuela materna) - DNI ***4521",
-      "Elena García (Tía paterna) - DNI ***9812"
+      "Rosa Fernández (Abuela materna) - CURP: FERA750312MDFRNS01 • Tel: +52 55 4444 5555",
+      "Carlos García Ramos (Padre) - CURP: GARC820715HDFRRL02 • Tel: +52 55 3333 4444"
     ],
     "medicalNotes": "Alergia a Nuez (No Certificado). Se requiere extremo cuidado en meriendas.",
     "generalNotes": "Muy sociable y participativo. Se adapta muy bien a las rutinas.",
@@ -286,13 +286,13 @@
   ```json
   {
     "pediatrician": "Dra. Sofía Morales",
-    "pediatricianPhone": "+52 555 111 222",
+    "pediatricianPhone": "+52 55 1234 5678",
     "medicalNotes": "Alergia a Nuez certificada.",
     "habitsAndPedagogicalNotes": "Duerme con su mantita de apego.",
-    "emergencyPhone": "+52 555 333 444",
+    "emergencyPhone": "+52 55 9876 5432",
     "authorizedPickups": [
-      "Rosa Fernández (Abuela materna) - DNI ***4521",
-      "Elena García (Tía paterna) - DNI ***9812"
+      "Rosa Fernández (Abuela materna) - CURP: FERA750312MDFRNS01 • Tel: +52 55 4444 5555",
+      "Carlos García Ramos (Padre) - CURP: GARC820715HDFRRL02 • Tel: +52 55 3333 4444"
     ],
     "medicalCertificateUri": "https://cdn.sonrisas.edu/certificates/cert_mateo_2026.pdf",
     "medicalCertificateName": "Certificado_Medico_Mateo.pdf",

@@ -1,6 +1,7 @@
 package com.example.etapa1.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -46,7 +47,9 @@ import androidx.compose.material3.FloatingActionButton
 import com.example.etapa1.model.WorkerChat
 import com.example.etapa1.model.WorkerChatMessage
 import com.example.etapa1.ui.components.WorkerChatMessageBubble
-import com.example.etapa1.ui.components.ShareGroupActivityDialog
+import com.example.etapa1.ui.components.ActivityTimelineCard
+import com.example.etapa1.ui.components.parseGroupActivityMessage
+import androidx.compose.material.icons.filled.DoneAll
 import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -58,6 +61,7 @@ import androidx.core.content.FileProvider
 import java.io.File
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -160,7 +164,7 @@ fun ChatBitacoraScreen(
 ) {
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
-    var showShareActivityDialog by remember { mutableStateOf(false) }
+    val isGroupChat = workerChat?.let { it.isGroup || it.isGlobal } ?: false
     
     var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
     var selectedFileName by remember { mutableStateOf<String?>(null) }
@@ -214,7 +218,9 @@ fun ChatBitacoraScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    if (isWorkerRole && child != null) {
+                    val isGroupChat = workerChat?.let { it.isGroup || it.isGlobal } ?: false
+                    val canAddActivity = isWorkerRole && (child != null || isGroupChat)
+                    if (canAddActivity) {
                         Button(
                             onClick = onNewActivityClick,
                             colors = ButtonDefaults.buttonColors(
@@ -316,17 +322,6 @@ fun ChatBitacoraScreen(
                                 tint = TextSecondary,
                                 modifier = Modifier.size(24.dp)
                             )
-                        }
-
-                        if (canShareActivity) {
-                            IconButton(onClick = { showShareActivityDialog = true }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.EventNote,
-                                    contentDescription = "Compartir actividad",
-                                    tint = BrandBlue,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
                         }
 
                         OutlinedTextField(
@@ -444,19 +439,13 @@ fun ChatBitacoraScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
 
                                 Column {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Text(
-                                            text = workerChat.title,
-                                            fontSize = 15.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = TextPrimary,
-                                            maxLines = 1
-                                        )
-                                        com.example.etapa1.ui.components.ChipConexion(estado = conexionEstado)
-                                    }
+                                    Text(
+                                        text = workerChat.title,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary,
+                                        maxLines = 1
+                                    )
                                     Text(
                                         text = workerChat.subtitle,
                                         fontSize = 12.sp,
@@ -500,18 +489,12 @@ fun ChatBitacoraScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
 
                                 Column {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Text(
-                                            text = if (!isWorkerRole) educatorName else child.shortName,
-                                            fontSize = 15.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = TextPrimary
-                                        )
-                                        com.example.etapa1.ui.components.ChipConexion(estado = conexionEstado)
-                                    }
+                                    Text(
+                                        text = if (!isWorkerRole) educatorName else child.shortName,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary
+                                    )
                                     Text(
                                         text = if (!isWorkerRole) {
                                             "$educatorRole • $roomName"
@@ -537,20 +520,22 @@ fun ChatBitacoraScreen(
                                 )
                             }
                         }
-                        IconButton(onClick = {
-                            if (isWorkerRole && child != null) {
-                                showCallDialog = true
-                            } else {
-                                val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:+34912334455"))
-                                context.startActivity(intent)
+                        if (!isGroupChat) {
+                            IconButton(onClick = {
+                                if (isWorkerRole && child != null) {
+                                    showCallDialog = true
+                                } else {
+                                    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:+525555123456"))
+                                    context.startActivity(intent)
+                                }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Phone,
+                                    contentDescription = if (isWorkerRole && child != null) "Llamar a familiares" else "Llamar a educador",
+                                    tint = AlertRed,
+                                    modifier = Modifier.size(22.dp)
+                                )
                             }
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Phone,
-                                contentDescription = if (isWorkerRole && child != null) "Llamar a familiares" else "Llamar al centro",
-                                tint = AlertRed,
-                                modifier = Modifier.size(22.dp)
-                            )
                         }
                     }
                 }
@@ -604,20 +589,6 @@ fun ChatBitacoraScreen(
         }
     }
     
-    if (showShareActivityDialog && canShareActivity) {
-        ShareGroupActivityDialog(
-            onDismiss = { showShareActivityDialog = false },
-            onSendActivity = { category, badge, description ->
-                if (onSendActivity != null) {
-                    onSendActivity(category, badge, description)
-                } else {
-                    val formatted = "[ACTIVIDAD]\nCategoría: $category\nDetalle: $badge\nObservaciones: $description"
-                    onSendMessage(formatted, null, null, null)
-                }
-            }
-        )
-    }
-
     if (showCallDialog && child != null) {
         ParentCallDialog(
             child = child,
@@ -900,44 +871,44 @@ private fun TimelineChip(chip: TimelineItem.EventChip) {
 
 @Composable
 private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boolean = true) {
+    val actData = remember(msg.message) { parseGroupActivityMessage(msg.message) }
     val isOutgoing = if (msg.senderRole != null) {
         if (isWorkerRole) msg.senderRole == com.example.etapa1.model.UserRole.EDUCADORA
         else msg.senderRole == com.example.etapa1.model.UserRole.FAMILIAR
     } else {
         if (isWorkerRole) msg.isOutgoing else !msg.isOutgoing
     }
+
+    if (actData != null) {
+        val (category, badge, desc) = actData
+        ActivityTimelineCard(
+            time = msg.time,
+            category = category,
+            portionLabel = badge,
+            description = desc,
+            authorName = if (isWorkerRole) (if (isOutgoing) "Tú" else "Familiar") else (if (isOutgoing) "Tú" else "Educadora"),
+            modifier = Modifier.fillMaxWidth()
+        )
+        return
+    }
+
     val context = LocalContext.current
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = if (isOutgoing) Alignment.End else Alignment.Start
     ) {
-        Text(
-            text = msg.time,
-            fontSize = 10.sp,
-            color = TextMuted,
-            modifier = Modifier.padding(
-                horizontal = 6.dp,
-                vertical = 2.dp
-            )
-        )
-
-        Box(
+        Surface(
+            shape = RoundedCornerShape(
+                topStart = 16.dp,
+                topEnd = 16.dp,
+                bottomStart = if (isOutgoing) 16.dp else 4.dp,
+                bottomEnd = if (isOutgoing) 4.dp else 16.dp
+            ),
+            color = if (isOutgoing) ChatOutgoingBubble else CardBackground,
+            border = if (isOutgoing) null else BorderStroke(1.dp, BorderSubtle),
+            shadowElevation = 1.dp,
             modifier = Modifier
-                .widthIn(max = 280.dp)
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 16.dp,
-                        bottomStart = if (isOutgoing) 16.dp else 4.dp,
-                        bottomEnd = if (isOutgoing) 4.dp else 16.dp
-                    )
-                )
-                .background(if (isOutgoing) ChatOutgoingBubble else CardBackground)
-                .border(
-                    width = if (isOutgoing) 0.dp else 1.dp,
-                    color = BorderSubtle,
-                    shape = RoundedCornerShape(16.dp)
-                )
+                .widthIn(min = 70.dp, max = 300.dp)
                 .clickable(enabled = msg.fileUri != null) {
                     msg.fileUri?.let { uriString ->
                         try {
@@ -951,9 +922,10 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boole
                         }
                     }
                 }
-                .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
-            Column {
+            Column(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp)
+            ) {
                 if (msg.fileUri != null) {
                     if (msg.fileMimeType?.startsWith("image/") == true) {
                         AsyncImage(
@@ -961,7 +933,7 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boole
                             contentDescription = "Imagen adjunta",
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(200.dp)
+                                .height(190.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
                             contentScale = ContentScale.Crop
@@ -969,7 +941,7 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boole
                     } else {
                         Row(
                             modifier = Modifier
-                                .fillMaxWidth(0.8f)
+                                .fillMaxWidth()
                                 .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -985,102 +957,44 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boole
                                 fontSize = 12.sp,
                                 color = if (isOutgoing) Color.White else BrandBlue,
                                 fontWeight = FontWeight.Bold,
-                                maxLines = 1
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
                 }
+
                 if (msg.message.isNotBlank()) {
                     Text(
                         text = msg.message,
-                        fontSize = 13.5.sp,
+                        fontSize = 14.sp,
                         color = if (isOutgoing) Color.White else TextPrimary,
-                        lineHeight = 18.sp
+                        lineHeight = 19.sp
                     )
                 }
-            }
-        }
-    }
-}
 
-@Composable
-private fun ActivityTimelineCard(act: TimelineItem.ActivityCard) {
-    val (categoryIcon, categoryTint) = when (act.category) {
-        "Alimentación" -> Pair(Icons.Default.Restaurant, Color(0xFFE65100))
-        "Descanso", "Siesta" -> Pair(Icons.Default.NightlightRound, Color(0xFF5E35B1))
-        "Funciones Excretoras" -> Pair(Icons.Default.Wc, Color(0xFF0288D1))
-        "Estado de Ánimo" -> Pair(Icons.Default.Face, Color(0xFF00897B))
-        "Accidentes" -> Pair(Icons.Default.WarningAmber, Color(0xFFD32F2F))
-        "Salud" -> Pair(Icons.Default.LocalHospital, Color(0xFFC2185B))
-        else -> Pair(Icons.AutoMirrored.Filled.EventNote, Color(0xFF1E88E5))
-    }
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = act.time,
-            fontSize = 11.sp,
-            color = TextMuted,
-            modifier = Modifier.padding(bottom = 3.dp)
-        )
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFFEFF5FD))
-                .border(1.dp, Color(0xFFD3E4F9), RoundedCornerShape(16.dp))
-                .padding(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top
-            ) {
-                // Etiqueta lateral izquierda
-                Box(
+                // Hora de envío y estado de entrega integrado abajo a la derecha
+                Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(BrandBlueContainer)
-                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                        .align(Alignment.End)
+                        .padding(top = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = msg.time,
+                        fontSize = 10.5.sp,
+                        color = if (isOutgoing) Color.White.copy(alpha = 0.75f) else TextMuted
+                    )
+                    if (isOutgoing) {
+                        Spacer(modifier = Modifier.width(3.dp))
                         Icon(
-                            imageVector = categoryIcon,
-                            contentDescription = null,
-                            tint = categoryTint,
-                            modifier = Modifier.size(15.dp)
+                            imageVector = Icons.Default.DoneAll,
+                            contentDescription = "Entregado",
+                            tint = Color.White.copy(alpha = 0.85f),
+                            modifier = Modifier.size(13.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Column {
-                            Text(
-                                text = act.category,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = BrandBlue
-                            )
-                            if (act.portionLabel.isNotBlank()) {
-                                Text(
-                                    text = act.portionLabel,
-                                    fontSize = 10.sp,
-                                    color = TextSecondary
-                                )
-                            }
-                        }
                     }
                 }
-
-                Spacer(modifier = Modifier.width(10.dp))
-
-                // Descripción de la actividad
-                Text(
-                    text = act.description,
-                    fontSize = 12.5.sp,
-                    color = TextPrimary,
-                    lineHeight = 17.sp,
-                    modifier = Modifier.weight(1f)
-                )
             }
         }
     }

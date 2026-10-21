@@ -27,5 +27,10 @@ class Settings(BaseSettings):
     # Vacío = no se mandan notificaciones (todo lo demás funciona igual).
     firebase_credentials: str = ""
 
+    # Generación opcional de resúmenes con IA (Google Gemini u OpenAI)
+    # Si están vacías, se utiliza el motor determinista tradicional sin costo ni llamadas externas.
+    gemini_api_key: str = ""
+    openai_api_key: str = ""
+
 
 settings = Settings()

@@ -280,13 +280,12 @@ fun MessagesContent(
                     }
                 }
 
-                // Centro: Título con estado de conexión
-                Row(
+                // Centro: Título de la pantalla
+                Box(
                     modifier = Modifier
                         .weight(1f)
                         .padding(horizontal = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "Mensajes",
@@ -297,8 +296,6 @@ fun MessagesContent(
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    com.example.etapa1.ui.components.ChipConexion(estado = uiState.conexionEstado)
                 }
 
                 // Botón arriba derecha: Buscar para trabajadora, o ActiveChildSwitcher para familiar

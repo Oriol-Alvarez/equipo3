@@ -46,6 +46,10 @@ class ChildDetailViewModel(
 
     fun getFullProfile(child: Child): ChildFullProfile = childRepository.getChildFullProfile(child)
 
+    fun updateChildProfile(childId: String, updatedProfile: ChildFullProfile) {
+        childRepository.updateChildFullProfile(childId, updatedProfile)
+    }
+
     fun getWeeklySummaries(child: Child): List<WeeklySummary> = childRepository.getWeeklySummariesForChild(child)
 
     fun getDailyBitacoras(child: Child): List<DailyBitacora> = childRepository.getDailyBitacorasForChild(child)

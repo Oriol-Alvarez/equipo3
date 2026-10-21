@@ -30,6 +30,7 @@ data class ChildFullProfileDto(
 
 @Serializable
 data class ChildProfileUpdateDto(
+    val bloodType: String? = null,
     val pediatrician: String? = null,
     val pediatricianPhone: String? = null,
     val medicalNotes: String? = null,

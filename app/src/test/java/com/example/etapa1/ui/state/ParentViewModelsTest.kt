@@ -105,30 +105,32 @@ class ParentViewModelsTest {
         val child = MockDataRepository.mateoGarcia
         val viewModel = ParentHomeViewModel(childRepository, child)
 
-        val newPickups = listOf("Laura García (Tía) - DNI: 12345678A", "Manuel García (Abuelo) - DNI: 87654321B")
+        val newPickups = listOf("Laura García (Tía) - CURP: GALA880312MDFRLA01 • Tel: +52 55 9999 8888", "Manuel García (Abuelo) - CURP: GARM550920HDFRRN02 • Tel: +52 55 7777 5555")
         viewModel.updateChildProfile(
             pediatrician = "Dr. Carlos Valdés",
-            pediatricianPhone = "+34 600 999 888",
+            pediatricianPhone = "+52 55 9999 8888",
             medicalNotes = "Control de intolerancia a la lactosa superado. Sin medicación actual.",
             habitsAndPedagogicalNotes = "Le gusta dormir con música suave. Muy autónomo comiendo.",
-            emergencyPhone = "+34 611 777 555",
+            emergencyPhone = "+52 55 7777 5555",
             emergencyPhoneRelation = "Abuela materna",
             authorizedPickups = newPickups,
             medicalCertificateUri = "content://media/external/file/101",
             medicalCertificateName = "Certificado_Pediatrico_2026.pdf",
-            medicalCertificateDate = "Certificado el 30/09/2026"
+            medicalCertificateDate = "Certificado el 30/09/2026",
+            bloodType = "O+"
         )
 
         // Verificar StateFlow de ViewModel
         val updatedProfile = viewModel.uiState.value.fullProfile
         assertEquals("Dr. Carlos Valdés", updatedProfile.pediatrician)
-        assertEquals("+34 600 999 888", updatedProfile.pediatricianPhone)
+        assertEquals("+52 55 9999 8888", updatedProfile.pediatricianPhone)
         assertEquals("Control de intolerancia a la lactosa superado. Sin medicación actual.", updatedProfile.medicalNotes)
         assertEquals("Le gusta dormir con música suave. Muy autónomo comiendo.", updatedProfile.generalNotes)
-        assertEquals("+34 611 777 555", updatedProfile.emergencyPhone)
+        assertEquals("+52 55 7777 5555", updatedProfile.emergencyPhone)
         assertEquals("Abuela materna", updatedProfile.emergencyPhoneRelation)
+        assertEquals("O+", updatedProfile.bloodType)
         assertEquals(2, updatedProfile.authorizedPickups.size)
-        assertEquals("Laura García (Tía) - DNI: 12345678A", updatedProfile.authorizedPickups[0])
+        assertEquals("Laura García (Tía) - CURP: GALA880312MDFRLA01 • Tel: +52 55 9999 8888", updatedProfile.authorizedPickups[0])
         assertEquals("content://media/external/file/101", updatedProfile.medicalCertificateUri)
         assertEquals("Certificado_Pediatrico_2026.pdf", updatedProfile.medicalCertificateName)
         assertEquals("Certificado el 30/09/2026", updatedProfile.medicalCertificateDate)
@@ -137,8 +139,9 @@ class ParentViewModelsTest {
         val repoProfile = childRepository.getChildFullProfile(child)
         assertEquals("Dr. Carlos Valdés", repoProfile.pediatrician)
         assertEquals("Certificado_Pediatrico_2026.pdf", repoProfile.medicalCertificateName)
-        assertEquals("+34 611 777 555", repoProfile.emergencyPhone)
+        assertEquals("+52 55 7777 5555", repoProfile.emergencyPhone)
         assertEquals("Abuela materna", repoProfile.emergencyPhoneRelation)
+        assertEquals("O+", repoProfile.bloodType)
         assertEquals(newPickups, repoProfile.authorizedPickups)
     }
 

@@ -160,6 +160,7 @@ class NetworkChildRepositoryImpl(
             val guardado = api.updateChildFullProfile(
                 childId,
                 ChildProfileUpdateDto(
+                    bloodType = profile.bloodType,
                     pediatrician = profile.pediatrician,
                     pediatricianPhone = profile.pediatricianPhone,
                     medicalNotes = profile.medicalNotes,

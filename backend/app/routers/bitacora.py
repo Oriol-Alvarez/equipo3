@@ -1,5 +1,6 @@
 """Módulo 5: Bitácora Diaria, Línea de Tiempo y Actividades (/children/{id}/...)"""
 
+import json
 import uuid
 from datetime import datetime
 from typing import Any
@@ -14,8 +15,8 @@ from ..notificaciones_push import familias_del_nino, notificar
 from ..deps import Identidad, requiere_educadora, usuario_actual
 from ..errors import ApiError
 from ..horario import hoy
-from ..resumenes import historial_diario
-from ..models import Activity, AttendanceRecord, BitacoraMessage, Child, TimelineEvent
+from ..resumenes import a_fecha, _json, historial_diario
+from ..models import Activity, AttendanceRecord, BitacoraMessage, Child, DailyLog, TimelineEvent
 from ..schemas import (
     BitacoraDaySummary,
     NewActivityRequest,
@@ -192,6 +193,55 @@ def registrar_actividad(
         excretory_function=body.excretoryFunction,
     )
     db.add(actividad)
+
+    # Sincronización con la estadía del registro diario (DailyLog)
+    fecha_dt = a_fecha(fecha_actividad)
+    if fecha_dt:
+        fecha_iso = fecha_dt.isoformat()
+        daily_log = db.scalar(
+            select(DailyLog).where(DailyLog.child_id == childId, DailyLog.date == fecha_iso)
+        )
+        if not daily_log:
+            daily_log = DailyLog(child_id=childId, date=fecha_iso)
+            db.add(daily_log)
+
+        estadia_dict = _json(daily_log.estadia)
+        cat = (body.category or "").upper()
+        if "ALIMENTACION" in cat:
+            opt = body.consumptionOption or body.portionOption
+            if opt:
+                m_type = (body.mealType or "").upper()
+                if "DESAYUNO" in m_type:
+                    estadia_dict["breakfast"] = opt
+                elif "COLACION" in m_type or "SNACK" in m_type:
+                    estadia_dict["snack"] = opt
+                elif "COMIDA" in m_type or "LUNCH" in m_type:
+                    estadia_dict["lunch"] = opt
+                elif not estadia_dict.get("breakfast"):
+                    estadia_dict["breakfast"] = opt
+            if body.description:
+                prev = estadia_dict.get("foodNotes", "")
+                estadia_dict["foodNotes"] = f"{prev}; {body.description}".strip("; ")
+        elif "DESCANSO" in cat or "SIESTA" in cat:
+            estadia_dict["slept"] = True
+            if body.napMinutes:
+                estadia_dict["napMinutes"] = (estadia_dict.get("napMinutes") or 0) + body.napMinutes
+            if body.description:
+                prev = estadia_dict.get("napComments", "")
+                estadia_dict["napComments"] = f"{prev}; {body.description}".strip("; ")
+        elif "ANIMO" in cat:
+            if body.moodState:
+                estadia_dict["mood"] = body.moodState
+            estadia_dict["participated"] = True
+        elif "ACCIDENTE" in cat:
+            estadia_dict["hadAccident"] = True
+            estadia_dict["accidentDescription"] = body.description
+        elif "SALUD" in cat:
+            estadia_dict["hadHealthIssue"] = True
+            estadia_dict["healthIssue"] = body.description
+
+        daily_log.estadia = json.dumps(estadia_dict, ensure_ascii=False)
+
     db.commit()
     notificar(db, familias_del_nino(db, childId), f"Nueva actividad de {alumno.short_name}",
               f"{body.category}: {body.description}", {"tipo": "actividad", "childId": childId})

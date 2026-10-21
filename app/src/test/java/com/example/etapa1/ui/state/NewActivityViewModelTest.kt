@@ -147,4 +147,27 @@ class NewActivityViewModelTest {
 
         assertNull(parsed)
     }
+
+    @Test
+    fun formatActivityPreview_formatsActivityCorrectly() {
+        val raw = "[ACTIVIDAD]\nCategoría: Alimentación\nDetalle: Desayuno: Comió todo\nObservaciones: Le gustó el puré"
+        val preview = com.example.etapa1.ui.components.formatActivityPreview(raw)
+        assertEquals("📋 Actividad: Alimentación • Desayuno: Comió todo", preview)
+
+        val rawWithYo = "Yo: [ACTIVIDAD]\nCategoría: Descanso\nDetalle: 60 min\nObservaciones: Durmió bien"
+        val previewWithYo = com.example.etapa1.ui.components.formatActivityPreview(rawWithYo)
+        assertEquals("Yo: 📋 Actividad: Descanso • 60 min", previewWithYo)
+    }
+
+    @Test
+    fun formatActivityDescription_cleansDuplicatedBadgePrefix() {
+        val badge = "Desayuno: Comió todo"
+        val descWithRepeat = "Desayuno: Comió todo. Observaciones: Le gustó el puré"
+        val cleaned = com.example.etapa1.ui.components.formatActivityDescription(descWithRepeat, badge)
+        assertEquals("Observaciones: Le gustó el puré", cleaned)
+
+        val descNormal = "El alumno participó activamente"
+        val cleanedNormal = com.example.etapa1.ui.components.formatActivityDescription(descNormal, badge)
+        assertEquals("El alumno participó activamente", cleanedNormal)
+    }
 }

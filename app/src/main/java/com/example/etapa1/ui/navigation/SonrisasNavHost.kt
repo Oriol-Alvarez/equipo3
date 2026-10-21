@@ -245,12 +245,6 @@ fun SonrisasNavHost(
             }
 
             composable(Route.CHAT_BITACORA) {
-                androidx.compose.runtime.DisposableEffect(Unit) {
-                    onDispose {
-                        selectedWorkerChat = null
-                    }
-                }
-
                 val chatElegido = selectedWorkerChat
                 if (chatElegido != null) {
                     // Chat del personal, grupo de familias o chat global
@@ -275,6 +269,9 @@ fun SonrisasNavHost(
                         onBack = {
                             selectedWorkerChat = null
                             nav.popBackStack()
+                        },
+                        onNewActivityClick = {
+                            nav.navigate(Route.NEW_ACTIVITY)
                         },
                         onSendMessage = { text, uri, name, mime ->
                             if (isFamilyGroup) {
@@ -320,17 +317,65 @@ fun SonrisasNavHost(
 
             composable(Route.NEW_ACTIVITY) {
                 val vm: NewActivityViewModel = viewModel(factory = AppViewModelProvider.Factory)
+                val chatElegido = selectedWorkerChat
+                val isGroupChat = chatElegido != null && (chatElegido.isGroup || chatElegido.isGlobal)
+
                 // Solo el personal registra actividades
-                if (isFamiliar || selectedChild.id.isEmpty()) {
+                if (isFamiliar || (!isGroupChat && selectedChild.id.isEmpty())) {
                     LaunchedEffect(Unit) { nav.popBackStack() }
                     return@composable
                 }
-                NewActivityScreen(
-                    viewModel = vm,
-                    child = selectedChild,
-                    onBack = { nav.popBackStack() },
-                    onSubmitActivity = { _, _, _, _ -> nav.popBackStack() }
-                )
+
+                if (isGroupChat && chatElegido != null) {
+                    val targetGroup = app?.container?.familyGroupsRepository?.groups?.value?.find { it.id == chatElegido.id }
+                    val targetChildIds: List<String> = targetGroup?.memberChildIds?.takeIf { it.isNotEmpty() }
+                        ?: app?.container?.childRepository?.childrenOfRoom?.value?.map { it.id }?.takeIf { it.isNotEmpty() }
+                        ?: com.example.etapa1.model.MockDataRepository.childrenSala1A.map { it.id }
+
+                    val groupChild = Child(
+                        id = chatElegido.id,
+                        fullName = chatElegido.title,
+                        shortName = chatElegido.title,
+                        ageText = if (targetChildIds.size == 1) "1 alumno" else "${targetChildIds.size} alumnos",
+                        roomText = "Grupo",
+                        groupText = "Actividad grupal",
+                        statusText = "Activo",
+                        isPresent = true,
+                        avatarInitials = chatElegido.avatarInitials,
+                        avatarBgColor = chatElegido.avatarBgColor
+                    )
+
+                    NewActivityScreen(
+                        viewModel = vm,
+                        child = groupChild,
+                        targetChildIds = targetChildIds,
+                        groupId = chatElegido.id,
+                        onBack = { nav.popBackStack() },
+                        onSubmitActivity = { cat, badge, desc, _ ->
+                            val formattedText = "[ACTIVIDAD]\nCategoría: ${cat.label}\nDetalle: $badge\nObservaciones: $desc"
+                            val isFamilyGroup = familyGroupsState.groups.any { it.id == chatElegido.id }
+                            if (isFamilyGroup) {
+                                familyGroupsVm.sendMessage(
+                                    groupId = chatElegido.id,
+                                    text = formattedText,
+                                    fileUri = null,
+                                    fileName = null,
+                                    fileMimeType = null
+                                )
+                            } else {
+                                messagesViewModel.sendMessage(chatElegido.id, formattedText)
+                            }
+                            nav.popBackStack()
+                        }
+                    )
+                } else {
+                    NewActivityScreen(
+                        viewModel = vm,
+                        child = selectedChild,
+                        onBack = { nav.popBackStack() },
+                        onSubmitActivity = { _, _, _, _ -> nav.popBackStack() }
+                    )
+                }
             }
 
             composable(Route.MESSAGES) {
@@ -513,12 +558,20 @@ fun SonrisasNavHost(
             }
         }
 
-        if (app != null && !app.container.useMocks && estadoConexion != EstadoConexion.Conectado) {
+        if (estadoConexion != EstadoConexion.Conectado && app?.container?.useMocks != true) {
+            val bottomOffset = if (showBottomBar) {
+                paddingValues.calculateBottomPadding() + 8.dp
+            } else if (currentRoute == Route.CHAT_BITACORA) {
+                72.dp
+            } else {
+                16.dp
+            }
             ChipConexion(
                 estado = estadoConexion,
+                compact = true,
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = paddingValues.calculateTopPadding() + 8.dp, end = 12.dp)
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = bottomOffset)
             )
         }
     }

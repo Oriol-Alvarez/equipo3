@@ -147,6 +147,12 @@ enum class MealType(val label: String) {
     COMIDA("Comida")
 }
 
+enum class ExcretionType(val label: String, val iconEmoji: String) {
+    PIPI("Pipí", "💧"),
+    POPO("Popó", "🧻"),
+    AMBOS("Pipí y Popó", "🚻")
+}
+
 enum class FoodConsumptionOption(val label: String) {
     NADA("Nada"),
     POCO("Poco"),
@@ -156,7 +162,7 @@ enum class FoodConsumptionOption(val label: String) {
 
 enum class MoodState(val label: String, val emoji: String) {
     FELIZ("Feliz", "🙂"),
-    TRISTE("Triste", "😢"),
+    TRISTE("Triste", "🙁"),
     ENOJADO("Enojado", "😠")
 }
 
@@ -253,7 +259,7 @@ object MockDataRepository {
         statusText = "08:15 AM • Presente",
         isPresent = true,
         arrivalTime = "08:15 AM",
-        allergyAlert = "Alergia a Nuez (No Certificado)",
+        allergyAlert = null,
         avatarInitials = "MG",
         avatarBgColor = 0xFFFFB74D,
         educatorName = "Laura Gómez",
@@ -636,29 +642,29 @@ object MockDataRepository {
                     "bruno_benitez" -> "11/10/2024"
                     else -> "10/05/2024"
                 },
-                studentId = "EST-${child.id.take(4).uppercase()}-2026",
+                studentId = "CURP-${child.id.take(4).uppercase()}240414HDFR01",
                 bloodType = when (child.id) {
                     "mateo_garcia" -> "O+"
                     "sofia_lopez" -> "A+"
                     "lucas_martinez" -> "B+"
                     else -> "O+"
                 },
-                pediatrician = "Dra. Sofía Morales",
-                pediatricianPhone = "+52 555 111 222",
-                emergencyPhone = "+52 555 333 444",
-                emergencyPhoneRelation = "Abuela materna",
+                pediatrician = "Dra. Sofía Morales (Hospital Infantil)",
+                pediatricianPhone = "+52 55 1234 5678",
+                emergencyPhone = "+52 55 9876 5432",
+                emergencyPhoneRelation = "Abuela materna (Rosa)",
                 motherName = "María López Fernández",
-                motherPhone = "+52 555 123 456",
+                motherPhone = "+52 55 1234 5678",
                 fatherName = "Carlos García Ramos",
-                fatherPhone = "+52 555 987 654",
+                fatherPhone = "+52 55 3333 4444",
                 authorizedPickups = listOf(
-                    "Rosa Fernández (Abuela materna) - DNI ***4521",
-                    "Elena García (Tía paterna) - DNI ***9812"
+                    "Rosa Fernández (Abuela materna) - CURP: FERA750312MDFRNS01 • Tel: +52 55 4444 5555",
+                    "Elena García (Tía paterna) - CURP: GARE800511MDFRLN02 • Tel: +52 55 3333 4444"
                 ),
                 medicalNotes = if (child.allergyAlert != null) {
-                    "${child.allergyAlert}. Se requiere extremo cuidado en las meriendas y almuerzos. Botiquín de emergencia revisado."
+                    "Alergia: ${child.allergyAlert}. Menú adaptado en comedor y seguimiento médico en expediente."
                 } else {
-                    "Sin alergias diagnosticadas. Cartilla de vacunación completa y verificada por el centro."
+                    "Esquema de vacunación completo conforme a Cartilla Nacional de Salud al día. Sin alergias diagnosticadas."
                 },
                 generalNotes = "Muy sociable y participativo. Se adapta muy bien a las rutinas de la sala y duerme tranquilo con su objeto de apego."
             )
@@ -669,60 +675,103 @@ object MockDataRepository {
         _childProfiles[childId] = profile
     }
 
+    private val _childTodayActivities = mutableMapOf<String, MutableList<DailyActivityInfo>>()
+
+    fun addDailyActivity(childId: String, activity: DailyActivityInfo) {
+        val list = _childTodayActivities.getOrPut(childId) {
+            getInitialTodayActivities(childId).toMutableList()
+        }
+        list.add(0, activity)
+    }
+
+    fun getTodayActivities(childId: String): List<DailyActivityInfo> {
+        return _childTodayActivities.getOrPut(childId) {
+            getInitialTodayActivities(childId).toMutableList()
+        }.toList()
+    }
+
+    private fun getInitialTodayActivities(childId: String): List<DailyActivityInfo> {
+        return if (childId == mateoGarcia.id) {
+            listOf(
+                DailyActivityInfo(
+                    id = "act_today_1",
+                    time = "09:30 AM",
+                    title = "Asamblea y cantos matutinos",
+                    category = ActivityCategory.ESTADO_ANIMO,
+                    description = "Participó entusiasmado en el círculo de bienvenida e interactuó amistosamente con sus compañeros."
+                ),
+                DailyActivityInfo(
+                    id = "act_today_2",
+                    time = "10:30 AM",
+                    title = "Merienda matutina",
+                    category = ActivityCategory.ALIMENTACION,
+                    portion = PortionOption.TODO,
+                    description = "Comió toda su porción de plátano y pera cortada. Tomó agua con autonomía."
+                ),
+                DailyActivityInfo(
+                    id = "act_today_3",
+                    time = "12:15 PM",
+                    title = "Almuerzo - Menú del día",
+                    category = ActivityCategory.ALIMENTACION,
+                    portion = PortionOption.MEDIO,
+                    description = "Tomó la crema de calabaza completa. Del plato de pollo con patatas consumió la mitad."
+                ),
+                DailyActivityInfo(
+                    id = "act_today_4",
+                    time = "13:00 - 14:15 PM",
+                    title = "Siesta y descanso",
+                    category = ActivityCategory.SIESTA,
+                    description = "Descanso reparador de 1 hora y 15 minutos en su cuna habitual sin interrupciones."
+                )
+            )
+        } else {
+            emptyList()
+        }
+    }
+
     fun getDailyBitacorasForChild(child: Child): List<DailyBitacora> {
         val now = java.util.Calendar.getInstance()
         val todayDate = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(now.time)
         val todayLabel = java.text.SimpleDateFormat("'Hoy, 'd MMM", java.util.Locale("es", "ES")).format(now.time).replaceFirstChar { it.uppercase() }
+
+        val isExited = !child.isPresent && (
+            child.statusText.contains("Retirado", ignoreCase = true) ||
+            child.statusText.contains("Egresado", ignoreCase = true)
+        )
+        val hasIngreso = child.isPresent || isExited || child.arrivalTime != null
+
+        val ingresoInfo = if (hasIngreso) {
+            DailyIngresoInfo(
+                time = child.arrivalTime ?: "08:15 AM",
+                delivererName = "María López (Madre)",
+                receiverName = "Laura Gómez (Educadora)",
+                physicalCondition = "Buen estado general, alegre y sin lesiones.",
+                hasSymptoms = false,
+                observations = "Durmió 9 horas continuas. Desayunó un tazón de leche en casa."
+            )
+        } else null
+
+        val egresoInfo = if (isExited) {
+            val egresoTime = child.statusText.substringBefore(" •").trim().ifEmpty { "16:30 PM" }
+            DailyEgresoInfo(
+                time = egresoTime,
+                collectorName = "María López (Madre)",
+                delivererName = "Laura Gómez (Educadora)",
+                physicalCondition = "Excelente estado general, aseado y tranquilo.",
+                observations = "Jornada escolar concluida con normalidad."
+            )
+        } else null
+
+        val activitiesToday = getTodayActivities(child.id)
+
         return listOf(
             DailyBitacora(
                 date = todayDate,
                 dayLabel = todayLabel,
                 isToday = true,
-                ingreso = if (child.isPresent) {
-                    DailyIngresoInfo(
-                        time = child.arrivalTime ?: "08:15 AM",
-                        delivererName = "María López (Madre)",
-                        receiverName = "Laura Gómez (Educadora)",
-                        physicalCondition = "Buen estado general, alegre y sin lesiones.",
-                        hasSymptoms = false,
-                        observations = "Durmió 9 horas continuas. Desayunó un tazón de leche en casa."
-                    )
-                } else null,
-                egreso = null,
-                activities = if (child.isPresent) {
-                    listOf(
-                        DailyActivityInfo(
-                            id = "act_today_1",
-                            time = "09:30 AM",
-                            title = "Asamblea y cantos matutinos",
-                            category = ActivityCategory.ESTADO_ANIMO,
-                            description = "Participó entusiasmado en el círculo de bienvenida e interactuó amistosamente con sus compañeros."
-                        ),
-                        DailyActivityInfo(
-                            id = "act_today_2",
-                            time = "10:30 AM",
-                            title = "Merienda matutina",
-                            category = ActivityCategory.ALIMENTACION,
-                            portion = PortionOption.TODO,
-                            description = "Comió toda su porción de plátano y pera cortada. Tomó agua con autonomía."
-                        ),
-                        DailyActivityInfo(
-                            id = "act_today_3",
-                            time = "12:15 PM",
-                            title = "Almuerzo - Menú del día",
-                            category = ActivityCategory.ALIMENTACION,
-                            portion = PortionOption.MEDIO,
-                            description = "Tomó la crema de calabaza completa. Del plato de pollo con patatas consumió la mitad."
-                        ),
-                        DailyActivityInfo(
-                            id = "act_today_4",
-                            time = "13:00 - 14:15 PM",
-                            title = "Siesta y descanso",
-                            category = ActivityCategory.SIESTA,
-                            description = "Descanso reparador de 1 hora y 15 minutos en su cuna habitual sin interrupciones."
-                        )
-                    )
-                } else emptyList()
+                ingreso = ingresoInfo,
+                egreso = egresoInfo,
+                activities = activitiesToday
             ),
             DailyBitacora(
                 date = "28/09/2026",
@@ -1446,18 +1495,21 @@ data class ChildFullProfile(
     val child: Child,
     val birthDate: String = "12/03/2024",
     val enrollmentDate: String = "01/09/2025",
-    val studentId: String = "AL-2025-042",
-    val bloodType: String = "A+",
-    val pediatrician: String = "Dra. Sofía Morales",
-    val pediatricianPhone: String = "+34 555 111 222",
-    val emergencyPhone: String = "+34 555 333 444",
-    val emergencyPhoneRelation: String = "Tutor legal",
+    val studentId: String = "CURP-GARM240414HDFRLA01",
+    val bloodType: String = "O+",
+    val pediatrician: String = "Dra. Sofía Morales (Hospital Infantil)",
+    val pediatricianPhone: String = "+52 55 1234 5678",
+    val emergencyPhone: String = "+52 55 9876 5432",
+    val emergencyPhoneRelation: String = "Abuela materna (Rosa)",
     val motherName: String = "María López Fernández",
-    val motherPhone: String = "+34 555 123 456",
+    val motherPhone: String = "+52 55 1234 5678",
     val fatherName: String = "Carlos García Ramos",
-    val fatherPhone: String = "+34 555 987 654",
-    val authorizedPickups: List<String> = listOf("Rosa Fernández (Abuela)", "Elena García (Tía)"),
-    val medicalNotes: String = "Vacunación al día. No presenta intolerancias alimentarias adicionales.",
+    val fatherPhone: String = "+52 55 3333 4444",
+    val authorizedPickups: List<String> = listOf(
+        "Rosa Fernández (Abuela materna) - CURP: FERA750312MDFRNS01 • Tel: +52 55 4444 5555",
+        "Elena García (Tía paterna) - CURP: GARE800511MDFRLN02 • Tel: +52 55 3333 4444"
+    ),
+    val medicalNotes: String = "Esquema de vacunación completo conforme a Cartilla Nacional de Salud al día. Sin alergias registradas.",
     val generalNotes: String = "Se adapta con facilidad a las rutinas de la sala. Duerme con su mantita en la siesta.",
     val medicalCertificateUri: String? = null,
     val medicalCertificateName: String? = null,

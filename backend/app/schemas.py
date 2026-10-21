@@ -172,6 +172,7 @@ class ChildFullProfileOut(BaseModel):
 
 
 class ChildProfileUpdate(BaseModel):
+    bloodType: str | None = None
     pediatrician: str | None = None
     pediatricianPhone: str | None = None
     medicalNotes: str | None = None

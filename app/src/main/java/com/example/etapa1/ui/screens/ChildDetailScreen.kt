@@ -29,6 +29,8 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -45,6 +47,7 @@ import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.ui.components.ChildFullDataContent
 import com.example.etapa1.ui.components.ChildHeaderSummaryCard
 import com.example.etapa1.ui.components.DailyBitacoraContent
+import com.example.etapa1.ui.components.EditChildProfileDialog
 import com.example.etapa1.ui.components.WeeklySummaryContent
 import com.example.etapa1.ui.theme.AppBackground
 import com.example.etapa1.ui.theme.BrandBlue
@@ -88,6 +91,7 @@ fun ChildDetailScreen(
         onNavigateToChat = onNavigateToChat,
         onNavigateToAttendance = onNavigateToAttendance,
         onExportLog = onExportLog,
+        onUpdateProfile = { updated -> viewModel.updateChildProfile(child.id, updated) },
         weeklyObservations = { summary, isCurrentWeek ->
             WeeklyObservationsPanel(
                 viewModel = weeklyObservationsViewModel,
@@ -139,12 +143,14 @@ fun ChildDetailContent(
     onNavigateToChat: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
     onExportLog: (() -> Unit)? = null,
+    onUpdateProfile: ((com.example.etapa1.model.ChildFullProfile) -> Unit)? = null,
     /** Observaciones de la familia debajo del resumen semanal (semana mostrada, ¿es la actual?). */
     weeklyObservations: @Composable (com.example.etapa1.model.WeeklySummary, Boolean) -> Unit = { _, _ -> }
 ) {
     var selectedTab by remember { mutableIntStateOf(0) } // 0 = Datos del Niño (Default), 1 = Bitácora Diaria, 2 = Resumen Semanal
     var selectedDayIndex by remember { mutableIntStateOf(0) }
     var selectedWeekIndex by remember { mutableIntStateOf(0) }
+    var showEditDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = AppBackground,
@@ -313,7 +319,8 @@ fun ChildDetailContent(
                     item {
                         ChildFullDataContent(
                             child = child,
-                            fullProfile = fullProfile
+                            fullProfile = fullProfile,
+                            onEditClick = if (onUpdateProfile != null) { { showEditDialog = true } } else null
                         )
                     }
                 }
@@ -346,6 +353,31 @@ fun ChildDetailContent(
             item {
                 Spacer(modifier = Modifier.height(40.dp))
             }
+        }
+
+        if (showEditDialog) {
+            EditChildProfileDialog(
+                child = child,
+                fullProfile = fullProfile,
+                onDismiss = { showEditDialog = false },
+                onSave = { ped, pedPhone, medNotes, habits, emergPhone, emergRelation, pickups, certUri, certName, certDate, bloodType ->
+                    val updated = fullProfile.copy(
+                        bloodType = bloodType,
+                        pediatrician = ped,
+                        pediatricianPhone = pedPhone,
+                        medicalNotes = medNotes,
+                        generalNotes = habits,
+                        emergencyPhone = emergPhone,
+                        emergencyPhoneRelation = emergRelation,
+                        authorizedPickups = pickups,
+                        medicalCertificateUri = certUri,
+                        medicalCertificateName = certName,
+                        medicalCertificateDate = certDate
+                    )
+                    onUpdateProfile?.invoke(updated)
+                    showEditDialog = false
+                }
+            )
         }
     }
 }

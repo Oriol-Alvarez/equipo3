@@ -16,7 +16,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .horario import hoy
-from .models import Activity, Child, DailyLog, DailyPlan, WeeklySummaryFeedback
+from .ia_resumenes import generar_resumen_ejecutivo_ia
+from .models import Activity, Child, DailyLog, DailyPlan, WeeklyObservation, WeeklySummaryFeedback
 
 SEMANAS_HISTORIAL = 4
 DIAS_HISTORIAL = 14
@@ -162,6 +163,8 @@ def resumen_semanal(
     lunes_actual = lunes_de(hoy_)
     viernes = lunes + timedelta(days=4)
     dias_semana = [(lunes + timedelta(days=i)).isoformat() for i in range(5)]
+    dias_semana_mex = [(lunes + timedelta(days=i)).strftime("%d/%m/%Y") for i in range(5)]
+    dias_semana_todos = set(dias_semana) | set(dias_semana_mex)
 
     registros = {
         r.date: r
@@ -276,6 +279,46 @@ def resumen_semanal(
         ejecutivo = ", ".join(partes[:-1]) + (" y " if len(partes) > 1 else "") + partes[-1] + "."
         if animos:
             ejecutivo += f" Su estado de ánimo fue {animo.lower()}."
+
+        # Síntesis opcional con IA integrando todos los datos disponibles
+        observaciones_objs = db.scalars(
+            select(WeeklyObservation).where(
+                WeeklyObservation.child_id == alumno.id,
+                WeeklyObservation.week_key.in_([
+                    texto_rango(lunes),
+                    etiqueta_semana(lunes, lunes_actual),
+                    lunes.isoformat(),
+                ]),
+            )
+        ).all()
+        textos_obs = [f"{o.author_role.capitalize()}: {o.text}" for o in observaciones_objs]
+
+        actividades_bitacora = [
+            f"{a.title}: {a.description}".strip(" :")
+            for a in db.scalars(
+                select(Activity).where(Activity.child_id == alumno.id, Activity.date.in_(dias_semana_todos))
+            ).all()
+            if (a.title or a.description)
+        ][:5]
+
+        ejecutivo_ia = generar_resumen_ejecutivo_ia({
+            "child_id": alumno.id,
+            "semana_id": lunes.isoformat(),
+            "nombre": nombre,
+            "rango_fechas": texto_rango(lunes),
+            "asistencia": f"{asistio} de {_plural(transcurridos, 'día', 'días')}",
+            "llegada_promedio": llegada_promedio,
+            "alimentacion": f"{porcentaje_comida} (destacados: {'; '.join(destacados_comida)})" if destacados_comida else porcentaje_comida,
+            "notas_comida": notas_comida,
+            "siesta": texto_siesta,
+            "animo": animo,
+            "salud": salud,
+            "actividades_plan": pedagogicas,
+            "actividades_bitacora": actividades_bitacora,
+            "observaciones": textos_obs,
+        })
+        if ejecutivo_ia:
+            ejecutivo = ejecutivo_ia
 
     return {
         "id": lunes.isoformat(),
