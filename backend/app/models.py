@@ -372,6 +372,7 @@ class LostObject(Base):
     image_uri: Mapped[str | None] = mapped_column(String(255), nullable=True)
     room: Mapped[str] = mapped_column(String(60), default="Sala 1A")
     is_claimed: Mapped[bool] = mapped_column(Boolean, default=False)
+    claimed_by_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 

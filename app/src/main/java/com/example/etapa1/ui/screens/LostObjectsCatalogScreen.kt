@@ -104,7 +104,9 @@ fun LostObjectsCatalogScreen(
         onCategorySelect = viewModel::selectCategory,
         onSearchQueryChange = viewModel::onSearchQueryChange,
         onToggleSearch = viewModel::toggleSearch,
-        onClaimItem = viewModel::claimItem,
+        onClaimItem = { itemId ->
+            viewModel.claimItem(itemId, activeChild?.fullName)
+        },
         onDeleteItem = viewModel::deleteItem,
         onBack = onBack,
         onNavigateToPublish = onNavigateToPublish,
@@ -130,6 +132,7 @@ fun LostObjectsCatalogScreen(
     var isSearchOpen by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf("Todos") }
     val claimedItems = remember { mutableStateMapOf<String, Boolean>() }
+    val claimedByNames = remember { mutableStateMapOf<String, String>() }
     var currentItems by remember(items) { mutableStateOf(items) }
 
     val baseCategories = listOf("Todos", "Ropa", "Juguetes", "Útiles", "Otros")
@@ -154,18 +157,25 @@ fun LostObjectsCatalogScreen(
         isSearchOpen = isSearchOpen,
         isWorkerRole = isWorkerRole,
         claimedItemsMap = claimedItems,
+        claimedByNamesMap = claimedByNames,
         filteredItems = filtered
     )
 
     LostObjectsCatalogContent(
         uiState = uiState,
+        activeChild = activeChild,
+        onSwitchChild = onSwitchChild,
         onCategorySelect = { selectedCategory = it },
         onSearchQueryChange = { searchQuery = it },
         onToggleSearch = {
             isSearchOpen = !isSearchOpen
             if (!isSearchOpen) searchQuery = ""
         },
-        onClaimItem = { claimedItems[it] = true },
+        onClaimItem = { id ->
+            claimedItems[id] = true
+            val name = activeChild?.fullName ?: "Mateo García"
+            claimedByNames[id] = name
+        },
         onDeleteItem = { id ->
             currentItems = currentItems.filterNot { it.id == id }
             onDeleteItem(id)
@@ -438,10 +448,12 @@ fun LostObjectsCatalogContent(
                 ) {
                     items(uiState.filteredItems, key = { it.id }) { item ->
                         val isClaimed = uiState.claimedItemsMap[item.id] ?: item.isClaimed
+                        val claimedByName = uiState.claimedByNamesMap[item.id] ?: item.claimedByName
 
                         LostItemCard(
                             item = item,
                             isClaimed = isClaimed,
+                            claimedByName = claimedByName,
                             isWorkerRole = uiState.isWorkerRole,
                             onClaimClick = {
                                 onClaimItem(item.id)
@@ -538,6 +550,7 @@ fun LostObjectsCatalogContent(
 private fun LostItemCard(
     item: LostItem,
     isClaimed: Boolean,
+    claimedByName: String? = null,
     isWorkerRole: Boolean,
     onClaimClick: () -> Unit,
     onDeleteClick: () -> Unit = {}
@@ -650,7 +663,7 @@ private fun LostItemCard(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Reportado como mío",
+                            text = if (!claimedByName.isNullOrBlank()) "Reclamado por $claimedByName" else "Reportado como mío",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -696,7 +709,7 @@ private fun LostItemCard(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Reclamado por familiar",
+                                text = if (!claimedByName.isNullOrBlank()) "Reclamado por $claimedByName" else "Reclamado por familiar",
                                 fontSize = 12.5.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = StatusPresentGreen

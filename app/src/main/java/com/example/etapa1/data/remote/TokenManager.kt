@@ -63,6 +63,9 @@ class TokenManager(context: Context) {
         get() = prefs.getInt("last_worker_chat_unread_count", 0)
         set(value) = prefs.edit().putInt("last_worker_chat_unread_count", value).apply()
 
+    val hasActiveSession: Boolean
+        get() = !token.isNullOrBlank()
+
     fun clear() {
         prefs.edit().clear().apply()
     }

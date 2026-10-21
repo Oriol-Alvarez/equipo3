@@ -52,7 +52,13 @@ def _aplicar_migraciones_compatibilidad() -> None:
             if engine.dialect.name == "postgresql":
                 conn.execute(text("ALTER TABLE child_profiles ADD COLUMN IF NOT EXISTS emergency_phone_relation VARCHAR(60);"))
                 conn.execute(text("ALTER TABLE bitacora_messages ADD COLUMN IF NOT EXISTS date VARCHAR(20) DEFAULT '';"))
+                conn.execute(text("ALTER TABLE lost_objects ADD COLUMN IF NOT EXISTS claimed_by_name VARCHAR(120);"))
                 conn.commit()
+            elif engine.dialect.name == "sqlite":
+                cols = [row[1] for row in conn.execute(text("PRAGMA table_info(lost_objects);")).fetchall()]
+                if cols and "claimed_by_name" not in cols:
+                    conn.execute(text("ALTER TABLE lost_objects ADD COLUMN claimed_by_name VARCHAR(120);"))
+                    conn.commit()
     except Exception:
         pass
 

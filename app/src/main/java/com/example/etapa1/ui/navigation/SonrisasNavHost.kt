@@ -310,8 +310,7 @@ fun SonrisasNavHost(
                         onAttendanceClick = {
                             attendanceChild = selectedChild
                             nav.navigate(Route.ATTENDANCE)
-                        },
-                        onWeeklySummaryClick = { nav.navigate(Route.WEEKLY_SUMMARY) }
+                        }
                     )
                 }
             }

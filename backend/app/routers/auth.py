@@ -169,8 +169,8 @@ def refresh(body: RefreshRequest, db: Session = Depends(get_db)) -> RefreshRespo
     if user is None:
         raise ApiError(401, "Usuario no encontrado", "usuario_inexistente")
 
-    token, _, ttl = emitir_sesion(db, user)
-    return RefreshResponse(token=token, expiresIn=ttl)
+    token, new_refresh, ttl = emitir_sesion(db, user)
+    return RefreshResponse(token=token, refreshToken=new_refresh, expiresIn=ttl)
 
 
 @router.post("/logout", status_code=204)

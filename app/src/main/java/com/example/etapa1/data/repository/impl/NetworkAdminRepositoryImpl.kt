@@ -111,7 +111,8 @@ class NetworkAdminRepositoryImpl(
                         location = it.location,
                         imageUri = it.imageUri,
                         room = it.room,
-                        isClaimed = it.isClaimed
+                        isClaimed = it.isClaimed,
+                        claimedByName = it.claimedByName
                     )
                 }
             }

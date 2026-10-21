@@ -54,8 +54,9 @@ services:
         condition: service_healthy
 
   tunel:
-    image: cloudflare/cloudflared:2026.9.3
-    command: ["tunnel", "--no-autoupdate", "--protocol", "http2", "--url", "http://api:8000"]
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run", "--token", "${CLOUDFLARE_TUNNEL_TOKEN}"]
     depends_on:
       - api
     profiles: ["tunel"]

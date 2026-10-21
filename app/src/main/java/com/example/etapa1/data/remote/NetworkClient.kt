@@ -10,7 +10,7 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.concurrent.TimeUnit
 
 object NetworkClient {
-    const val DEFAULT_BASE_URL = "https://point-shareholders-mart-con.trycloudflare.com/api/v1/"
+    const val DEFAULT_BASE_URL = "https://dormitory-landlady-detract.ngrok-free.dev/api/v1/"
     var baseUrl: String = DEFAULT_BASE_URL
 
     val json: Json = Json {
@@ -25,6 +25,13 @@ object NetworkClient {
             level = HttpLoggingInterceptor.Level.BODY
         }
         return OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .addHeader("ngrok-skip-browser-warning", "true")
+                    .build()
+                chain.proceed(request)
+            }
+            .authenticator(TokenAuthenticator(tokenManager) { baseUrl })
             .addInterceptor(AuthInterceptor(
                 tokenProvider = { tokenManager.token },
                 onUnauthorized = { tokenManager.notifySessionExpired() }

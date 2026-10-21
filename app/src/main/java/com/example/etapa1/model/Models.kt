@@ -127,7 +127,8 @@ data class LostItem(
     val location: String? = null,
     val imageUri: String? = null,
     val room: String = "Sala 1A",
-    val isClaimed: Boolean = false
+    val isClaimed: Boolean = false,
+    val claimedByName: String? = null
 )
 
 enum class ActivityCategory(val label: String) {

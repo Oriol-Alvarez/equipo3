@@ -63,6 +63,7 @@ class ChatConexion(
         peticion = Request.Builder()
             .url(endpoint)
             .header("Authorization", "Bearer $token")
+            .header("ngrok-skip-browser-warning", "true")
             .build()
 
         abrir()

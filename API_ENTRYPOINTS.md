@@ -1044,11 +1044,18 @@
 * **Método:** `PATCH`
 * **Ruta:** `/lost-objects/{id}/claim`
 * **Rol requerido:** `FAMILIAR`, `EDUCADORA`
+* **Request Body (Opcional):**
+  ```json
+  {
+    "childName": "Mateo García"
+  }
+  ```
 * **Response (200 OK):**
   ```json
   {
     "id": "lost_1",
-    "isClaimed": true
+    "isClaimed": true,
+    "claimedByName": "Mateo García"
   }
   ```
 

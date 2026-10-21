@@ -84,6 +84,7 @@ class RefreshRequest(BaseModel):
 class RefreshResponse(BaseModel):
     token: str
     expiresIn: int
+    refreshToken: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -562,6 +563,7 @@ class LostObjectOut(BaseModel):
     imageUri: str | None = None
     room: str = "Sala 1A"
     isClaimed: bool = False
+    claimedByName: str | None = None
 
 
 class CreateLostObjectRequest(BaseModel):
@@ -573,9 +575,15 @@ class CreateLostObjectRequest(BaseModel):
     imageUri: str | None = None
 
 
+class ClaimLostObjectRequest(BaseModel):
+    childName: str | None = None
+    childId: str | None = None
+
+
 class ClaimLostObjectOut(BaseModel):
     id: str
     isClaimed: bool
+    claimedByName: str | None = None
 
 
 # ---------------------------------------------------------------------------

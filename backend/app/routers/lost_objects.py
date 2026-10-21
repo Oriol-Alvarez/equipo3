@@ -9,9 +9,10 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import Identidad, requiere_educadora, usuario_actual
 from ..errors import ApiError
-from ..models import LostObject
+from ..models import Child, ChildParent, LostObject
 from ..schemas import (
     ClaimLostObjectOut,
+    ClaimLostObjectRequest,
     CreateLostObjectRequest,
     LostObjectOut,
     UpdateLostObjectRequest,
@@ -49,6 +50,7 @@ def listar_objetos_perdidos(
             imageUri=o.image_uri,
             room=o.room,
             isClaimed=o.is_claimed,
+            claimedByName=o.claimed_by_name,
         )
         for o in filas
     ]
@@ -87,13 +89,15 @@ def publicar_objeto_perdido(
         imageUri=objeto.image_uri,
         room=objeto.room,
         isClaimed=objeto.is_claimed,
+        claimedByName=objeto.claimed_by_name,
     )
 
 
 @router.patch("/{id}/claim", response_model=ClaimLostObjectOut)
 def reclamar_objeto_perdido(
     id: str,
-    _: Identidad = Depends(usuario_actual),
+    body: ClaimLostObjectRequest | None = None,
+    quien: Identidad = Depends(usuario_actual),
     db: Session = Depends(get_db),
 ) -> ClaimLostObjectOut:
     """Marca un objeto como reclamado por parte de la familia o personal."""
@@ -102,8 +106,18 @@ def reclamar_objeto_perdido(
         raise ApiError(404, f"No existe el objeto con id {id}")
 
     objeto.is_claimed = True
+    nombre_nino = body.childName.strip() if body and body.childName and body.childName.strip() else None
+    if not nombre_nino and quien.role == "FAMILIAR":
+        hijo_id = db.scalar(select(ChildParent.child_id).where(ChildParent.parent_user_id == quien.id))
+        if hijo_id:
+            alumno = db.get(Child, hijo_id)
+            if alumno:
+                nombre_nino = alumno.name
+    if nombre_nino:
+        objeto.claimed_by_name = nombre_nino
+
     db.commit()
-    return ClaimLostObjectOut(id=id, isClaimed=True)
+    return ClaimLostObjectOut(id=id, isClaimed=True, claimedByName=objeto.claimed_by_name)
 
 
 @router.delete("/{id}", status_code=204)
@@ -159,5 +173,6 @@ def modificar_objeto_perdido(
         imageUri=objeto.image_uri,
         room=objeto.room,
         isClaimed=objeto.is_claimed,
+        claimedByName=objeto.claimed_by_name,
     )
 

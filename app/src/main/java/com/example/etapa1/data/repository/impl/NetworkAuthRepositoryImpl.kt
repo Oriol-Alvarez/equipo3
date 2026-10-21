@@ -29,6 +29,17 @@ class NetworkAuthRepositoryImpl(
     private val _currentUserRole = MutableStateFlow(initialRole)
     override val currentUserRole: StateFlow<UserRole> = _currentUserRole.asStateFlow()
 
+    private val _isLoggedIn = MutableStateFlow(!tokenManager.token.isNullOrBlank())
+    override val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
+
+    init {
+        CoroutineScope(Dispatchers.Main.immediate).launch {
+            tokenManager.sessionExpired.collect {
+                _isLoggedIn.value = false
+            }
+        }
+    }
+
     override suspend fun login(email: String, password: String, role: UserRole): Result<UserRole> = withContext(Dispatchers.IO) {
         try {
             val response = api.login(LoginRequestDto(email = email.trim(), password = password, role = null))
@@ -48,6 +59,7 @@ class NetworkAuthRepositoryImpl(
                     else -> UserRole.EDUCADORA
                 }
                 _currentUserRole.value = resolvedRole
+                _isLoggedIn.value = true
                 Result.success(resolvedRole)
             } else {
                 val errorMsg = com.example.etapa1.data.remote.NetworkErrorHelper.parseResponse(response)
@@ -62,6 +74,7 @@ class NetworkAuthRepositoryImpl(
     override fun setRole(role: UserRole) {
         _currentUserRole.value = role
         tokenManager.userRole = role.name
+        _isLoggedIn.value = true
     }
 
     override fun logout() {
@@ -85,5 +98,6 @@ class NetworkAuthRepositoryImpl(
         }
         tokenManager.clear()
         _currentUserRole.value = UserRole.EDUCADORA
+        _isLoggedIn.value = false
     }
 }

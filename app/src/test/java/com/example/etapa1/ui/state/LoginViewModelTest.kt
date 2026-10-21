@@ -55,6 +55,7 @@ class LoginViewModelTest {
     fun submitLogin_whenRepositoryFails_setsSpecificErrorMessage() {
         val failingRepo = object : com.example.etapa1.data.repository.AuthRepository {
             override val currentUserRole = authRepository.currentUserRole
+            override val isLoggedIn = authRepository.isLoggedIn
             override suspend fun login(email: String, password: String, role: UserRole): Result<UserRole> {
                 return Result.failure(Exception("No se pudo conectar con el servidor. Verifica tu conexión."))
             }

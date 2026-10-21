@@ -21,6 +21,7 @@ data class LostObjectsUiState(
     val isSearchOpen: Boolean = false,
     val isWorkerRole: Boolean = true,
     val claimedItemsMap: Map<String, Boolean> = emptyMap(),
+    val claimedByNamesMap: Map<String, String> = emptyMap(),
     val filteredItems: List<LostItem> = emptyList()
 )
 
@@ -42,9 +43,10 @@ class LostObjectsViewModel(
     val uiState: StateFlow<LostObjectsUiState> = combine(
         lostObjectsRepository.lostItems,
         lostObjectsRepository.claimedItems,
+        lostObjectsRepository.claimedByNames,
         authRepository.currentUserRole,
         _filterState
-    ) { items, claimedMap, role, filters ->
+    ) { items, claimedMap, claimedByNamesMap, role, filters ->
         val baseCategories = listOf("Todos", "Ropa", "Juguetes", "Útiles", "Otros")
         val allCategories = (baseCategories + items.map { it.category }).distinct()
 
@@ -69,6 +71,7 @@ class LostObjectsViewModel(
             isSearchOpen = filters.isSearchOpen,
             isWorkerRole = isWorker,
             claimedItemsMap = claimedMap,
+            claimedByNamesMap = claimedByNamesMap,
             filteredItems = filtered
         )
     }.stateIn(
@@ -94,8 +97,8 @@ class LostObjectsViewModel(
         )
     }
 
-    fun claimItem(itemId: String) {
-        lostObjectsRepository.claimLostItem(itemId)
+    fun claimItem(itemId: String, childName: String? = null) {
+        lostObjectsRepository.claimLostItem(itemId, childName)
     }
 
     fun deleteItem(itemId: String) {

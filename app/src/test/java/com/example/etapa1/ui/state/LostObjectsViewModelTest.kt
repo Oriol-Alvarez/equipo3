@@ -120,6 +120,22 @@ class LostObjectsViewModelTest {
     }
 
     @Test
+    fun claimItemWithChildName_updatesClaimedByNamesMap() {
+        authRepository.setRole(UserRole.FAMILIAR)
+        val viewModel = LostObjectsViewModel(lostObjectsRepository, authRepository, testScope)
+
+        var latestState: LostObjectsUiState? = null
+        val job = viewModel.uiState.onEach { latestState = it }.launchIn(testScope)
+
+        viewModel.claimItem("item_2", "Mateo García")
+        assertTrue(latestState?.claimedItemsMap?.get("item_2") == true)
+        assertEquals("Mateo García", latestState?.claimedByNamesMap?.get("item_2"))
+        assertEquals("Mateo García", latestState?.items?.find { it.id == "item_2" }?.claimedByName)
+
+        job.cancel()
+    }
+
+    @Test
     fun filterByCategoryAndSearch_worksCorrectlyWithDeletion() {
         authRepository.setRole(UserRole.EDUCADORA)
         val viewModel = LostObjectsViewModel(lostObjectsRepository, authRepository, testScope)

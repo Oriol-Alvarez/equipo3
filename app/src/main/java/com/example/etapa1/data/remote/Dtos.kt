@@ -70,7 +70,8 @@ data class RefreshRequestDto(
 @Serializable
 data class RefreshResponseDto(
     val token: String,
-    val expiresIn: Int
+    val expiresIn: Int,
+    val refreshToken: String? = null
 )
 
 @Serializable
@@ -231,7 +232,21 @@ data class LostItemDto(
     val location: String? = null,
     val imageUri: String? = null,
     val room: String = "Sala 1A",
-    val isClaimed: Boolean = false
+    val isClaimed: Boolean = false,
+    val claimedByName: String? = null
+)
+
+@Serializable
+data class ClaimLostObjectRequest(
+    val childName: String? = null,
+    val childId: String? = null
+)
+
+@Serializable
+data class ClaimLostObjectDto(
+    val id: String,
+    val isClaimed: Boolean,
+    val claimedByName: String? = null
 )
 
 @Serializable

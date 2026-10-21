@@ -25,6 +25,9 @@ class NetworkLostObjectsRepositoryImpl(
     private val _claimedItems = MutableStateFlow<Map<String, Boolean>>(emptyMap())
     override val claimedItems: StateFlow<Map<String, Boolean>> = _claimedItems.asStateFlow()
 
+    private val _claimedByNames = MutableStateFlow<Map<String, String>>(emptyMap())
+    override val claimedByNames: StateFlow<Map<String, String>> = _claimedByNames.asStateFlow()
+
     init {
         refresh()
     }
@@ -35,12 +38,15 @@ class NetworkLostObjectsRepositoryImpl(
             // Conserva lo que se está publicando (id temporal)
             _lostItems.update { actual -> actual.filter { it.id.startsWith("temp_") } + lista }
             _claimedItems.value = lista.filter { it.isClaimed }.associate { it.id to true }
+            _claimedByNames.value = lista.filter { it.isClaimed && !it.claimedByName.isNullOrBlank() }
+                .associate { it.id to it.claimedByName!! }
         }
     }
 
     override fun limpiar() {
         _lostItems.value = emptyList()
         _claimedItems.value = emptyMap()
+        _claimedByNames.value = emptyMap()
     }
 
     override fun publishLostItem(newItem: LostItem) {
@@ -73,11 +79,31 @@ class NetworkLostObjectsRepositoryImpl(
         }
     }
 
-    override fun claimLostItem(itemId: String) {
+    override fun claimLostItem(itemId: String, childName: String?) {
         _claimedItems.update { it + (itemId to true) }
+        if (!childName.isNullOrBlank()) {
+            _claimedByNames.update { it + (itemId to childName) }
+        }
+        _lostItems.update { items ->
+            items.map {
+                if (it.id == itemId) it.copy(isClaimed = true, claimedByName = childName ?: it.claimedByName)
+                else it
+            }
+        }
         RemoteSync.launch("Reclamar objeto perdido $itemId") {
-            if (api.claimLostObject(itemId).bodyOrLog("PATCH /lost-objects/$itemId/claim") == null) {
+            val req = if (!childName.isNullOrBlank()) com.example.etapa1.data.remote.ClaimLostObjectRequest(childName = childName) else null
+            val respuesta = api.claimLostObject(itemId, req).bodyOrLog("PATCH /lost-objects/$itemId/claim")
+            if (respuesta == null) {
                 _claimedItems.update { it - itemId }
+                _claimedByNames.update { it - itemId }
+            } else if (respuesta.claimedByName != null) {
+                _claimedByNames.update { it + (itemId to respuesta.claimedByName) }
+                _lostItems.update { items ->
+                    items.map {
+                        if (it.id == itemId) it.copy(claimedByName = respuesta.claimedByName)
+                        else it
+                    }
+                }
             }
         }
     }
@@ -86,6 +112,7 @@ class NetworkLostObjectsRepositoryImpl(
         val antes = _lostItems.value
         _lostItems.update { lista -> lista.filterNot { it.id == itemId } }
         _claimedItems.update { it - itemId }
+        _claimedByNames.update { it - itemId }
         if (itemId.startsWith("temp_")) return
         RemoteSync.launch("Eliminar objeto perdido $itemId") {
             val respuesta = api.deleteLostObject(itemId)
@@ -104,6 +131,7 @@ class NetworkLostObjectsRepositoryImpl(
         location = location,
         imageUri = imageUri?.let(RemoteSync::absoluteUrl),
         room = room,
-        isClaimed = isClaimed
+        isClaimed = isClaimed,
+        claimedByName = claimedByName
     )
 }

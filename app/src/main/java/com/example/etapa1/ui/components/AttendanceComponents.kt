@@ -516,7 +516,7 @@ fun IngresoFormSection(
             onSave = {
                 trySave()
             },
-            saveButtonText = "Guardar Registro de Ingreso"
+            saveButtonText = "Guardar Registro"
         )
     }
 }
@@ -773,7 +773,7 @@ fun EgresoFormSection(
             onSave = {
                 trySave()
             },
-            saveButtonText = "Guardar Registro de Egreso"
+            saveButtonText = "Guardar Registro"
         )
     }
 }

@@ -208,3 +208,37 @@ def test_registro_sembrado_trae_dias_anteriores_completos(cliente: TestClient, e
     pasados = [d for d in todos if d["date"] < hoy().isoformat()]
     assert pasados
     assert all(d["ingreso"] and d["estadia"] and d["egreso"] for d in pasados)
+
+
+def test_reclamar_objeto_perdido_con_nombre_del_nino(cliente: TestClient, familiar: Persona, educadora: Persona):
+    # 1. Crear un objeto nuevo
+    r_crear = cliente.post(
+        f"{API}/lost-objects",
+        headers=educadora.headers,
+        json={
+            "title": "Gorra Roja Test",
+            "description": "Gorra de béisbol infantil",
+            "category": "Ropa",
+            "location": "Entrada",
+            "room": "Sala 1A",
+        },
+    )
+    assert r_crear.status_code == 201
+    obj_id = r_crear.json()["id"]
+
+    # 2. Reclamar con nombre del niño
+    r_claim = cliente.patch(
+        f"{API}/lost-objects/{obj_id}/claim",
+        headers=familiar.headers,
+        json={"childName": "Mateo García"},
+    )
+    assert r_claim.status_code == 200
+    assert r_claim.json()["isClaimed"] is True
+    assert r_claim.json()["claimedByName"] == "Mateo García"
+
+    # 3. Al listar objetos debe aparecer el claimedByName
+    r_lista = cliente.get(f"{API}/lost-objects", headers=educadora.headers)
+    assert r_lista.status_code == 200
+    item = next(o for o in r_lista.json() if o["id"] == obj_id)
+    assert item["isClaimed"] is True
+    assert item["claimedByName"] == "Mateo García"

@@ -118,7 +118,10 @@ interface SonrisasApi {
     ): Response<List<LostItemDto>>
 
     @PATCH("lost-objects/{id}/claim")
-    suspend fun claimLostObject(@Path("id") id: String): Response<Unit>
+    suspend fun claimLostObject(
+        @Path("id") id: String,
+        @Body request: ClaimLostObjectRequest? = null
+    ): Response<ClaimLostObjectDto>
 
     // ---------------------------------------------------------------- grupos con familias
     @GET("family-groups")
