@@ -4,7 +4,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Configuración del sistema leída desde variables de entorno o archivo .env."""
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=(".env", "backend/.env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/sonrisas"
     jwt_secret: str = "super-secret-jwt-key-for-sonrisas-app-tc2007b"
