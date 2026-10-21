@@ -222,6 +222,9 @@ def resumen_semanal(
         select(Activity).where(Activity.child_id == alumno.id, Activity.date.in_(dias_semana_todos))
     ).all()
 
+    # Días con actividades registradas: el niño estuvo presente aunque no se haya pasado asistencia
+    dias_con_actividad: set[str] = set()
+
     # Integrar actividades de la bitácora en la asistencia y estadías
     for a in actividades_semana:
         dia_obj = a_fecha(a.date)
@@ -232,8 +235,8 @@ def resumen_semanal(
             continue
 
         # Si el día no tenía ingreso registrado pero hubo actividades, se considera asistido
-        if dia_iso not in ingresos:
-            ingresos[dia_iso] = {"time": a.time or "08:15", "assistantName": "Personal Escolar"}
+        # Cuenta como asistido, pero la hora de la actividad no es una hora de llegada
+        dias_con_actividad.add(dia_iso)
 
         cat_upper = (a.category or "").upper().replace("Á", "A").replace("É", "E").replace("Í", "I").replace("Ó", "O").replace("Ú", "U")
         if dia_iso not in estadias:
@@ -271,14 +274,14 @@ def resumen_semanal(
                     if m in a.description.upper():
                         mood = m
                         break
-            if not mood and a.title:
+            if not mood:
+                texto = f"{a.portion_option or ''} {a.title or ''}".upper()
                 for m in ("FELIZ", "TRISTE", "ENOJADO"):
-                    if m in a.title.upper():
+                    if m in texto:
                         mood = m
                         break
-            if not mood:
-                mood = "FELIZ"
-            estadias[dia_iso]["mood"] = mood
+            if mood:  # si no se reconoce, no se inventa
+                estadias[dia_iso]["mood"] = mood
             estadias[dia_iso]["participated"] = True
 
         elif "ACCIDENTE" in cat_upper:
@@ -293,7 +296,7 @@ def resumen_semanal(
 
     # Asistencia y hora de llegada
     transcurridos = dias_escolares_transcurridos(lunes, hoy_)
-    asistio = len(ingresos)
+    asistio = len(set(ingresos) | dias_con_actividad)
     porcentaje_asistencia = f"{round(asistio * 100 / transcurridos)}%" if transcurridos else "—"
     llegadas = [m for m in (minutos_de(i.get("time")) for i in ingresos.values()) if m is not None]
     llegada_promedio = hora_12h(round(sum(llegadas) / len(llegadas))) if llegadas else "—"
