@@ -24,6 +24,12 @@ interface SonrisasApi {
     @POST("auth/logout")
     suspend fun logout(@Body request: RefreshRequestDto): Response<Unit>
 
+    @POST("auth/device-token")
+    suspend fun registerDeviceToken(@Body request: DeviceTokenRequestDto): Response<Unit>
+
+    @DELETE("auth/device-token")
+    suspend fun unregisterDeviceToken(@Body request: DeviceTokenRequestDto): Response<Unit>
+
     @GET("auth/me")
     suspend fun me(): Response<UserDto>
 
@@ -41,6 +47,28 @@ interface SonrisasApi {
 
     @GET("children/{childId}")
     suspend fun getChild(@Path("childId") childId: String): Response<ChildDto>
+
+    @GET("children/{childId}/full-profile")
+    suspend fun getChildFullProfile(@Path("childId") childId: String): Response<ChildFullProfileDto>
+
+    @PUT("children/{childId}/full-profile")
+    suspend fun updateChildFullProfile(
+        @Path("childId") childId: String,
+        @Body request: ChildProfileUpdateDto
+    ): Response<ChildFullProfileDto>
+
+    @GET("children/{childId}/weekly-summaries")
+    suspend fun getWeeklySummaries(@Path("childId") childId: String): Response<List<WeeklySummaryDto>>
+
+    @PUT("children/{childId}/weekly-summaries/{summaryId}/feedback")
+    suspend fun sendWeeklySummaryFeedback(
+        @Path("childId") childId: String,
+        @Path("summaryId") summaryId: String,
+        @Body request: WeeklySummaryFeedbackDto
+    ): Response<WeeklySummaryDto>
+
+    @GET("children/{childId}/bitacoras")
+    suspend fun getBitacoras(@Path("childId") childId: String): Response<List<BitacoraDiaDto>>
 
     @GET("children/{childId}/educator")
     suspend fun getChildEducator(@Path("childId") childId: String): Response<EducatorDto>
@@ -132,7 +160,8 @@ interface SonrisasApi {
     @GET("daily-plans")
     suspend fun getDailyPlans(
         @Query("from") from: String? = null,
-        @Query("to") to: String? = null
+        @Query("to") to: String? = null,
+        @Query("roomId") roomId: String? = null
     ): Response<List<DailyPlanDto>>
 
     @PUT("daily-plans/{date}")
@@ -176,6 +205,9 @@ interface SonrisasApi {
     @GET("chats/workers")
     suspend fun getWorkerChats(): Response<List<WorkerChatDto>>
 
+    @POST("chats/workers")
+    suspend fun createWorkerGroup(@Body request: CreateWorkerGroupDto): Response<WorkerChatDto>
+
     @GET("chats/workers/{chatId}/messages")
     suspend fun getWorkerChatMessages(@Path("chatId") chatId: String): Response<List<WorkerChatMessageDto>>
 
@@ -185,8 +217,8 @@ interface SonrisasApi {
         @Body request: SendWorkerMessageDto
     ): Response<WorkerChatMessageDto>
 
-    @POST("chats/workers/{chatId}/read")
-    suspend fun markWorkerChatAsRead(@Path("chatId") chatId: String): Response<Unit>
+    @PUT("chats/workers/{chatId}/read")
+    suspend fun markWorkerChatRead(@Path("chatId") chatId: String): Response<Unit>
 
     @GET("chats/staff-global/messages")
     suspend fun getStaffGlobalChat(): Response<StaffGlobalChatDto>
@@ -207,6 +239,9 @@ interface SonrisasApi {
         @Body request: SendBitacoraMessageDto
     ): Response<BitacoraMessageDto>
 
+    @PUT("chats/bitacora/{childId}/read")
+    suspend fun markBitacoraChatRead(@Path("childId") childId: String): Response<Unit>
+
     @GET("children/{childId}/timeline")
     suspend fun getChildTimeline(
         @Path("childId") childId: String,
@@ -218,6 +253,12 @@ interface SonrisasApi {
         @Path("childId") childId: String,
         @Body request: CreateActivityDto
     ): Response<NewActivityResponseDto>
+
+    @POST("children/{childId}/timeline/events")
+    suspend fun createTimelineEvent(
+        @Path("childId") childId: String,
+        @Body request: QuickEventDto
+    ): Response<TimelineItemDto>
 
     // ---------------------------------------------------------------- Gestión de Avisos
     @POST("announcements")

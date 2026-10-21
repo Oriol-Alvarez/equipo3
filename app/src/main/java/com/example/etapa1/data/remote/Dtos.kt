@@ -53,6 +53,11 @@ data class UserDto(
 )
 
 @Serializable
+data class DeviceTokenRequestDto(
+    val deviceToken: String
+)
+
+@Serializable
 data class LoginResponseDto(
     val token: String,
     val refreshToken: String,
@@ -94,6 +99,8 @@ data class ChildDto(
     val allergyAlert: String? = null,
     val avatarInitials: String = "MG",
     val avatarBgColor: Long = 4294948685L,
+    val birthDate: String = "",
+    val roomId: String = "",
     val educatorName: String? = null,
     val educatorRole: String? = null,
     val educatorAvatarInitials: String? = null,
@@ -506,6 +513,20 @@ data class AdminUpdateChildDto(
     val medicalNotes: String? = null,
     val generalNotes: String? = null,
     val habitsNotes: String? = null
+)
+
+@Serializable
+data class QuickEventDto(
+    val time: String,
+    val text: String,
+    val iconType: String,
+    val date: String? = null
+)
+
+@Serializable
+data class CreateWorkerGroupDto(
+    val title: String,
+    val membersIds: List<String>
 )
 
 
