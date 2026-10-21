@@ -52,10 +52,7 @@ data class UserDto(
     val children: List<AdminChildSummaryDto> = emptyList()
 )
 
-@Serializable
-data class DeviceTokenRequestDto(
-    val deviceToken: String
-)
+
 
 @Serializable
 data class LoginResponseDto(
@@ -535,19 +532,7 @@ data class AdminUpdateChildDto(
     val habitsNotes: String? = null
 )
 
-@Serializable
-data class QuickEventDto(
-    val time: String,
-    val text: String,
-    val iconType: String,
-    val date: String? = null
-)
 
-@Serializable
-data class CreateWorkerGroupDto(
-    val title: String,
-    val membersIds: List<String>
-)
 
 
 
