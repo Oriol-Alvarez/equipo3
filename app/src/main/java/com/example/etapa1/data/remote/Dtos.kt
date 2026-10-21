@@ -52,6 +52,8 @@ data class UserDto(
     val children: List<AdminChildSummaryDto> = emptyList()
 )
 
+
+
 @Serializable
 data class LoginResponseDto(
     val token: String,
@@ -529,6 +531,8 @@ data class AdminUpdateChildDto(
     val generalNotes: String? = null,
     val habitsNotes: String? = null
 )
+
+
 
 
 

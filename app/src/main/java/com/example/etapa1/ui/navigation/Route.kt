@@ -22,4 +22,5 @@ object Route {
     const val DAILY_PLAN = "daily_plan"
     const val EXPORT_LOG = "export_log"
     const val ADMIN_PANEL = "admin_panel"
+    const val WEEKLY_SUMMARY = "weekly_summary"
 }

@@ -310,9 +310,43 @@ fun SonrisasNavHost(
                         onAttendanceClick = {
                             attendanceChild = selectedChild
                             nav.navigate(Route.ATTENDANCE)
-                        }
+                        },
+                        onWeeklySummaryClick = { nav.navigate(Route.WEEKLY_SUMMARY) }
                     )
                 }
+            }
+
+            composable(Route.WEEKLY_SUMMARY) {
+                if (selectedChild.id.isEmpty()) {
+                    LaunchedEffect(Unit) { nav.popBackStack() }
+                    return@composable
+                }
+                // Bitácora ya abierta del niño + asistencia, todo del servidor
+                val vm: ChatBitacoraViewModel = viewModel(factory = AppViewModelProvider.Factory)
+                val items by vm.timelineItems.collectAsState()
+                val asistenciaRepo = app?.container?.attendanceRepository
+                LaunchedEffect(selectedChild.id) { asistenciaRepo?.refresh() }
+                val asistencias = asistenciaRepo?.attendanceRecords?.collectAsState()?.value.orEmpty()
+                WeeklySummaryScreen(
+                    child = selectedChild,
+                    timelineItems = items,
+                    attendanceRecords = asistencias,
+                    onBack = { nav.popBackStack() },
+                    onChatClick = { nav.popBackStack() },
+                    onExportClick = if (isEducadora) {
+                        { nav.navigate(Route.EXPORT_LOG) }
+                    } else {
+                        null
+                    },
+                    onSaveManualObservations = { texto ->
+                        vm.sendMessage(
+                            text = texto,
+                            senderRole = if (isEducadora) com.example.etapa1.model.UserRole.EDUCADORA
+                            else com.example.etapa1.model.UserRole.FAMILIAR,
+                            childId = selectedChild.id
+                        )
+                    }
+                )
             }
 
             composable(Route.NEW_ACTIVITY) {

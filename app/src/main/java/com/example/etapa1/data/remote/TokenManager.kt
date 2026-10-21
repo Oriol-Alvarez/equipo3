@@ -53,6 +53,16 @@ class TokenManager(context: Context) {
         get() = prefs.getString("fcm_device_token", null)
         set(value) = prefs.edit().putString("fcm_device_token", value).apply()
 
+    /** Último anuncio ya notificado por SyncWorker. */
+    var lastAnnouncementId: String?
+        get() = prefs.getString("last_announcement_id", null)
+        set(value) = prefs.edit().putString("last_announcement_id", value).apply()
+
+    /** Mensajes sin leer del personal en la última revisión de SyncWorker. */
+    var lastWorkerChatUnreadCount: Int
+        get() = prefs.getInt("last_worker_chat_unread_count", 0)
+        set(value) = prefs.edit().putInt("last_worker_chat_unread_count", value).apply()
+
     fun clear() {
         prefs.edit().clear().apply()
     }

@@ -29,6 +29,8 @@ import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.LocalHospital
@@ -115,7 +117,8 @@ fun ChatBitacoraScreen(
     onBack: () -> Unit,
     onChildInfoClick: () -> Unit = {},
     onNewActivityClick: () -> Unit,
-    onAttendanceClick: () -> Unit = {}
+    onAttendanceClick: () -> Unit = {},
+    onWeeklySummaryClick: () -> Unit = {}
 ) {
     val timelineItems by viewModel.timelineItems.collectAsState()
     val conexionEstado by viewModel.conexionEstado.collectAsState()
@@ -132,6 +135,7 @@ fun ChatBitacoraScreen(
         onChildInfoClick = onChildInfoClick,
         onNewActivityClick = onNewActivityClick,
         onAttendanceClick = onAttendanceClick,
+        onWeeklySummaryClick = onWeeklySummaryClick,
         onSendMessage = { text, uri, name, mime ->
             viewModel.sendMessage(
                 text = text,
@@ -157,6 +161,7 @@ fun ChatBitacoraScreen(
     onChildInfoClick: () -> Unit = {},
     onNewActivityClick: () -> Unit = {},
     onAttendanceClick: () -> Unit = {},
+    onWeeklySummaryClick: () -> Unit = {},
     /** Expediente real para los teléfonos del botón de llamar; null usa los datos de ejemplo (vista previa). */
     childProfile: com.example.etapa1.model.ChildFullProfile? = null,
     onSendMessage: (String, Uri?, String?, String?) -> Unit,
@@ -510,6 +515,16 @@ fun ChatBitacoraScreen(
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (child != null) {
+                            IconButton(onClick = onWeeklySummaryClick) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoAwesome,
+                                    contentDescription = "Resumen Semanal IA",
+                                    tint = BrandBlue,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
                         if (isWorkerRole && child != null) {
                             IconButton(onClick = onAttendanceClick) {
                                 Icon(

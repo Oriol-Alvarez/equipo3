@@ -72,7 +72,7 @@ class NetworkAuthRepositoryImpl(
             // Este teléfono deja de recibir notificaciones de la cuenta que sale
             if (!tokenSesion.isNullOrBlank() && !telefono.isNullOrBlank()) {
                 try {
-                    api.unregisterDeviceToken("Bearer $tokenSesion", DeviceTokenRequestDto(deviceToken = telefono))
+                    api.unregisterDeviceToken(DeviceTokenRequestDto(deviceToken = telefono))
                 } catch (_: Exception) {
                 }
             }

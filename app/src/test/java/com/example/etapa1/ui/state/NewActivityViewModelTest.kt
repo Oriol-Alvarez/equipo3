@@ -185,12 +185,14 @@ class NewActivityViewModelTest {
         val bitacoraRepo = FakeBitacoraRepository()
         var detalleCargado: String? = null
         val fakeChildRepo = object : ChildRepository {
-            override val roomChildren = MutableStateFlow<List<Child>>(emptyList())
+            override val childrenOfRoom = MutableStateFlow<List<Child>>(emptyList())
             override val parentChildren = MutableStateFlow<List<Child>>(emptyList())
             override val salaActual = MutableStateFlow("sala_1a")
             override val cambios = MutableStateFlow(0)
             override fun abrirSala(roomId: String) {}
             override fun cargarDetalle(childId: String) { detalleCargado = childId }
+            override fun updateChildAttendance(childId: String, isPresent: Boolean, time: String, statusText: String) {}
+            override fun refresh() {}
             override fun getChildById(childId: String): Child? = null
             override fun getChildFullProfile(child: Child): ChildFullProfile = MockDataRepository.getChildFullProfile(child)
             override fun updateChildFullProfile(childId: String, profile: ChildFullProfile) {}

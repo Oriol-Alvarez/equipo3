@@ -68,8 +68,15 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.9.0"))
     implementation("com.google.firebase:firebase-messaging-ktx")
 
+    // Revisión periódica de anuncios y mensajes cuando la app está cerrada (respaldo sin Firebase)
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
     // AndroidX Security (EncryptedSharedPreferences)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    // Firebase (para Notificaciones Push)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)
