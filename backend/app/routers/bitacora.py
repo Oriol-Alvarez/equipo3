@@ -6,7 +6,10 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends
+import logging
+
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..acceso import exigir_alumno_visible
@@ -163,6 +166,13 @@ def historial_bitacoras(
     return [BitacoraDaySummary(**dia) for dia in historial_diario(db, childId)]
 
 
+log = logging.getLogger(__name__)
+
+
+def _registro_del_dia(db: Session, child_id: str, fecha_iso: str) -> DailyLog | None:
+    return db.scalar(select(DailyLog).where(DailyLog.child_id == child_id, DailyLog.date == fecha_iso))
+
+
 @router.post("/children/{childId}/activities", response_model=NewActivityResponse, status_code=201)
 def registrar_actividad(
     childId: str,
@@ -206,55 +216,68 @@ def registrar_actividad(
         excretory_function=body.excretoryFunction,
     )
     db.add(actividad)
+    db.commit()  # la actividad queda guardada aunque falle la sincronización del registro diario
 
     # Sincronización con la estadía del registro diario (DailyLog)
-    fecha_dt = a_fecha(fecha_actividad)
-    if fecha_dt:
-        fecha_iso = fecha_dt.isoformat()
-        daily_log = db.scalar(
-            select(DailyLog).where(DailyLog.child_id == childId, DailyLog.date == fecha_iso)
-        )
-        if not daily_log:
-            daily_log = DailyLog(child_id=childId, date=fecha_iso)
-            db.add(daily_log)
+    # La app actualiza la estadía al mismo tiempo; si crea el registro del día justo antes,
+    # el INSERT choca: se reintenta una vez sobre el registro que ya existe.
+    for intento in range(2):
+        try:
+            fecha_dt = a_fecha(fecha_actividad)
+            if fecha_dt:
+                fecha_iso = fecha_dt.isoformat()
+                daily_log = _registro_del_dia(db, childId, fecha_iso)
+                if not daily_log:
+                    daily_log = DailyLog(child_id=childId, date=fecha_iso)
+                    db.add(daily_log)
 
-        # El ingreso no se crea aquí: solo lo registra Asistencia (con firmas y hora HH:MM)
+                # El ingreso no se crea aquí: solo lo registra Asistencia (con firmas y hora HH:MM)
 
-        estadia_dict = _json(daily_log.estadia)
-        cat = cat_norm
-        if "ALIMENTACION" in cat:
-            if opt:
-                estadia_dict[m_type] = opt
-            if body.description:
-                prev = estadia_dict.get("foodNotes", "")
-                if body.description not in prev:
-                    estadia_dict["foodNotes"] = f"{prev}; {body.description}".strip("; ")
-        elif "DESCANSO" in cat or "SIESTA" in cat:
-            estadia_dict["slept"] = True
-            mins = body.napMinutes
-            if not mins and body.description:
-                import re
-                match = re.search(r"(\d+)\s*minuto", body.description)
-                if match:
-                    mins = int(match.group(1))
-            if mins and mins > 0:
-                estadia_dict["napMinutes"] = mins
-            if body.description:
-                prev = estadia_dict.get("napComments", "")
-                if body.description not in prev:
-                    estadia_dict["napComments"] = f"{prev}; {body.description}".strip("; ")
-        elif "ANIMO" in cat:
-            if mood_val:
-                estadia_dict["mood"] = mood_val
-            estadia_dict["participated"] = True
-        elif "ACCIDENTE" in cat:
-            estadia_dict["hadAccident"] = True
-            estadia_dict["accidentDescription"] = body.description
-        elif "SALUD" in cat:
-            estadia_dict["hadHealthIssue"] = True
-            estadia_dict["healthIssue"] = body.description
+                estadia_dict = _json(daily_log.estadia)
+                cat = cat_norm
+                if "ALIMENTACION" in cat:
+                    if opt:
+                        estadia_dict[m_type] = opt
+                    if body.description:
+                        prev = estadia_dict.get("foodNotes", "")
+                        if body.description not in prev:
+                            estadia_dict["foodNotes"] = f"{prev}; {body.description}".strip("; ")
+                elif "DESCANSO" in cat or "SIESTA" in cat:
+                    estadia_dict["slept"] = True
+                    mins = body.napMinutes
+                    if not mins and body.description:
+                        import re
+                        match = re.search(r"(\d+)\s*minuto", body.description)
+                        if match:
+                            mins = int(match.group(1))
+                    if mins and mins > 0:
+                        estadia_dict["napMinutes"] = mins
+                    if body.description:
+                        prev = estadia_dict.get("napComments", "")
+                        if body.description not in prev:
+                            estadia_dict["napComments"] = f"{prev}; {body.description}".strip("; ")
+                elif "ANIMO" in cat:
+                    if mood_val:
+                        estadia_dict["mood"] = mood_val
+                    estadia_dict["participated"] = True
+                elif "ACCIDENTE" in cat:
+                    estadia_dict["hadAccident"] = True
+                    estadia_dict["accidentDescription"] = body.description
+                elif "SALUD" in cat:
+                    estadia_dict["hadHealthIssue"] = True
+                    estadia_dict["healthIssue"] = body.description
 
-        daily_log.estadia = json.dumps(estadia_dict, ensure_ascii=False)
+                daily_log.estadia = json.dumps(estadia_dict, ensure_ascii=False)
+            db.commit()
+            break
+        except IntegrityError:
+            db.rollback()
+            if intento == 1:
+                log.warning("No se pudo sincronizar la estadía de %s en %s", childId, fecha_actividad)
+        except Exception:
+            db.rollback()
+            log.exception("Error al sincronizar la estadía de %s en %s", childId, fecha_actividad)
+            break
 
     db.commit()
     notificar(db, familias_del_nino(db, childId), f"Nueva actividad de {alumno.short_name}",
