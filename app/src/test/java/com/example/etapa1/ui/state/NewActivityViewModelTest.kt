@@ -17,7 +17,14 @@ import com.example.etapa1.model.TimelineItem
 import com.example.etapa1.model.UserRole
 import com.example.etapa1.model.WeeklySummary
 import com.example.etapa1.ui.components.parseGroupActivityMessage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Before
 import kotlinx.coroutines.flow.StateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -25,7 +32,20 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class NewActivityViewModelTest {
+
+    // saveActivity programa una recarga con viewModelScope (hilo principal de Android)
+    @Before
+    fun setUpMain() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+    }
+
+    @After
+    fun tearDownMain() {
+        Dispatchers.resetMain()
+    }
+
 
     private class FakeBitacoraRepository : BitacoraRepository {
         val activitiesAdded = mutableListOf<Triple<String, String, String>>()

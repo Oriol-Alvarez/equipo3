@@ -183,13 +183,12 @@ def registrar_actividad(
     cat_norm = (body.category or "").upper().replace("Á", "A").replace("É", "E").replace("Í", "I").replace("Ó", "O").replace("Ú", "U")
     mood_val = (body.moodState or "").upper()
     if not mood_val and "ANIMO" in cat_norm:
-        texto_busqueda = f"{body.title or ''} {body.description or ''}".upper()
+        texto_busqueda = f"{body.portionOption or ''} {body.title or ''} {body.description or ''}".upper()
         for m in ("FELIZ", "TRISTE", "ENOJADO"):
             if m in texto_busqueda:
                 mood_val = m
                 break
-        if not mood_val:
-            mood_val = "FELIZ"
+        # Si no se reconoce el ánimo se deja vacío: no se inventa un valor
 
     actividad = Activity(
         id=act_id,
@@ -219,22 +218,7 @@ def registrar_actividad(
             daily_log = DailyLog(child_id=childId, date=fecha_iso)
             db.add(daily_log)
 
-        if not daily_log.ingreso:
-            daily_log.ingreso = json.dumps({
-                "time": body.time or "08:15",
-                "assistantName": "Personal Escolar",
-                "deliveredBy": "Familiar",
-                "receivedBy": "Personal Escolar",
-                "isSick": False,
-                "medicationWithPrescription": "NO_APLICA",
-                "hasSymptoms": False,
-                "symptoms": "",
-                "arrivedClean": True,
-                "backpackComplete": True,
-                "goodPhysicalCondition": True,
-                "injuries": "",
-                "observations": "Registro por actividad en bitácora",
-            }, ensure_ascii=False)
+        # El ingreso no se crea aquí: solo lo registra Asistencia (con firmas y hora HH:MM)
 
         estadia_dict = _json(daily_log.estadia)
         cat = cat_norm
@@ -260,7 +244,8 @@ def registrar_actividad(
                 if body.description not in prev:
                     estadia_dict["napComments"] = f"{prev}; {body.description}".strip("; ")
         elif "ANIMO" in cat:
-            estadia_dict["mood"] = mood_val or "FELIZ"
+            if mood_val:
+                estadia_dict["mood"] = mood_val
             estadia_dict["participated"] = True
         elif "ACCIDENTE" in cat:
             estadia_dict["hadAccident"] = True
