@@ -15,7 +15,7 @@ from ..notificaciones_push import familias_del_nino, notificar
 from ..deps import Identidad, requiere_educadora, usuario_actual
 from ..errors import ApiError
 from ..horario import hoy
-from ..resumenes import a_fecha, _json, historial_diario
+from ..resumenes import a_fecha, _json, historial_diario, normalizar_opcion_comida, normalizar_tipo_comida
 from ..models import Activity, AttendanceRecord, BitacoraMessage, Child, DailyLog, TimelineEvent
 from ..schemas import (
     BitacoraDaySummary,
@@ -177,19 +177,33 @@ def registrar_actividad(
 
     act_id = f"act_{uuid.uuid4().hex[:8]}"
     fecha_actividad = body.date or hoy().strftime("%d/%m/%Y")
+    opt = normalizar_opcion_comida(body.consumptionOption or body.portionOption or body.description)
+    m_type = normalizar_tipo_comida(body.mealType or body.title or body.description)
+
+    cat_norm = (body.category or "").upper().replace("Á", "A").replace("É", "E").replace("Í", "I").replace("Ó", "O").replace("Ú", "U")
+    mood_val = (body.moodState or "").upper()
+    if not mood_val and "ANIMO" in cat_norm:
+        texto_busqueda = f"{body.title or ''} {body.description or ''}".upper()
+        for m in ("FELIZ", "TRISTE", "ENOJADO"):
+            if m in texto_busqueda:
+                mood_val = m
+                break
+        if not mood_val:
+            mood_val = "FELIZ"
+
     actividad = Activity(
         id=act_id,
         child_id=childId,
         date=fecha_actividad,
         time=body.time,
         category=body.category,
-        meal_type=body.mealType,
-        consumption_option=body.consumptionOption,
+        meal_type=m_type if "ALIMENTACION" in cat_norm else body.mealType,
+        consumption_option=opt or body.consumptionOption,
         portion_option=body.portionOption,
         title=body.title,
         description=body.description,
         nap_minutes=body.napMinutes,
-        mood_state=body.moodState,
+        mood_state=mood_val or body.moodState,
         excretory_function=body.excretoryFunction,
     )
     db.add(actividad)
@@ -205,33 +219,48 @@ def registrar_actividad(
             daily_log = DailyLog(child_id=childId, date=fecha_iso)
             db.add(daily_log)
 
+        if not daily_log.ingreso:
+            daily_log.ingreso = json.dumps({
+                "time": body.time or "08:15",
+                "assistantName": "Personal Escolar",
+                "deliveredBy": "Familiar",
+                "receivedBy": "Personal Escolar",
+                "isSick": False,
+                "medicationWithPrescription": "NO_APLICA",
+                "hasSymptoms": False,
+                "symptoms": "",
+                "arrivedClean": True,
+                "backpackComplete": True,
+                "goodPhysicalCondition": True,
+                "injuries": "",
+                "observations": "Registro por actividad en bitácora",
+            }, ensure_ascii=False)
+
         estadia_dict = _json(daily_log.estadia)
-        cat = (body.category or "").upper()
+        cat = cat_norm
         if "ALIMENTACION" in cat:
-            opt = body.consumptionOption or body.portionOption
             if opt:
-                m_type = (body.mealType or "").upper()
-                if "DESAYUNO" in m_type:
-                    estadia_dict["breakfast"] = opt
-                elif "COLACION" in m_type or "SNACK" in m_type:
-                    estadia_dict["snack"] = opt
-                elif "COMIDA" in m_type or "LUNCH" in m_type:
-                    estadia_dict["lunch"] = opt
-                elif not estadia_dict.get("breakfast"):
-                    estadia_dict["breakfast"] = opt
+                estadia_dict[m_type] = opt
             if body.description:
                 prev = estadia_dict.get("foodNotes", "")
-                estadia_dict["foodNotes"] = f"{prev}; {body.description}".strip("; ")
+                if body.description not in prev:
+                    estadia_dict["foodNotes"] = f"{prev}; {body.description}".strip("; ")
         elif "DESCANSO" in cat or "SIESTA" in cat:
             estadia_dict["slept"] = True
-            if body.napMinutes:
-                estadia_dict["napMinutes"] = (estadia_dict.get("napMinutes") or 0) + body.napMinutes
+            mins = body.napMinutes
+            if not mins and body.description:
+                import re
+                match = re.search(r"(\d+)\s*minuto", body.description)
+                if match:
+                    mins = int(match.group(1))
+            if mins and mins > 0:
+                estadia_dict["napMinutes"] = mins
             if body.description:
                 prev = estadia_dict.get("napComments", "")
-                estadia_dict["napComments"] = f"{prev}; {body.description}".strip("; ")
+                if body.description not in prev:
+                    estadia_dict["napComments"] = f"{prev}; {body.description}".strip("; ")
         elif "ANIMO" in cat:
-            if body.moodState:
-                estadia_dict["mood"] = body.moodState
+            estadia_dict["mood"] = mood_val or "FELIZ"
             estadia_dict["participated"] = True
         elif "ACCIDENTE" in cat:
             estadia_dict["hadAccident"] = True

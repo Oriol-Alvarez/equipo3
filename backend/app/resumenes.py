@@ -30,8 +30,20 @@ MESES_CORTOS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "
 DIAS_CORTOS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
 
 # Porcentaje aproximado de lo que comió según la opción de la hoja oficial
-PORCENTAJE_COMIDA = {"NADA": 0, "POCO": 33, "TODO": 100, "PIDIO_MAS": 100}
-TEXTO_COMIDA = {"NADA": "no comió", "POCO": "comió poco", "TODO": "comió todo", "PIDIO_MAS": "pidió más"}
+PORCENTAJE_COMIDA = {
+    "NADA": 0,
+    "POCO": 33,
+    "MEDIO": 50,
+    "TODO": 100,
+    "PIDIO_MAS": 100,
+}
+TEXTO_COMIDA = {
+    "NADA": "no comió",
+    "POCO": "comió poco",
+    "MEDIO": "comió medio plato",
+    "TODO": "comió todo",
+    "PIDIO_MAS": "pidió más",
+}
 COMIDAS = (("breakfast", "Desayuno"), ("snack", "Colación"), ("lunch", "Comida"))
 TEXTO_ANIMO = {"FELIZ": "feliz", "TRISTE": "triste", "ENOJADO": "enojado"}
 
@@ -46,6 +58,36 @@ CATEGORIA_POR_ETIQUETA = {
     "salud": "SALUD",
 }
 PORCION_POR_ETIQUETA = {"poco": "POCO", "medio": "MEDIO", "todo": "TODO"}
+
+
+def normalizar_opcion_comida(texto: str | None) -> str | None:
+    """Normaliza cualquier texto de consumo/porción a una clave de PORCENTAJE_COMIDA."""
+    if not texto:
+        return None
+    t = texto.strip().upper().replace("Ó", "O").replace("Í", "I").replace("Á", "A").replace("É", "E")
+    if "PIDIO" in t or "MAS" in t:
+        return "PIDIO_MAS"
+    if "TODO" in t or "COMPLET" in t:
+        return "TODO"
+    if "MEDIO" in t or "1/2" in t:
+        return "MEDIO"
+    if "POCO" in t or "1/3" in t:
+        return "POCO"
+    if "NADA" in t or "NO COMIO" in t:
+        return "NADA"
+    return t if t in PORCENTAJE_COMIDA else None
+
+
+def normalizar_tipo_comida(texto: str | None) -> str:
+    """Mapea a 'breakfast', 'snack' o 'lunch'."""
+    if not texto:
+        return "lunch"
+    t = texto.strip().upper().replace("Ó", "O").replace("Í", "I").replace("Á", "A").replace("É", "E")
+    if "DESAYUNO" in t or "BREAKFAST" in t:
+        return "breakfast"
+    if "COLACION" in t or "SNACK" in t or "MERIENDA" in t:
+        return "snack"
+    return "lunch"
 
 
 # ---------------------------------------------------------------------------
@@ -175,6 +217,80 @@ def resumen_semanal(
     ingresos = {d: _json(r.ingreso) for d, r in registros.items() if r.ingreso}
     estadias = {d: _json(r.estadia) for d, r in registros.items() if r.estadia}
 
+    # Tarjetas de actividades de la bitácora para la misma semana
+    actividades_semana = db.scalars(
+        select(Activity).where(Activity.child_id == alumno.id, Activity.date.in_(dias_semana_todos))
+    ).all()
+
+    # Integrar actividades de la bitácora en la asistencia y estadías
+    for a in actividades_semana:
+        dia_obj = a_fecha(a.date)
+        if not dia_obj:
+            continue
+        dia_iso = dia_obj.isoformat()
+        if dia_iso not in dias_semana:
+            continue
+
+        # Si el día no tenía ingreso registrado pero hubo actividades, se considera asistido
+        if dia_iso not in ingresos:
+            ingresos[dia_iso] = {"time": a.time or "08:15", "assistantName": "Personal Escolar"}
+
+        cat_upper = (a.category or "").upper().replace("Á", "A").replace("É", "E").replace("Í", "I").replace("Ó", "O").replace("Ú", "U")
+        if dia_iso not in estadias:
+            estadias[dia_iso] = {}
+
+        if "ALIMENTACION" in cat_upper:
+            opt = normalizar_opcion_comida(a.consumption_option or a.portion_option or a.description or a.title)
+            tipo = normalizar_tipo_comida(a.meal_type or a.title or a.description)
+            if opt:
+                estadias[dia_iso][tipo] = opt
+            if a.description:
+                prev_notas = estadias[dia_iso].get("foodNotes", "")
+                if a.description not in prev_notas:
+                    estadias[dia_iso]["foodNotes"] = f"{prev_notas}; {a.description}".strip("; ")
+
+        elif "DESCANSO" in cat_upper or "SIESTA" in cat_upper:
+            mins = a.nap_minutes
+            if not mins and a.description:
+                import re
+                match = re.search(r"(\d+)\s*minuto", a.description)
+                if match:
+                    mins = int(match.group(1))
+            if mins and mins > 0:
+                estadias[dia_iso]["slept"] = True
+                estadias[dia_iso]["napMinutes"] = mins
+            if a.description:
+                prev_comm = estadias[dia_iso].get("napComments", "")
+                if a.description not in prev_comm:
+                    estadias[dia_iso]["napComments"] = f"{prev_comm}; {a.description}".strip("; ")
+
+        elif "ANIMO" in cat_upper:
+            mood = (a.mood_state or "").upper()
+            if not mood and a.description:
+                for m in ("FELIZ", "TRISTE", "ENOJADO"):
+                    if m in a.description.upper():
+                        mood = m
+                        break
+            if not mood and a.title:
+                for m in ("FELIZ", "TRISTE", "ENOJADO"):
+                    if m in a.title.upper():
+                        mood = m
+                        break
+            if not mood:
+                mood = "FELIZ"
+            estadias[dia_iso]["mood"] = mood
+            estadias[dia_iso]["participated"] = True
+
+        elif "ACCIDENTE" in cat_upper:
+            estadias[dia_iso]["hadAccident"] = True
+            if a.description:
+                estadias[dia_iso]["accidentDescription"] = a.description
+
+        elif "SALUD" in cat_upper:
+            estadias[dia_iso]["hadHealthIssue"] = True
+            if a.description:
+                estadias[dia_iso]["healthIssue"] = a.description
+
     # Asistencia y hora de llegada
     transcurridos = dias_escolares_transcurridos(lunes, hoy_)
     asistio = len(ingresos)
@@ -186,7 +302,11 @@ def resumen_semanal(
     porcentajes: list[int] = []
     resumen_comidas: list[str] = []
     for campo, nombre in COMIDAS:
-        valores = [e.get(campo) for e in estadias.values() if e.get(campo) in PORCENTAJE_COMIDA]
+        valores = [
+            normalizar_opcion_comida(e.get(campo))
+            for e in estadias.values()
+            if normalizar_opcion_comida(e.get(campo)) in PORCENTAJE_COMIDA
+        ]
         porcentajes.extend(PORCENTAJE_COMIDA[v] for v in valores)
         if valores:
             completos = sum(1 for v in valores if v in ("TODO", "PIDIO_MAS"))
@@ -213,16 +333,14 @@ def resumen_semanal(
         texto_siesta = "No hay registros de siesta esta semana."
         siesta_diaria = "—"
 
-    # Estado de ánimo
+    # Estado de ánimo (conciso para que quepa en 1 sola línea de la tarjeta)
     animos = [e.get("mood") for e in estadias.values() if e.get("mood") in TEXTO_ANIMO]
     participo = sum(1 for e in estadias.values() if e.get("participated") is True)
     if animos:
         predominante = max(TEXTO_ANIMO, key=animos.count)
         animo = f"Mayormente {TEXTO_ANIMO[predominante]}"
-        if participo:
-            animo += f", participó {_plural(participo, 'día', 'días')}"
     else:
-        animo = "Sin registros de ánimo"
+        animo = "Sin registros"
 
     # Salud y seguridad
     incidentes: list[str] = []
@@ -265,7 +383,8 @@ def resumen_semanal(
 
     # Resumen ejecutivo en una o dos frases
     nombre = alumno.short_name or alumno.full_name
-    if not registros:
+    tiene_registros = bool(registros or estadias or ingresos or actividades_semana)
+    if not tiene_registros:
         if transcurridos == 0:
             ejecutivo = f"La semana de {nombre} aún no comienza."
         else:
@@ -278,7 +397,7 @@ def resumen_semanal(
             partes.append(f"durmió {duracion(total_siesta)} de siesta en total")
         ejecutivo = ", ".join(partes[:-1]) + (" y " if len(partes) > 1 else "") + partes[-1] + "."
         if animos:
-            ejecutivo += f" Su estado de ánimo fue {animo.lower()}."
+            ejecutivo += f" Su estado de ánimo fue {animo.lower()}" + (f", participando {_plural(participo, 'día', 'días')}." if participo else ".")
 
         # Síntesis opcional con IA integrando todos los datos disponibles
         observaciones_objs = db.scalars(
@@ -293,13 +412,20 @@ def resumen_semanal(
         ).all()
         textos_obs = [f"{o.author_role.capitalize()}: {o.text}" for o in observaciones_objs]
 
-        actividades_bitacora = [
-            f"{a.title}: {a.description}".strip(" :")
-            for a in db.scalars(
-                select(Activity).where(Activity.child_id == alumno.id, Activity.date.in_(dias_semana_todos))
-            ).all()
-            if (a.title or a.description)
-        ][:5]
+        actividades_bitacora: list[str] = []
+        for a in db.scalars(
+            select(Activity).where(Activity.child_id == alumno.id, Activity.date.in_(dias_semana_todos))
+        ).all():
+            partes_a = []
+            if a.title:
+                partes_a.append(a.title)
+            if a.description:
+                desc = a.description.strip()
+                if desc and desc.lower() != (a.title or "").strip().lower():
+                    partes_a.append(f'- Comentario: "{desc}"')
+            if partes_a:
+                actividades_bitacora.append(" ".join(partes_a))
+        actividades_bitacora = actividades_bitacora[:8]
 
         ejecutivo_ia = generar_resumen_ejecutivo_ia({
             "child_id": alumno.id,

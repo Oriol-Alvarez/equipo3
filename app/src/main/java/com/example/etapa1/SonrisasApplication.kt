@@ -78,7 +78,13 @@ open class AppContainer(val context: Context) {
     private val mockRoomRepository by lazy { MockRoomRepositoryImpl() }
     private val mockChildRepository by lazy { MockChildRepositoryImpl() }
     private val mockAttendanceRepository by lazy { MockAttendanceRepositoryImpl() }
-    private val mockBitacoraRepository by lazy { MockBitacoraRepositoryImpl() }
+    private val mockBitacoraRepository by lazy {
+        MockBitacoraRepositoryImpl().apply {
+            onActivityCreated = { childId ->
+                mockChildRepository.cargarDetalle(childId)
+            }
+        }
+    }
     private val mockLostObjectsRepository by lazy { MockLostObjectsRepositoryImpl() }
     private val mockSuggestionsRepository by lazy { MockSuggestionsRepositoryImpl() }
     private val mockMessagesRepository by lazy { MockMessagesRepositoryImpl() }
@@ -102,7 +108,13 @@ open class AppContainer(val context: Context) {
     private val networkDailyPlanRepository by lazy { NetworkDailyPlanRepositoryImpl(api) }
     private val networkDailyLogRepository by lazy { NetworkDailyLogRepositoryImpl(api) }
     private val networkMessagesRepository by lazy { NetworkMessagesRepositoryImpl(api, tokenManager, chatConexion) }
-    private val networkBitacoraRepository by lazy { NetworkBitacoraRepositoryImpl(api, tokenManager, chatConexion, subidaArchivos) }
+    private val networkBitacoraRepository by lazy {
+        NetworkBitacoraRepositoryImpl(api, tokenManager, chatConexion, subidaArchivos).apply {
+            onActivityCreated = { childId ->
+                networkChildRepository.cargarDetalle(childId)
+            }
+        }
+    }
     private val networkAdminRepository by lazy { NetworkAdminRepositoryImpl(api) }
 
     // Repositorios expuestos a la aplicación (conmutación transparente según `useMocks`)

@@ -879,6 +879,37 @@ object MockDataRepository {
             "Sin incidentes de salud ni alergias registradas. Temperatura y estado físico óptimos en todas las jornadas."
         }
 
+        // Cálculo dinámico de alimentación a partir de actividades registradas en la bitácora
+        val todayFoodActivities = _childTodayActivities[child.id]?.filter { it.category == ActivityCategory.ALIMENTACION }.orEmpty()
+        val foodPoints = mutableListOf(0, 33, 100) // Base inicial (promedio 44%)
+        for (act in todayFoodActivities) {
+            val pts = when (act.portion) {
+                PortionOption.TODO -> 100
+                PortionOption.MEDIO -> 50
+                PortionOption.POCO -> 33
+                null -> if (act.description.contains("todo", ignoreCase = true) || act.description.contains("pidió más", ignoreCase = true)) 100
+                        else if (act.description.contains("medio", ignoreCase = true)) 50
+                        else if (act.description.contains("poco", ignoreCase = true)) 33
+                        else 0
+            }
+            foodPoints.add(pts)
+        }
+        val computedFoodPercentage = "${Math.round(foodPoints.average().toFloat())}%"
+
+        // Cálculo dinámico de estado de ánimo a partir de actividades registradas en la bitácora
+        val todayMoodActivities = _childTodayActivities[child.id]?.filter { it.category == ActivityCategory.ESTADO_ANIMO }.orEmpty()
+        val computedMoodSummary = if (todayMoodActivities.isNotEmpty()) {
+            val lastMoodDesc = todayMoodActivities.last().description
+            when {
+                lastMoodDesc.contains("Feliz", ignoreCase = true) -> "Mayormente feliz"
+                lastMoodDesc.contains("Triste", ignoreCase = true) -> "Mayormente triste"
+                lastMoodDesc.contains("Enojado", ignoreCase = true) -> "Mayormente enojado"
+                else -> "Mayormente feliz"
+            }
+        } else {
+            if (child.isPresent) "Mayormente feliz" else "Tranquilo"
+        }
+
         val currentWeek = WeeklySummary(
             weekLabel = "Semana actual",
             weekRangeText = "Semana del 22 al 26 de Septiembre, 2026",
@@ -886,11 +917,11 @@ object MockDataRepository {
             totalSchoolDays = 5,
             attendancePercentageText = if (child.isPresent) "100%" else "80%",
             averageArrivalTime = child.arrivalTime ?: "08:20 AM",
-            foodIntakePercentage = if (child.isPresent) "92%" else "85%",
+            foodIntakePercentage = computedFoodPercentage,
             totalNapHours = "6h 15m",
             averageNapDaily = "1h 15m/día",
-            moodSummary = if (child.isPresent) "Muy participativo y sociable" else "Tranquilo y afectuoso",
-            executiveSummary = "Semana sumamente positiva para ${child.fullName}. Ha mantenido una asistencia constante con horario puntual de ingreso. En alimentación mostró gran apetito y excelente autonomía con los cubiertos. En el descanso mantuvo siestas continuas de más de una hora. Su interacción con educadoras y compañeros en actividades sensoriales fue sobresaliente.",
+            moodSummary = computedMoodSummary,
+            executiveSummary = "Semana sumamente positiva para ${child.fullName}. Ha mantenido una asistencia constante con horario puntual de ingreso. En alimentación registró un promedio del $computedFoodPercentage de consumo de alimentos. En el descanso mantuvo siestas continuas de más de una hora. Su interacción con educadoras y compañeros en actividades sensoriales fue sobresaliente.",
             foodHighlights = listOf(
                 "Gran aceptación en cremas de verduras, sopa de pollo con fideos y lentejas con arroz.",
                 "Excelente autonomía: come sin ayuda y pide agua con naturalidad cuando la necesita.",

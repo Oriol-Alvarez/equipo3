@@ -1,12 +1,21 @@
 package com.example.etapa1.ui.state
 
 import com.example.etapa1.data.repository.BitacoraRepository
+import com.example.etapa1.data.repository.ChildRepository
 import com.example.etapa1.data.repository.FamilyGroupsRepository
+import com.example.etapa1.model.ActivityCategory
+import com.example.etapa1.model.Child
+import com.example.etapa1.model.ChildFullProfile
+import com.example.etapa1.model.DailyBitacora
 import com.example.etapa1.model.FamilyGroupChat
+import com.example.etapa1.model.FoodConsumptionOption
 import com.example.etapa1.model.GroupParticipant
+import com.example.etapa1.model.MealType
 import com.example.etapa1.model.MessageAttachment
+import com.example.etapa1.model.MockDataRepository
 import com.example.etapa1.model.TimelineItem
 import com.example.etapa1.model.UserRole
+import com.example.etapa1.model.WeeklySummary
 import com.example.etapa1.ui.components.parseGroupActivityMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -169,5 +178,77 @@ class NewActivityViewModelTest {
         val descNormal = "El alumno participó activamente"
         val cleanedNormal = com.example.etapa1.ui.components.formatActivityDescription(descNormal, badge)
         assertEquals("El alumno participó activamente", cleanedNormal)
+    }
+
+    @Test
+    fun saveActivity_callsChildRepositoryCargarDetalle() {
+        val bitacoraRepo = FakeBitacoraRepository()
+        var detalleCargado: String? = null
+        val fakeChildRepo = object : ChildRepository {
+            override val roomChildren = MutableStateFlow<List<Child>>(emptyList())
+            override val parentChildren = MutableStateFlow<List<Child>>(emptyList())
+            override val salaActual = MutableStateFlow("sala_1a")
+            override val cambios = MutableStateFlow(0)
+            override fun abrirSala(roomId: String) {}
+            override fun cargarDetalle(childId: String) { detalleCargado = childId }
+            override fun getChildById(childId: String): Child? = null
+            override fun getChildFullProfile(child: Child): ChildFullProfile = MockDataRepository.getChildFullProfile(child)
+            override fun updateChildFullProfile(childId: String, profile: ChildFullProfile) {}
+            override fun getWeeklySummaryForChild(child: Child): WeeklySummary = MockDataRepository.getWeeklySummaryForChild(child)
+            override fun getWeeklySummariesForChild(child: Child): List<WeeklySummary> = emptyList()
+            override fun markWeeklySummaryReadStatus(childId: String, weekRangeText: String, isRead: Boolean, timestampText: String?) {}
+            override fun setWeeklySummaryReaction(childId: String, weekRangeText: String, reaction: String?) {}
+            override fun getDailyBitacorasForChild(child: Child): List<DailyBitacora> = emptyList()
+        }
+
+        val viewModel = NewActivityViewModel(bitacoraRepo, childRepository = fakeChildRepo)
+        viewModel.saveActivity(
+            time = "12:30 PM",
+            category = ActivityCategory.ALIMENTACION,
+            summaryBadge = "Comió todo",
+            description = "Comió todo su plato",
+            childId = "mateo_garcia",
+            mealType = MealType.COMIDA,
+            foodConsumption = FoodConsumptionOption.TODO
+        )
+
+        assertEquals("mateo_garcia", detalleCargado)
+    }
+
+    @Test
+    fun saveActivity_withEstadoAnimo_updatesDailyLogEstadiaMood() {
+        val bitacoraRepo = FakeBitacoraRepository()
+        var updatedEstadia: com.example.etapa1.model.EstadiaLog? = null
+        val fakeDailyLogRepo = object : com.example.etapa1.data.repository.DailyLogRepository {
+            override val logs = MutableStateFlow<List<com.example.etapa1.model.DailyLog>>(emptyList())
+            override fun logFor(childId: String, date: com.example.etapa1.domain.SimpleDate) = null
+            override fun logsFor(childId: String, days: List<com.example.etapa1.domain.SimpleDate>) = emptyList<com.example.etapa1.model.DailyLog?>()
+            override fun saveIngreso(childId: String, date: com.example.etapa1.domain.SimpleDate, ingreso: com.example.etapa1.model.IngresoLog) = Result.failure<com.example.etapa1.model.DailyLog>(NotImplementedError())
+            override fun saveEstadia(childId: String, date: com.example.etapa1.domain.SimpleDate, estadia: com.example.etapa1.model.EstadiaLog) = Result.failure<com.example.etapa1.model.DailyLog>(NotImplementedError())
+            override fun updateEstadia(childId: String, date: com.example.etapa1.domain.SimpleDate, change: (com.example.etapa1.model.EstadiaLog) -> com.example.etapa1.model.EstadiaLog): Result<com.example.etapa1.model.DailyLog> {
+                val initial = com.example.etapa1.model.EstadiaLog()
+                val updated = change(initial)
+                updatedEstadia = updated
+                val dummyLog = com.example.etapa1.model.DailyLog(childId = childId, date = date, ingreso = null, estadia = updated, egreso = null)
+                return Result.success(dummyLog)
+            }
+            override fun saveEgreso(childId: String, date: com.example.etapa1.domain.SimpleDate, egreso: com.example.etapa1.model.EgresoLog) = Result.failure<com.example.etapa1.model.DailyLog>(NotImplementedError())
+            override fun recordAttendanceTime(childId: String, date: com.example.etapa1.domain.SimpleDate, isArrival: Boolean, time24h: String, recordedBy: String) = Result.failure<com.example.etapa1.model.DailyLog>(NotImplementedError())
+        }
+
+        val viewModel = NewActivityViewModel(bitacoraRepo, dailyLogRepository = fakeDailyLogRepo)
+        viewModel.saveActivity(
+            time = "10:30 AM",
+            category = ActivityCategory.ESTADO_ANIMO,
+            summaryBadge = "😊 Feliz",
+            description = "Estadía: Feliz. En actividades: ¿Lloró?: No, ¿Peleó?: No, ¿Participó?: Sí.",
+            childId = "mateo_garcia",
+            moodState = com.example.etapa1.model.MoodState.FELIZ
+        )
+
+        assertNotNull(updatedEstadia)
+        assertEquals(com.example.etapa1.model.MoodState.FELIZ, updatedEstadia?.mood)
+        assertEquals(true, updatedEstadia?.participated)
+        assertEquals(false, updatedEstadia?.cried)
     }
 }

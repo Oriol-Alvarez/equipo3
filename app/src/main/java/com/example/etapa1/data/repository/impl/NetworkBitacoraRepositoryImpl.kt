@@ -259,6 +259,9 @@ class NetworkBitacoraRepositoryImpl(
         }
     }
 
+    /** Callback notificado cuando se crea una actividad en el backend para refrescar resúmenes. */
+    var onActivityCreated: ((String) -> Unit)? = null
+
     override fun addActivityCard(
         childId: String,
         time: String,
@@ -266,6 +269,34 @@ class NetworkBitacoraRepositoryImpl(
         portionLabel: String,
         description: String,
         date: String?
+    ) {
+        addActivityCard(
+            childId = childId,
+            time = time,
+            category = category,
+            portionLabel = portionLabel,
+            description = description,
+            date = date,
+            mealType = null,
+            consumptionOption = null,
+            napMinutes = null,
+            moodState = null,
+            excretoryFunction = null
+        )
+    }
+
+    override fun addActivityCard(
+        childId: String,
+        time: String,
+        category: String,
+        portionLabel: String,
+        description: String,
+        date: String?,
+        mealType: String?,
+        consumptionOption: String?,
+        napMinutes: Int?,
+        moodState: String?,
+        excretoryFunction: String?
     ) {
         val tempId = "temp_${System.nanoTime()}"
         val fecha = date ?: fechaActual()
@@ -288,13 +319,19 @@ class NetworkBitacoraRepositoryImpl(
                     category = category,
                     title = "$category: $portionLabel".trim().removeSuffix(":"),
                     description = description,
-                    portionOption = portionLabel
+                    portionOption = portionLabel,
+                    mealType = mealType,
+                    consumptionOption = consumptionOption,
+                    napMinutes = napMinutes,
+                    moodState = moodState,
+                    excretoryFunction = excretoryFunction
                 )
             ).bodyOrLog("POST /children/$childId/activities")
             if (res == null) {
                 quitar(childId, tempId)
             } else {
                 confirmar(childId, tempId, pendiente.copy(id = res.id, date = res.timelineItem.date ?: fecha))
+                onActivityCreated?.invoke(childId)
             }
         }
     }

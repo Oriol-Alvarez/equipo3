@@ -1,6 +1,7 @@
 package com.example.etapa1.ui.state
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.etapa1.data.repository.BitacoraRepository
 import com.example.etapa1.data.repository.ChildRepository
 import com.example.etapa1.data.repository.DailyLogRepository
@@ -12,8 +13,11 @@ import com.example.etapa1.model.ExcretionType
 import com.example.etapa1.model.FamilyGroupsSampleData
 import com.example.etapa1.model.FoodConsumptionOption
 import com.example.etapa1.model.MealType
+import com.example.etapa1.model.MoodState
 import com.example.etapa1.model.PortionOption
 import com.example.etapa1.model.SphincterControl
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class NewActivityViewModel(
     private val bitacoraRepository: BitacoraRepository,
@@ -33,15 +37,35 @@ class NewActivityViewModel(
         foodConsumption: FoodConsumptionOption? = null,
         excretionType: ExcretionType? = null,
         excretionAviso: Boolean? = null,
-        excretionNoAplica: Boolean? = null
+        excretionNoAplica: Boolean? = null,
+        moodState: MoodState? = null
     ) {
+        val mins = if (category == ActivityCategory.DESCANSO || category == ActivityCategory.SIESTA) {
+            description.substringAfter("un tiempo de ", "").substringBefore(" minutos").toIntOrNull()
+        } else null
+
+        val mood = if (category == ActivityCategory.ESTADO_ANIMO) {
+            moodState?.name ?: when {
+                description.contains("Estadía: Feliz") -> "FELIZ"
+                description.contains("Estadía: Triste") -> "TRISTE"
+                description.contains("Estadía: Enojado") -> "ENOJADO"
+                else -> null
+            }
+        } else null
+
         // 1. Agregar a la línea de tiempo del chat de bitácora
         bitacoraRepository.addActivityCard(
             childId = childId,
             time = time,
             category = category.label,
             portionLabel = summaryBadge,
-            description = description
+            description = description,
+            date = null,
+            mealType = mealType?.name,
+            consumptionOption = foodConsumption?.name,
+            napMinutes = mins,
+            moodState = mood,
+            excretoryFunction = excretionType?.name
         )
 
         // 2. Agregar a la lista funcional de actividades del día del alumno
@@ -147,7 +171,14 @@ class NewActivityViewModel(
 
                 ActivityCategory.ESTADO_ANIMO -> {
                     val obs = description.substringAfter("Observaciones: ", "").trim()
+                    val resolvedMood = moodState ?: when {
+                        description.contains("Estadía: Feliz") -> MoodState.FELIZ
+                        description.contains("Estadía: Triste") -> MoodState.TRISTE
+                        description.contains("Estadía: Enojado") -> MoodState.ENOJADO
+                        else -> null
+                    }
                     current.copy(
+                        mood = resolvedMood ?: current.mood,
                         cried = description.contains("¿Lloró?: Sí"),
                         fought = description.contains("¿Peleó?: Sí"),
                         participated = description.contains("¿Participó?: Sí"),
@@ -206,6 +237,10 @@ class NewActivityViewModel(
 
         // 5. Notificar al repositorio de niños para recargar el resumen semanal y la ficha
         childRepository?.cargarDetalle(childId)
+        viewModelScope.launch {
+            delay(500)
+            childRepository?.cargarDetalle(childId)
+        }
     }
 
     /**
@@ -222,7 +257,8 @@ class NewActivityViewModel(
         foodConsumption: FoodConsumptionOption? = null,
         excretionType: ExcretionType? = null,
         excretionAviso: Boolean? = null,
-        excretionNoAplica: Boolean? = null
+        excretionNoAplica: Boolean? = null,
+        moodState: MoodState? = null
     ) {
         for (childId in targetChildIds) {
             saveActivity(
@@ -236,7 +272,8 @@ class NewActivityViewModel(
                 foodConsumption = foodConsumption,
                 excretionType = excretionType,
                 excretionAviso = excretionAviso,
-                excretionNoAplica = excretionNoAplica
+                excretionNoAplica = excretionNoAplica,
+                moodState = moodState
             )
         }
     }

@@ -81,7 +81,7 @@ fun NewActivityScreen(
         child = child,
         isGroupActivity = isGroup,
         onBack = onBack,
-        onSubmitActivityDetailed = { cat, badge, desc, shareWithGroups, mealType, foodCons, excType, excAviso, excNoAplica ->
+        onSubmitActivityDetailed = { cat, badge, desc, shareWithGroups, mealType, foodCons, excType, excAviso, excNoAplica, moodSt ->
             val currentTime = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
             if (isGroup) {
                 viewModel.saveGroupActivity(
@@ -95,7 +95,8 @@ fun NewActivityScreen(
                     foodConsumption = foodCons,
                     excretionType = excType,
                     excretionAviso = excAviso,
-                    excretionNoAplica = excNoAplica
+                    excretionNoAplica = excNoAplica,
+                    moodState = moodSt
                 )
             } else {
                 viewModel.saveActivity(
@@ -109,7 +110,8 @@ fun NewActivityScreen(
                     foodConsumption = foodCons,
                     excretionType = excType,
                     excretionAviso = excAviso,
-                    excretionNoAplica = excNoAplica
+                    excretionNoAplica = excNoAplica,
+                    moodState = moodSt
                 )
             }
             onSubmitActivity(cat, badge, desc, shareWithGroups)
@@ -128,7 +130,7 @@ fun NewActivityScreen(
         child = child,
         isGroupActivity = isGroupActivity,
         onBack = onBack,
-        onSubmitActivityDetailed = { cat, badge, desc, shareWithGroups, _, _, _, _, _ ->
+        onSubmitActivityDetailed = { cat, badge, desc, shareWithGroups, _, _, _, _, _, _ ->
             onSubmitActivity(cat, badge, desc, shareWithGroups)
         }
     )
@@ -148,7 +150,8 @@ fun NewActivityScreen(
         foodConsumption: FoodConsumptionOption?,
         excretionType: ExcretionType?,
         excretionAviso: Boolean?,
-        excretionNoAplica: Boolean?
+        excretionNoAplica: Boolean?,
+        moodState: MoodState?
     ) -> Unit
 ) {
     var selectedCategory by remember { mutableStateOf<ActivityCategory?>(null) }
@@ -521,7 +524,8 @@ fun NewActivityScreen(
                                     if (currentCategory == ActivityCategory.ALIMENTACION) mealConsumptionOption else null,
                                     if (currentCategory == ActivityCategory.FUNCIONES_EXCRETORAS) selectedExcretionType else null,
                                     if (currentCategory == ActivityCategory.FUNCIONES_EXCRETORAS) controlAviso else null,
-                                    if (currentCategory == ActivityCategory.FUNCIONES_EXCRETORAS) controlNoAplica else null
+                                    if (currentCategory == ActivityCategory.FUNCIONES_EXCRETORAS) controlNoAplica else null,
+                                    if (currentCategory == ActivityCategory.ESTADO_ANIMO) (selectedMood ?: MoodState.FELIZ) else null
                                 )
                             },
                             modifier = Modifier

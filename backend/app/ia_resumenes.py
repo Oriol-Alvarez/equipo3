@@ -55,30 +55,32 @@ def construir_prompt(contexto: dict[str, Any]) -> str:
     if notas_comida:
         secciones.append(f"- Notas de comida: {'; '.join(notas_comida)}")
     secciones.append(f"- Siesta y descanso: {siesta}")
-    secciones.append(f"- Estado de ánimo y participación: {animo}")
+    secciones.append(f"- Estado de ánimo: {animo}")
     secciones.append(f"- Salud y seguridad: {salud}")
 
     if actividades_plan:
-        secciones.append(f"- Actividades pedagógicas planeadas: {', '.join(actividades_plan)}")
+        secciones.append(f"- Planeación pedagógica: {', '.join(actividades_plan)}")
     if actividades_bitacora:
-        secciones.append(f"- Actividades registradas en bitácora: {'; '.join(actividades_bitacora)}")
+        items_act = "\n  * ".join(actividades_bitacora)
+        secciones.append(f"- Comentarios y actividades registradas en bitácora por educadoras:\n  * {items_act}")
     if observaciones:
-        secciones.append(f"- Observaciones del equipo y familia: {'; '.join(observaciones)}")
+        items_obs = "\n  * ".join(observaciones)
+        secciones.append(f"- Observaciones semanales (educadores/familia):\n  * {items_obs}")
 
     datos_str = "\n".join(secciones)
 
     return f"""Eres un pedagogo infantil cálido y profesional en la guardería 'Sonrisas'.
-A partir de los siguientes registros reales de la semana, redacta un 'Resumen Ejecutivo' de 2 a 3 oraciones concisas para la familia de {nombre}.
+Redacta el 'Resumen Ejecutivo' semanal para la ficha móvil de la familia de {nombre}.
 
 {datos_str}
 
-Instrucciones estrictas:
-1. Sintetiza asistencia, cómo comió, descanso, estado de ánimo y alguna actividad o comentario destacado.
-2. Si hubo incidentes de salud o malestares, menciónalos con tacto; si todo estuvo bien, destaca su bienestar.
-3. El tono debe ser humano, positivo, empático y alentador para los padres.
-4. NO inventes ningún dato que no esté en la lista anterior.
-5. Devuelve únicamente el párrafo redactado, sin encabezados ni viñetas.
-"""
+REGLAS ESTRICTAS DE FORMATO Y EXTENSIÓN:
+1. LONGITUD MÁXIMA EN PANTALLA: Máximo de 7 a 8 líneas en la pantalla de un teléfono móvil (entre 50 y 65 palabras en total, NUNCA más de 70 palabras). Debe ser muy sintético, fluido y directo.
+2. ESTRUCTURA: Un único párrafo continuo. Prohibido usar viñetas, listas, saltos de línea, títulos o comillas envolventes.
+3. INICIO DIRECTO: Comienza directamente hablando de {nombre} y su semana (ej. "{nombre} ha completado una semana...", "{nombre} disfrutó de una semana..."). Prohibido saludar ("Estimada familia", "Hola", etc.).
+4. COMENTARIOS DE ACTIVIDADES: Es indispensable que integres de forma natural algún comentario u observación concreta de las actividades registradas en la bitácora (qué hizo, qué disfrutó o qué destacó la educadora).
+5. SÍNTESIS BÁSICA: Integra con agilidad asistencia, alimentación, descanso, ánimo y que estuvo bien de salud (o la atención requerida si hubo algún incidente).
+6. SIN FRASES DE CIERRE: Termina de inmediato tras sintetizar los hechos. Prohibido añadir frases hechas, lemas ni despedidas (como "¡Sigamos cosechando sonrisas!", "Hasta la próxima semana", etc.)."""
 
 
 def _llamar_gemini(prompt: str, api_key: str, timeout_s: float = 6.0) -> str | None:
@@ -90,8 +92,8 @@ def _llamar_gemini(prompt: str, api_key: str, timeout_s: float = 6.0) -> str | N
             payload = {
                 "contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {
-                    "temperature": 0.3,
-                    "maxOutputTokens": 350,
+                    "temperature": 0.2,
+                    "maxOutputTokens": 180,
                 },
             }
             try:
@@ -120,8 +122,8 @@ def _llamar_openai(prompt: str, api_key: str, timeout_s: float = 4.0) -> str | N
             {"role": "system", "content": "Eres un pedagogo infantil que redacta resúmenes ejecutivos breves y cálidos para familias."},
             {"role": "user", "content": prompt},
         ],
-        "temperature": 0.3,
-        "max_tokens": 280,
+        "temperature": 0.2,
+        "max_tokens": 160,
     }
     with httpx.Client(timeout=timeout_s) as client:
         resp = client.post(url, headers=headers, json=payload)

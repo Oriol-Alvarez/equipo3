@@ -102,6 +102,61 @@ def test_semana_fuera_del_historial_da_404(cliente: TestClient, familiar: Person
     assert r.status_code == 404
 
 
+def test_actividad_en_bitacora_actualiza_resumen_semanal(cliente: TestClient, educadora: Persona, familiar: Persona):
+    semana = lunes_de(hoy()).isoformat()
+    # 1. Consultar resumen semanal antes
+    r1 = cliente.get(f"{API}/children/mateo_garcia/weekly-summaries/{semana}", headers=familiar.headers)
+    assert r1.status_code == 200
+
+    # 2. Registrar actividad de comida en la bitácora
+    r2 = cliente.post(
+        f"{API}/children/mateo_garcia/activities",
+        json={
+            "time": "12:30 PM",
+            "category": "Alimentación",
+            "title": "Almuerzo",
+            "description": "Comió todo su plato de verduras con pollo.",
+            "mealType": "COMIDA",
+            "consumptionOption": "TODO",
+            "portionOption": "Todo",
+            "date": hoy().strftime("%d/%m/%Y"),
+        },
+        headers=educadora.headers,
+    )
+    assert r2.status_code == 201
+
+    # 3. Verificar que el resumen semanal refleja la actividad y el porcentaje
+    r3 = cliente.get(f"{API}/children/mateo_garcia/weekly-summaries/{semana}", headers=familiar.headers)
+    assert r3.status_code == 200
+    resumen_actualizado = r3.json()
+    assert resumen_actualizado["foodIntakePercentage"] != "—"
+    assert any("comió completo" in h for h in resumen_actualizado["foodHighlights"])
+
+
+def test_actividad_animo_actualiza_resumen_semanal(cliente: TestClient, educadora: Persona, familiar: Persona):
+    semana = lunes_de(hoy()).isoformat()
+    r = cliente.post(
+        f"{API}/children/mateo_garcia/activities",
+        json={
+            "time": "11:00 AM",
+            "category": "Estado de Ánimo",
+            "title": "Estado de Ánimo",
+            "description": "Estadía: Feliz. Participó alegremente.",
+            "moodState": "FELIZ",
+            "date": hoy().strftime("%d/%m/%Y"),
+        },
+        headers=educadora.headers,
+    )
+    assert r.status_code == 201
+
+    r2 = cliente.get(f"{API}/children/mateo_garcia/weekly-summaries/{semana}", headers=familiar.headers)
+    assert r2.status_code == 200
+    resumen = r2.json()
+    assert "feliz" in resumen["moodSummary"].lower()
+    assert "\n" not in resumen["moodSummary"]
+    assert len(resumen["moodSummary"]) <= 25
+
+
 # ---------------------------------------------------------------------------
 # Historial diario
 # ---------------------------------------------------------------------------

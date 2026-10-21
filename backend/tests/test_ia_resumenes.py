@@ -37,6 +37,9 @@ def test_construir_prompt_incluye_todos_los_elementos():
     assert "Comió toda la fruta" in prompt
     assert "Estuvo muy concentrado" in prompt
     assert "Resumen Ejecutivo" in prompt
+    assert "Comentarios y actividades registradas en bitácora por educadoras" in prompt
+    assert "LONGITUD MÁXIMA EN PANTALLA" in prompt
+    assert "teléfono móvil" in prompt
 
 
 def test_sin_api_key_devuelve_none(monkeypatch):

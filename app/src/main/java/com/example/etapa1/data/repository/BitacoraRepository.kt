@@ -40,6 +40,22 @@ interface BitacoraRepository {
         date: String? = null
     )
 
+    fun addActivityCard(
+        childId: String,
+        time: String,
+        category: String,
+        portionLabel: String,
+        description: String,
+        date: String? = null,
+        mealType: String? = null,
+        consumptionOption: String? = null,
+        napMinutes: Int? = null,
+        moodState: String? = null,
+        excretoryFunction: String? = null
+    ) {
+        addActivityCard(childId, time, category, portionLabel, description, date)
+    }
+
     /** Borra lo cargado al cerrar sesión. */
     fun limpiar() {}
 }

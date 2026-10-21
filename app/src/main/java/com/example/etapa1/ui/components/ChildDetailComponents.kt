@@ -49,6 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.etapa1.model.ActivityCategory
@@ -618,7 +619,7 @@ fun WeeklySummaryContent(
                     )
 
                     WeeklyMetricCard(
-                        title = "Estado General",
+                        title = "Estado de Ánimo",
                         value = currentSummary.moodSummary,
                         subtext = "Comportamiento semanal",
                         icon = Icons.Default.Face,
@@ -935,9 +936,11 @@ fun WeeklyMetricCard(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = value,
-                fontSize = 17.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary
+                color = TextPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(

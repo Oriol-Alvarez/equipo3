@@ -76,6 +76,8 @@ class MockBitacoraRepositoryImpl : BitacoraRepository {
         )
     }
 
+    var onActivityCreated: ((String) -> Unit)? = null
+
     override fun addActivityCard(
         childId: String,
         time: String,
@@ -83,6 +85,34 @@ class MockBitacoraRepositoryImpl : BitacoraRepository {
         portionLabel: String,
         description: String,
         date: String?
+    ) {
+        addActivityCard(
+            childId = childId,
+            time = time,
+            category = category,
+            portionLabel = portionLabel,
+            description = description,
+            date = date,
+            mealType = null,
+            consumptionOption = null,
+            napMinutes = null,
+            moodState = null,
+            excretoryFunction = null
+        )
+    }
+
+    override fun addActivityCard(
+        childId: String,
+        time: String,
+        category: String,
+        portionLabel: String,
+        description: String,
+        date: String?,
+        mealType: String?,
+        consumptionOption: String?,
+        napMinutes: Int?,
+        moodState: String?,
+        excretoryFunction: String?
     ) {
         agregar(
             childId,
@@ -95,6 +125,7 @@ class MockBitacoraRepositoryImpl : BitacoraRepository {
                 description = description
             )
         )
+        onActivityCreated?.invoke(childId)
     }
 
     private fun horaActual(): String = SimpleDateFormat("hh:mm a", Locale.US).format(Date())
