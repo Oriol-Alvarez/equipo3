@@ -16,6 +16,7 @@ except ImportError:
     RateLimitExceeded = None
 
 from . import almacen, errors
+from .carga_inicial import carga_inicial_produccion
 from .idempotencia import idempotencia
 from .rate_limit import limiter
 from .config import settings
@@ -72,9 +73,14 @@ async def lifespan(_: FastAPI):
     almacen.preparar()
 
     with SessionLocal() as db:
-        seed_database(db)
-        seed_modulos_heber(db)
-        seed_salas_adicionales(db)
+        if settings.datos_demo:
+            # Desarrollo y demostración: cuentas y niños de ejemplo
+            seed_database(db)
+            seed_modulos_heber(db)
+            seed_salas_adicionales(db)
+        else:
+            # Estancia real: solo la cuenta de Dirección y las salas (plan de implantación)
+            carga_inicial_produccion(db)
 
     yield
 

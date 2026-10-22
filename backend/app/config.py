@@ -36,5 +36,15 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     openai_api_key: str = ""
 
+    # Implantación (ver docs/entrega-final.md, plan de implantación)
+    # true  = desarrollo y demostración: se cargan las cuentas y niños de ejemplo (Password123!).
+    # false = estancia real: NO se carga nada de ejemplo; solo la cuenta de Dirección y las salas de abajo.
+    datos_demo: bool = True
+    direccion_email: str = ""
+    direccion_password: str = ""
+    direccion_nombre: str = "Dirección"
+    # Formato: "Sala 1A:Lactantes,Sala 2B:Maternales A"
+    salas_iniciales: str = ""
+
 
 settings = Settings()
