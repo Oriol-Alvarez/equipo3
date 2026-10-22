@@ -946,7 +946,9 @@ private fun ChatMessageBubble(
         if (isWorkerRole) msg.senderRole == com.example.etapa1.model.UserRole.EDUCADORA
         else msg.senderRole == com.example.etapa1.model.UserRole.FAMILIAR
     } else {
-        if (isWorkerRole) msg.isOutgoing else !msg.isOutgoing
+        // El servidor ya marca isOutgoing desde el punto de vista de quien tiene la sesión.
+        // Antes se invertía para la familia y veía sus propios mensajes del lado de la educadora.
+        msg.isOutgoing
     }
 
     if (actData != null) {

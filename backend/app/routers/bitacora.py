@@ -84,12 +84,16 @@ def obtener_linea_de_tiempo(
     for att in asistencias:
         texto = f"{'Ingreso' if att.is_ingreso else 'Egreso'}: {att.time}"
         icono = "entry" if att.is_ingreso else "exit"
+        # La app manda la fecha de asistencia como 2026-10-22; la línea de tiempo usa 22/10/2026
+        fecha_att = att.date
+        if fecha_att and len(fecha_att) == 10 and fecha_att[4] == "-" and fecha_att[7] == "-":
+            fecha_att = f"{fecha_att[8:10]}/{fecha_att[5:7]}/{fecha_att[0:4]}"
         items.append(
             TimelineItemOut(
                 type="EVENT_CHIP",
                 id=att.id,
                 time=att.time,
-                date=att.date,
+                date=fecha_att,
                 text=texto,
                 iconType=icono,
             )
