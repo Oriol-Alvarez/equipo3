@@ -99,7 +99,8 @@ def test_subida_media_y_descarga_contrato(cliente: TestClient, educadora: Person
 
     # Descarga de imagen
     file_id = media_data["fileId"]
-    r_bajada = cliente.get(f"/api/v1/media/{file_id}")
+    # Desde la entrega final la descarga exige sesión (RF-09 / RF-14)
+    r_bajada = cliente.get(f"/api/v1/media/{file_id}", headers=educadora.headers)
     assert r_bajada.status_code == 200
     assert r_bajada.content == PNG_CHICO
     assert "ETag" in r_bajada.headers

@@ -17,7 +17,7 @@ from ..db import get_db
 from ..notificaciones_push import familias_del_nino, notificar
 from ..deps import Identidad, requiere_educadora, usuario_actual
 from ..errors import ApiError
-from ..horario import hoy
+from ..horario import fecha_local, hoy
 from ..resumenes import a_fecha, _json, historial_diario, normalizar_opcion_comida, normalizar_tipo_comida
 from ..models import Activity, AttendanceRecord, BitacoraMessage, Child, DailyLog, TimelineEvent
 from ..schemas import (
@@ -134,7 +134,7 @@ def obtener_linea_de_tiempo(
     # 4. Mensajes relevantes en bitácora
     mensajes = db.scalars(select(BitacoraMessage).where(BitacoraMessage.child_id == childId)).all()
     for m in mensajes:
-        fecha_msg = getattr(m, "date", None) or (m.created_at.strftime("%d/%m/%Y") if m.created_at else hoy().strftime("%d/%m/%Y"))
+        fecha_msg = getattr(m, "date", None) or fecha_local(m.created_at)
         if date and fecha_msg != date:
             continue
         items.append(
@@ -177,13 +177,13 @@ def _registro_del_dia(db: Session, child_id: str, fecha_iso: str) -> DailyLog | 
 def registrar_actividad(
     childId: str,
     body: NewActivityRequest,
-    _: Identidad = Depends(requiere_educadora),
+    quien: Identidad = Depends(requiere_educadora),
     db: Session = Depends(get_db),
 ) -> NewActivityResponse:
     """Registra una nueva actividad realizada por el menor (alimentación, siesta, etc.)."""
     alumno = db.get(Child, childId)
     if alumno is None:
-        raise ApiError(404, f"No existe el alumno con id {childId}")
+        raise ApiError(404, f"No existe el alumno con id {childId}", "alumno_inexistente")
 
     act_id = f"act_{uuid.uuid4().hex[:8]}"
     fecha_actividad = body.date or hoy().strftime("%d/%m/%Y")
@@ -214,6 +214,8 @@ def registrar_actividad(
         nap_minutes=body.napMinutes,
         mood_state=mood_val or body.moodState,
         excretory_function=body.excretoryFunction,
+        created_by_id=quien.id,
+        created_by_name=quien.display_name or quien.email,
     )
     db.add(actividad)
     db.commit()  # la actividad queda guardada aunque falle la sincronización del registro diario
@@ -312,7 +314,7 @@ def registrar_actividad(
 def registrar_evento_rapido(
     childId: str,
     body: QuickEventRequest,
-    _: Identidad = Depends(requiere_educadora),
+    quien: Identidad = Depends(requiere_educadora),
     db: Session = Depends(get_db),
 ) -> TimelineItemOut:
     """Registra un evento rápido (chip) en la línea de tiempo del menor."""
@@ -327,6 +329,8 @@ def registrar_evento_rapido(
         time=body.time,
         text=body.text,
         icon_type=body.iconType,
+        created_by_id=quien.id,
+        created_by_name=quien.display_name or quien.email,
     )
     db.add(evento)
     db.commit()

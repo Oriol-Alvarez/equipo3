@@ -10,7 +10,7 @@ from ..db import get_db
 from ..deps import Identidad, requiere_direccion
 from ..errors import ApiError
 from ..fichas import fichas
-from ..horario import hoy
+from ..horario import ZONA_ESTANCIA, hoy
 from ..resumenes import a_fecha
 from ..models import (
     Activity,
@@ -21,6 +21,8 @@ from ..models import (
     ChildParent,
     ChildProfile,
     LostObject,
+    PhotoAccess,
+    PhotoDeletion,
     Room,
     StaffMember,
     Suggestion,
@@ -37,6 +39,17 @@ from ..schemas import (
     UserProfileOut,
 )
 from ..security import hash_password
+
+
+def _fecha_hora_local(momento) -> str:
+    """Timestamp de la base de datos (UTC sin zona) -> 'dd/mm/aaaa hh:mm AM' en hora de la estancia."""
+    if momento is None:
+        return ""
+    from datetime import timezone as _tz
+
+    if momento.tzinfo is None:
+        momento = momento.replace(tzinfo=_tz.utc)
+    return momento.astimezone(ZONA_ESTANCIA).strftime("%d/%m/%Y %I:%M %p")
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -497,8 +510,9 @@ def obtener_logs_sistema(
                 category="ASISTENCIA",
                 title=action_title,
                 description=detail,
-                actorName=receiver if is_in else deliverer,
-                actorRole="EDUCADORA" if is_in else "FAMILIAR",
+                # RF-14: la cuenta que capturó el registro (los registros antiguos no la tienen)
+                actorName=att.recorded_by_name or (receiver if is_in else deliverer),
+                actorRole="EDUCADORA" if (att.recorded_by_name or is_in) else "FAMILIAR",
                 childName=c_name,
                 roomName=r_name,
             )
@@ -519,7 +533,7 @@ def obtener_logs_sistema(
                 category="ACTIVIDAD",
                 title=f"{act.category.capitalize()}: {act.title}",
                 description=act.description or f"Registro de {act.category.lower()}",
-                actorName="Personal Educativo",
+                actorName=act.created_by_name or "Personal Educativo",
                 actorRole="EDUCADORA",
                 childName=c_name,
                 roomName=r_name,
@@ -602,6 +616,42 @@ def obtener_logs_sistema(
                 actorRole="DIRECCION",
                 childName=None,
                 roomName=lo.room,
+            )
+        )
+
+    # 7. RF-14: quién consultó cada fotografía o archivo
+    for acc in db.scalars(select(PhotoAccess).order_by(PhotoAccess.accessed_at.desc()).limit(limit)).all():
+        logs.append(
+            AdminLogItem(
+                id=f"log_foto_{acc.id}",
+                timestamp=_fecha_hora_local(acc.accessed_at),
+                category="FOTO",
+                title="Consulta de foto o archivo",
+                description=f"{acc.user_name} abrió el archivo {acc.file_id}.",
+                actorName=acc.user_name,
+                actorRole=acc.user_role,
+                childName=None,
+                roomName=None,
+            )
+        )
+
+    # 8. RF-10: fotos eliminadas a solicitud
+    for bor in db.scalars(select(PhotoDeletion).order_by(PhotoDeletion.deleted_at.desc()).limit(limit)).all():
+        motivo = f" Motivo: {bor.reason}" if bor.reason else ""
+        logs.append(
+            AdminLogItem(
+                id=f"log_borrado_{bor.id}",
+                timestamp=_fecha_hora_local(bor.deleted_at),
+                category="FOTO",
+                title="Foto eliminada",
+                description=(
+                    f"{bor.requested_by_name} eliminó el archivo {bor.file_id} "
+                    f"({bor.references_cleared} mensaje(s) actualizados).{motivo}"
+                ),
+                actorName=bor.requested_by_name,
+                actorRole=bor.requested_by_role,
+                childName=None,
+                roomName=None,
             )
         )
 

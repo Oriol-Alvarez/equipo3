@@ -16,6 +16,7 @@ except ImportError:
     RateLimitExceeded = None
 
 from . import almacen, errors
+from .idempotencia import idempotencia
 from .rate_limit import limiter
 from .config import settings
 from .db import Base, SessionLocal, engine
@@ -52,6 +53,12 @@ def _aplicar_migraciones_compatibilidad() -> None:
             if engine.dialect.name == "postgresql":
                 conn.execute(text("ALTER TABLE child_profiles ADD COLUMN IF NOT EXISTS emergency_phone_relation VARCHAR(60);"))
                 conn.execute(text("ALTER TABLE bitacora_messages ADD COLUMN IF NOT EXISTS date VARCHAR(20) DEFAULT '';"))
+                # RF-14: quién capturó cada registro (columnas nuevas de la entrega final)
+                for tabla in ("activities", "timeline_events"):
+                    conn.execute(text(f"ALTER TABLE {tabla} ADD COLUMN IF NOT EXISTS created_by_id VARCHAR(64);"))
+                    conn.execute(text(f"ALTER TABLE {tabla} ADD COLUMN IF NOT EXISTS created_by_name VARCHAR(120);"))
+                conn.execute(text("ALTER TABLE attendance_records ADD COLUMN IF NOT EXISTS recorded_by_id VARCHAR(64);"))
+                conn.execute(text("ALTER TABLE attendance_records ADD COLUMN IF NOT EXISTS recorded_by_name VARCHAR(120);"))
                 conn.commit()
     except Exception:
         pass
@@ -85,6 +92,11 @@ if RateLimitExceeded is not None and _rate_limit_exceeded_handler is not None:
 # ---------------------------------------------------------------------------
 # Middlewares
 # ---------------------------------------------------------------------------
+
+# RF-11: los reintentos de la cola sin conexión no duplican registros (Idempotency-Key).
+# Se registra antes que las cabeceras de seguridad para que las respuestas repetidas también las lleven.
+app.middleware("http")(idempotencia)
+
 
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):

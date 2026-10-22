@@ -11,7 +11,8 @@ from .daily_logs import _registro
 from ..db import get_db
 from ..deps import Identidad, requiere_educadora, usuario_actual
 from ..errors import ApiError
-from ..resumenes import minutos_de
+from ..acceso import exigir_alumno_visible, ids_visibles
+from ..horario import hora_12h_de, minutos_del_dia
 from ..models import AttendanceRecord, Child
 from ..schemas import (
     AttendanceRecordOut,
@@ -22,12 +23,23 @@ from ..schemas import (
     IngresoRequest,
 )
 
-def _hora_24(hora: str) -> str:
-    """'8:15 AM' u '08:15' -> '08:15' (formato de la hoja oficial). Si no se entiende, 422."""
-    minutos = minutos_de(hora)
+def _minutos(hora: str) -> int:
+    """'8:15 AM', '14:30' o '14:30 AM' -> minutos del día. Si no se entiende, 422."""
+    minutos = minutos_del_dia(hora)
     if minutos is None:
         raise ApiError(422, f"Hora no válida: {hora}", "hora_invalida", "Usa el formato 08:15 o 08:15 AM.")
+    return minutos
+
+
+def _hora_24(hora: str) -> str:
+    """'8:15 AM' u '08:15' -> '08:15' (formato de la hoja oficial). Si no se entiende, 422."""
+    minutos = _minutos(hora)
     return f"{minutos // 60:02d}:{minutos % 60:02d}"
+
+
+def _hora_12(hora: str) -> str:
+    """Cualquier formato aceptado -> '02:30 PM' (como se muestra en la app)."""
+    return hora_12h_de(_minutos(hora))
 
 
 router = APIRouter(prefix="/attendance", tags=["attendance"])
@@ -36,13 +48,12 @@ router = APIRouter(prefix="/attendance", tags=["attendance"])
 @router.post("/ingreso", response_model=AttendanceResponse, status_code=201)
 def registrar_ingreso(
     body: IngresoRequest,
-    _: Identidad = Depends(requiere_educadora),
+    quien: Identidad = Depends(requiere_educadora),
     db: Session = Depends(get_db),
 ) -> AttendanceResponse:
     """Registra el ingreso formal del alumno y actualiza su estado a Presente."""
-    alumno = db.get(Child, body.childId)
-    if alumno is None:
-        raise ApiError(404, f"No existe el alumno con id {body.childId}", "alumno_no_encontrado")
+    alumno = exigir_alumno_visible(quien, body.childId, db)
+    hora = _hora_12(body.entryTime)
 
     record_id = f"att_{uuid.uuid4().hex[:12]}"
     nuevo_registro = AttendanceRecord(
@@ -51,7 +62,9 @@ def registrar_ingreso(
         is_ingreso=True,
         date=body.date,
         day_of_week=body.dayOfWeek,
-        time=body.entryTime,
+        time=hora,
+        recorded_by_id=quien.id,
+        recorded_by_name=quien.display_name or quien.email,
         status="REGISTRADO",
         assistant_name=body.assistantName,
         is_child_sick=body.isChildSick,
@@ -72,8 +85,8 @@ def registrar_ingreso(
 
     # Actualizar estado del alumno en sala
     alumno.is_present = True
-    alumno.arrival_time = body.entryTime
-    alumno.status_text = f"{body.entryTime} • Presente"
+    alumno.arrival_time = hora
+    alumno.status_text = f"{hora} • Presente"
 
     # Sincronización con la bitácora oficial (DailyLog)
     med_opt = body.medicationOption if body.medicationOption in {"SI", "NO", "NO_APLICA"} else "NO_APLICA"
@@ -109,13 +122,12 @@ def registrar_ingreso(
 @router.post("/egreso", response_model=AttendanceResponse, status_code=201)
 def registrar_egreso(
     body: EgresoRequest,
-    _: Identidad = Depends(requiere_educadora),
+    quien: Identidad = Depends(requiere_educadora),
     db: Session = Depends(get_db),
 ) -> AttendanceResponse:
     """Registra la entrega/egreso formal del alumno y actualiza su estado de asistencia."""
-    alumno = db.get(Child, body.childId)
-    if alumno is None:
-        raise ApiError(404, f"No existe el alumno con id {body.childId}", "alumno_no_encontrado")
+    alumno = exigir_alumno_visible(quien, body.childId, db)
+    hora = _hora_12(body.exitTime)
 
     record_id = f"att_{uuid.uuid4().hex[:12]}"
     nuevo_registro = AttendanceRecord(
@@ -123,7 +135,9 @@ def registrar_egreso(
         child_id=body.childId,
         is_ingreso=False,
         date=body.date,
-        time=body.exitTime,
+        time=hora,
+        recorded_by_id=quien.id,
+        recorded_by_name=quien.display_name or quien.email,
         status="REGISTRADO",
         good_physical_condition=body.goodPhysicalCondition,
         injury_detail=body.injuryDetail,
@@ -139,7 +153,7 @@ def registrar_egreso(
 
     # Actualizar estado del alumno
     alumno.is_present = False
-    alumno.status_text = f"{body.exitTime} • Retirado"
+    alumno.status_text = f"{hora} • Retirado"
 
     # Sincronización con la bitácora oficial (DailyLog)
     egreso_log = EgresoLogData(
@@ -170,12 +184,19 @@ def registrar_egreso(
 def consultar_asistencias(
     childId: str | None = None,
     date: str | None = None,
-    _: Identidad = Depends(usuario_actual),
+    quien: Identidad = Depends(usuario_actual),
     db: Session = Depends(get_db),
 ) -> list[AttendanceRecordOut]:
-    """Consulta el historial de registros de asistencia filtrado por alumno y fecha."""
+    """Consulta el historial de registros de asistencia filtrado por alumno y fecha.
+
+    RF-07: una familia solo recibe la asistencia de sus propios hijos (antes recibía la de todos).
+    """
     query = select(AttendanceRecord).order_by(AttendanceRecord.recorded_at.desc())
+    visibles = ids_visibles(quien, db)
+    if visibles is not None:
+        query = query.where(AttendanceRecord.child_id.in_(visibles))
     if childId:
+        exigir_alumno_visible(quien, childId, db)
         query = query.where(AttendanceRecord.child_id == childId)
     if date:
         query = query.where(AttendanceRecord.date == date)

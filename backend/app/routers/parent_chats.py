@@ -10,7 +10,7 @@ from ..acceso import es_personal, exigir_alumno_visible
 from ..db import get_db
 from ..notificaciones_push import familias_del_nino, notificar, personal_de_la_sala
 from ..lecturas import clave_bitacora, marcar_leido, momento_utc, no_leidos_bitacora
-from ..horario import ahora, hoy
+from ..horario import ahora, fecha_local, hoy
 from ..deps import Identidad, requiere_educadora, usuario_actual
 from ..errors import ApiError
 from ..models import BitacoraMessage, Child, ChildParent, Usuario
@@ -84,7 +84,7 @@ def obtener_mensajes_chat_bitacora(
             senderId=m.sender_id,
             senderName=m.sender_name,
             time=m.time,
-            date=m.created_at.strftime("%d/%m/%Y") if m.created_at else hoy().strftime("%d/%m/%Y"),
+            date=m.date or fecha_local(m.created_at),
             message=m.message,
             isOutgoing=m.sender_id == quien.id,
             fileUri=m.file_uri,

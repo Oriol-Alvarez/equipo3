@@ -134,6 +134,9 @@ class AttendanceRecord(Base):
     receiver_tutor_signature_data: Mapped[str | None] = mapped_column(Text, nullable=True)
     deliverer_staff_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
     deliverer_staff_signature_data: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # RF-14: cuenta del personal que capturó el registro
+    recorded_by_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    recorded_by_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
     recorded_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
@@ -153,6 +156,9 @@ class Activity(Base):
     nap_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     mood_state: Mapped[str | None] = mapped_column(String(40), nullable=True)
     excretory_function: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    # RF-14: quién capturó el dato
+    created_by_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_by_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
@@ -165,6 +171,8 @@ class TimelineEvent(Base):
     time: Mapped[str] = mapped_column(String(20))
     text: Mapped[str] = mapped_column(String(120))
     icon_type: Mapped[str] = mapped_column(String(30))  # entry, mood, nap, etc.
+    created_by_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_by_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
@@ -446,3 +454,56 @@ class DailyLog(Base):
     estadia: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON
     egreso: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+# ---------------------------------------------------------------------------
+# Entrega final: operación sin conexión, bitácora de fotos y borrado de fotos
+# ---------------------------------------------------------------------------
+
+
+class IdempotencyRecord(Base):
+    """Respuesta guardada de una petición con cabecera Idempotency-Key.
+
+    RF-11: la app guarda sin conexión lo que registra la educadora y lo reenvía al volver
+    el internet. Si un envío llegó al servidor pero la respuesta se perdió, el reintento
+    trae la misma llave y el servidor contesta lo mismo sin volver a guardar (sin duplicados).
+    """
+
+    __tablename__ = "idempotency_records"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)  # sha256(usuario + llave)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    method: Mapped[str] = mapped_column(String(10))
+    path: Mapped[str] = mapped_column(String(255))
+    status_code: Mapped[int] = mapped_column(Integer)
+    body: Mapped[str] = mapped_column(Text)
+    content_type: Mapped[str] = mapped_column(String(100), default="application/json")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class PhotoAccess(Base):
+    """RF-14: quién consultó cada fotografía o archivo y cuándo."""
+
+    __tablename__ = "photo_accesses"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    file_id: Mapped[str] = mapped_column(String(64), index=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    user_name: Mapped[str] = mapped_column(String(120), default="")
+    user_role: Mapped[str] = mapped_column(String(20), default="")
+    accessed_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class PhotoDeletion(Base):
+    """RF-10: constancia de cada foto eliminada (la foto ya no existe; solo queda quién y cuándo)."""
+
+    __tablename__ = "photo_deletions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    file_id: Mapped[str] = mapped_column(String(64), index=True)
+    requested_by_id: Mapped[str] = mapped_column(String(64))
+    requested_by_name: Mapped[str] = mapped_column(String(120), default="")
+    requested_by_role: Mapped[str] = mapped_column(String(20), default="")
+    reason: Mapped[str] = mapped_column(Text, default="")
+    references_cleared: Mapped[int] = mapped_column(Integer, default=0)
+    deleted_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
