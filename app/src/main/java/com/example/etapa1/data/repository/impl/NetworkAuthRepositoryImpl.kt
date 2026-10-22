@@ -64,6 +64,19 @@ class NetworkAuthRepositoryImpl(
         tokenManager.userRole = role.name
     }
 
+    override fun sesionGuardada(): UserRole? {
+        if (tokenManager.token.isNullOrBlank() || tokenManager.userId.isNullOrBlank()) return null
+        return when (tokenManager.userRole?.uppercase()) {
+            "FAMILIAR" -> UserRole.FAMILIAR
+            "ADMINISTRADOR", "DIRECCION", "ADMIN" -> UserRole.ADMINISTRADOR
+            "EDUCADORA" -> UserRole.EDUCADORA
+            else -> null
+        }
+    }
+
+    override fun nombreSesion(): String? =
+        tokenManager.userDisplayName?.takeIf { it.isNotBlank() } ?: tokenManager.userEmail
+
     override fun logout() {
         val refresh = tokenManager.refreshToken
         val tokenSesion = tokenManager.token

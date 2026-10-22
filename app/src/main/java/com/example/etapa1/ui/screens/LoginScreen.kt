@@ -283,7 +283,16 @@ fun LoginContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Servidor al que se conecta la app (cambia cuando se levanta otro túnel)
+            ConfigurarServidor()
+
+            // Seguridad (RNF-03): los accesos rápidos con contraseña solo existen en la versión de
+            // desarrollo; el APK de release que se entrega no lleva credenciales.
+            if (!com.example.etapa1.BuildConfig.DEBUG) return@Column
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
                 text = "Acceso rápido de prueba:",

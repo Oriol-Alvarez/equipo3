@@ -69,6 +69,7 @@ import com.example.etapa1.ui.theme.TextSecondary
 
 import androidx.compose.runtime.collectAsState
 import com.example.etapa1.ui.state.AttendanceViewModel
+import com.example.etapa1.model.RegistroAsistencia
 
 @Composable
 fun AttendanceScreen(
@@ -84,8 +85,8 @@ fun AttendanceScreen(
         children = children,
         initialChild = initialChild,
         onBack = onBack,
-        onSaveAttendance = { child, isIngreso, time, notes ->
-            viewModel.saveAttendance(child, isIngreso, time, notes)
+        onSaveAttendance = { child, registro ->
+            viewModel.saveAttendance(child, registro)
         }
     )
 }
@@ -96,7 +97,7 @@ fun AttendanceScreen(
     children: List<Child> = MockDataRepository.childrenSala1A,
     initialChild: Child? = null,
     onBack: () -> Unit,
-    onSaveAttendance: (child: Child, isIngreso: Boolean, time: String, notes: String) -> Unit = { _, _, _, _ -> }
+    onSaveAttendance: (child: Child, registro: RegistroAsistencia) -> Unit = { _, _ -> }
 ) {
     val selectedChild = initialChild ?: children.firstOrNull() ?: MockDataRepository.mateoGarcia
     var activeTab by remember { mutableIntStateOf(0) } // 0 = Ingreso, 1 = Egreso
@@ -196,9 +197,38 @@ fun AttendanceScreen(
                 }
             }
         } else {
-            val timeStr = if (isIngreso) "${ingresoState.entryTime} AM" else "${egresoState.exitTime} PM"
-            val notes = if (isIngreso) ingresoState.observations else egresoState.observations
-            onSaveAttendance(selectedChild, isIngreso, timeStr, notes)
+            // La hora del formulario ya es de 24 h ("14:30"); se manda tal cual con todos los datos
+            val registro = if (isIngreso) {
+                RegistroAsistencia(
+                    isIngreso = true,
+                    hora24 = ingresoState.entryTime.trim(),
+                    observaciones = ingresoState.observations,
+                    asistente = ingresoState.assistantName,
+                    entrega = ingresoState.delivererName,
+                    recibePersonal = ingresoState.receiverStaffName,
+                    enfermo = ingresoState.isChildSick,
+                    medicamento = ingresoState.medicationOption,
+                    conSintomas = ingresoState.hasSymptoms,
+                    sintomas = ingresoState.symptomsDetail,
+                    limpio = ingresoState.isClean,
+                    mochilaCompleta = ingresoState.backpackComplete,
+                    buenEstadoFisico = ingresoState.goodPhysicalCondition,
+                    lesiones = ingresoState.injuryDetail
+                )
+            } else {
+                RegistroAsistencia(
+                    isIngreso = false,
+                    hora24 = egresoState.exitTime.trim(),
+                    observaciones = egresoState.observations,
+                    recoge = egresoState.receiverTutorName,
+                    entregaPersonal = egresoState.delivererStaffName,
+                    limpio = egresoState.isClean,
+                    mochilaCompleta = egresoState.backpackComplete,
+                    buenEstadoFisico = egresoState.goodPhysicalCondition,
+                    lesiones = egresoState.injuryDetail
+                )
+            }
+            onSaveAttendance(selectedChild, registro)
             successDialogMessage = if (isIngreso) {
                 "Se registró exitosamente el Ingreso de ${selectedChild.fullName} a las ${ingresoState.entryTime} hrs."
             } else {

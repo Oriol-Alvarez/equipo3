@@ -2,6 +2,14 @@ package com.example.etapa1.data.remote
 
 import kotlinx.serialization.Serializable
 
+/** Respuesta de DELETE /media/{id} (RF-10). */
+@Serializable
+data class EliminarArchivoDto(
+    val deleted: Boolean = false,
+    val fileId: String = "",
+    val referencesCleared: Int = 0
+)
+
 @Serializable
 data class LoginRequestDto(
     val email: String,

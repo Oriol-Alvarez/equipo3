@@ -2,6 +2,8 @@ package com.example.etapa1
 
 import android.app.Application
 import android.content.Context
+import coil.ImageLoader
+import coil.ImageLoaderFactory
 import com.example.etapa1.data.export.AndroidLogSheetExporter
 import com.example.etapa1.data.export.LogSheetExporter
 import com.example.etapa1.data.remote.NetworkClient
@@ -48,6 +50,7 @@ import com.example.etapa1.data.repository.impl.NetworkRoomRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkSuggestionsRepositoryImpl
 import com.example.etapa1.data.remote.ChatConexion
 import com.example.etapa1.data.remote.OfflineStore
+import com.example.etapa1.data.remote.ColaSinConexion
 import com.example.etapa1.data.repository.impl.NetworkBitacoraRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkMessagesRepositoryImpl
 import com.example.etapa1.data.repository.impl.NetworkWeeklyObservationsRepositoryImpl
@@ -68,6 +71,9 @@ open class AppContainer(val context: Context) {
     val tokenManager by lazy { TokenManager(context) }
     val offlineStore by lazy { OfflineStore(context) }
     val api by lazy { NetworkClient.createApi(tokenManager) }
+
+    /** RF-11: registros hechos sin internet que esperan enviarse (se guardan cifrados en el teléfono). */
+    val cola: ColaSinConexion by lazy { ColaSinConexion(context, api, tokenManager) }
     val subidaArchivos by lazy { SubidaArchivos(api, context) }
     val chatConexion: ChatConexion by lazy {
         ChatConexion(NetworkClient.createOkHttpClient(tokenManager))
@@ -97,9 +103,17 @@ open class AppContainer(val context: Context) {
 
     // Repositorios de Red conectados a FastAPI
     private val networkAuthRepository by lazy { NetworkAuthRepositoryImpl(api, tokenManager) }
-    private val networkRoomRepository by lazy { NetworkRoomRepositoryImpl(api) }
-    private val networkChildRepository by lazy { NetworkChildRepositoryImpl(api, tokenManager) }
-    private val networkAttendanceRepository by lazy { NetworkAttendanceRepositoryImpl(api) }
+    private val networkRoomRepository by lazy { NetworkRoomRepositoryImpl(api, tokenManager, offlineStore) }
+    private val networkChildRepository by lazy { NetworkChildRepositoryImpl(api, tokenManager, offlineStore) }
+    private val networkAttendanceRepository by lazy {
+        NetworkAttendanceRepositoryImpl(api, cola, tokenManager).apply {
+            // Cuando un ingreso/egreso guardado sin internet llega al servidor se recargan los datos
+            onAsistenciaEnviada = {
+                networkDailyLogRepository.refresh()
+                networkChildRepository.refresh()
+            }
+        }
+    }
     private val networkAnnouncementRepository by lazy { NetworkAnnouncementRepositoryImpl(api, chatConexion) }
     private val networkSuggestionsRepository by lazy { NetworkSuggestionsRepositoryImpl(api) }
     private val networkLostObjectsRepository by lazy { NetworkLostObjectsRepositoryImpl(api, subidaArchivos) }
@@ -109,7 +123,14 @@ open class AppContainer(val context: Context) {
     private val networkDailyLogRepository by lazy { NetworkDailyLogRepositoryImpl(api) }
     private val networkMessagesRepository by lazy { NetworkMessagesRepositoryImpl(api, tokenManager, chatConexion) }
     private val networkBitacoraRepository by lazy {
-        NetworkBitacoraRepositoryImpl(api, tokenManager, chatConexion, subidaArchivos).apply {
+        NetworkBitacoraRepositoryImpl(
+            api = api,
+            tokenManager = tokenManager,
+            chatConexion = chatConexion,
+            subidaArchivos = subidaArchivos,
+            cola = cola,
+            cache = offlineStore
+        ).apply {
             onActivityCreated = { childId ->
                 networkChildRepository.cargarDetalle(childId)
             }
@@ -205,6 +226,8 @@ open class AppContainer(val context: Context) {
         weeklyObservationsRepository.refresh()
         dailyPlanRepository.refresh()
         dailyLogRepository.refresh()
+        // Lo que quedó pendiente sin internet se manda en cuanto vuelve a entrar la misma persona
+        cola.procesar()
     }
 
     /** Al cerrar sesión: borra todo lo cargado para que el siguiente usuario no vea datos ajenos. */
@@ -222,18 +245,33 @@ open class AppContainer(val context: Context) {
         dailyPlanRepository.limpiar()
         dailyLogRepository.limpiar()
         bitacoraRepository.limpiar()
+        // Los datos guardados para trabajar sin internet no deben quedar para la siguiente persona.
+        // La cola de pendientes se conserva: se manda cuando quien los capturó vuelva a entrar.
+        offlineStore.clear()
+        com.example.etapa1.ui.components.Adjuntos.borrarDescargas(context)
     }
 
     val logSheetExporter: LogSheetExporter by lazy { AndroidLogSheetExporter(context) }
 }
 
-class SonrisasApplication : Application() {
+class SonrisasApplication : Application(), ImageLoaderFactory {
 
     lateinit var container: AppContainer
         private set
 
     override fun onCreate() {
         super.onCreate()
+        // Antes de cualquier petición: servidor elegido en el teléfono (si se cambió desde el login)
+        NetworkClient.cargarServidorGuardado(this)
         container = AppContainer(this)
     }
+
+    /**
+     * Las fotos del servidor solo se entregan con sesión (RF-09 / RF-14), así que Coil las pide con
+     * el mismo cliente que agrega el token. Las imágenes del teléfono (content://) no cambian.
+     */
+    override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
+        .okHttpClient { NetworkClient.createOkHttpClient(container.tokenManager) }
+        .crossfade(true)
+        .build()
 }

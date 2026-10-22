@@ -56,6 +56,20 @@ interface BitacoraRepository {
         addActivityCard(childId, time, category, portionLabel, description, date)
     }
 
+    /**
+     * RF-10: pide al servidor borrar la foto de un mensaje. Si sale bien, la foto desaparece de
+     * la bitácora para todos y del servidor. [alTerminar] recibe el resultado para avisar en pantalla.
+     */
+    fun eliminarFoto(
+        childId: String,
+        itemId: String,
+        fileUri: String,
+        motivo: String = "",
+        alTerminar: (Result<Unit>) -> Unit = {}
+    ) {
+        alTerminar(Result.failure(UnsupportedOperationException("No disponible sin servidor")))
+    }
+
     /** Borra lo cargado al cerrar sesión. */
     fun limpiar() {}
 }

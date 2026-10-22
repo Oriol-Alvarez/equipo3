@@ -11,6 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.etapa1.ui.screens.LoginScreen
+import com.example.etapa1.ui.screens.PantallaBloqueo
+import com.example.etapa1.ui.state.Bloqueo
 import com.example.etapa1.ui.state.AppViewModelProvider
 import com.example.etapa1.ui.state.LoginViewModel
 import com.example.etapa1.ui.state.SesionEstado
@@ -57,14 +59,27 @@ fun SonrisasApp() {
                 }
             }
 
-            SonrisasNavHost(
-                sesion = actual.sesion,
-                onSalir = {
-                    app?.container?.desconectarChat()
-                    app?.container?.limpiarTodo()
-                    sesionViewModel.salir()
+            val salir: () -> Unit = {
+                app?.container?.desconectarChat()
+                app?.container?.limpiarTodo()
+                sesionViewModel.salir()
+            }
+            val bloqueada by Bloqueo.bloqueada.collectAsState()
+
+            Box(Modifier.fillMaxSize()) {
+                SonrisasNavHost(
+                    sesion = actual.sesion,
+                    onSalir = salir
+                )
+                // RF-13: encima de todo, hasta que se pone la huella
+                if (bloqueada) {
+                    PantallaBloqueo(
+                        nombre = sesionViewModel.nombreSesion(),
+                        onDesbloquear = { Bloqueo.desbloquear() },
+                        onUsarContrasena = salir
+                    )
                 }
-            )
+            }
         }
     }
 }

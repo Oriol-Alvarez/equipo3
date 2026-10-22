@@ -52,6 +52,7 @@ import com.example.etapa1.ui.components.WorkerChatMessageBubble
 import com.example.etapa1.ui.components.ActivityTimelineCard
 import com.example.etapa1.ui.components.parseGroupActivityMessage
 import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.Schedule
 import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -108,6 +109,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.etapa1.ui.theme.Etapa1Theme
 import androidx.compose.runtime.collectAsState
 import com.example.etapa1.ui.state.ChatBitacoraViewModel
+import com.example.etapa1.ui.components.Adjuntos
 
 @Composable
 fun ChatBitacoraScreen(
@@ -124,6 +126,48 @@ fun ChatBitacoraScreen(
     val conexionEstado by viewModel.conexionEstado.collectAsState()
     val cambiosFicha by viewModel.cambiosFicha.collectAsState()
     val perfil = remember(child.id, cambiosFicha) { viewModel.perfil(child) }
+    val contexto = LocalContext.current
+
+    // RF-10: confirmación antes de borrar una foto (el borrado es definitivo y para todos)
+    var fotoPorBorrar by remember { mutableStateOf<TimelineItem.ChatMessage?>(null) }
+    var borrando by remember { mutableStateOf(false) }
+    fotoPorBorrar?.let { foto ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { if (!borrando) fotoPorBorrar = null },
+            title = { Text(if (isWorkerRole) "¿Eliminar esta foto?" else "¿Solicitar que se elimine esta foto?") },
+            text = {
+                Text(
+                    "La foto se borrará del servidor y dejará de verse para todas las personas. " +
+                        "Esta acción no se puede deshacer."
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    enabled = !borrando,
+                    onClick = {
+                        borrando = true
+                        viewModel.eliminarFoto(foto) { resultado ->
+                            borrando = false
+                            fotoPorBorrar = null
+                            android.widget.Toast.makeText(
+                                contexto,
+                                resultado.fold(
+                                    onSuccess = { "La foto se eliminó." },
+                                    onFailure = { "No se pudo eliminar: ${it.message}" }
+                                ),
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                ) { Text(if (borrando) "Eliminando…" else "Eliminar") }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(enabled = !borrando, onClick = { fotoPorBorrar = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     ChatBitacoraScreen(
         child = child,
@@ -145,7 +189,8 @@ fun ChatBitacoraScreen(
                 senderRole = if (isWorkerRole) com.example.etapa1.model.UserRole.EDUCADORA else com.example.etapa1.model.UserRole.FAMILIAR,
                 childId = child.id
             )
-        }
+        },
+        onEliminarFoto = { fotoPorBorrar = it }
     )
 }
 
@@ -165,7 +210,9 @@ fun ChatBitacoraScreen(
     /** Expediente real para los teléfonos del botón de llamar; null usa los datos de ejemplo (vista previa). */
     childProfile: com.example.etapa1.model.ChildFullProfile? = null,
     onSendMessage: (String, Uri?, String?, String?) -> Unit,
-    onSendActivity: ((category: String, badge: String, description: String) -> Unit)? = null
+    onSendActivity: ((category: String, badge: String, description: String) -> Unit)? = null,
+    /** RF-10: si no es null, las fotos del servidor muestran la opción para pedir su eliminación. */
+    onEliminarFoto: ((TimelineItem.ChatMessage) -> Unit)? = null
 ) {
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -591,7 +638,7 @@ fun ChatBitacoraScreen(
                                     TimelineChip(item)
                                 }
                                 is TimelineItem.ChatMessage -> {
-                                    ChatMessageBubble(item, isWorkerRole)
+                                    ChatMessageBubble(item, isWorkerRole, onEliminarFoto)
                                 }
                                 is TimelineItem.ActivityCard -> {
                                     ActivityTimelineCard(item)
@@ -885,7 +932,11 @@ private fun TimelineChip(chip: TimelineItem.EventChip) {
 }
 
 @Composable
-private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boolean = true) {
+private fun ChatMessageBubble(
+    msg: TimelineItem.ChatMessage,
+    isWorkerRole: Boolean = true,
+    onEliminarFoto: ((TimelineItem.ChatMessage) -> Unit)? = null
+) {
     val actData = remember(msg.message) { parseGroupActivityMessage(msg.message) }
     val isOutgoing = if (msg.senderRole != null) {
         if (isWorkerRole) msg.senderRole == com.example.etapa1.model.UserRole.EDUCADORA
@@ -925,16 +976,9 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boole
             modifier = Modifier
                 .widthIn(min = 70.dp, max = 300.dp)
                 .clickable(enabled = msg.fileUri != null) {
+                    // Se descarga con la sesión y se abre desde la carpeta privada de la app
                     msg.fileUri?.let { uriString ->
-                        try {
-                            val intent = Intent(Intent.ACTION_VIEW).apply {
-                                setDataAndType(Uri.parse(uriString), msg.fileMimeType ?: "*/*")
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            }
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
+                        Adjuntos.abrir(context, uriString, msg.fileMimeType, msg.fileName)
                     }
                 }
         ) {
@@ -953,6 +997,18 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boole
                                 .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
                             contentScale = ContentScale.Crop
                         )
+                        // RF-10: la familia pide borrar la foto (el personal también puede quitarla)
+                        if (onEliminarFoto != null && msg.fileUri.contains("/media/") && !msg.id.startsWith("temp_")) {
+                            Text(
+                                text = if (isWorkerRole) "Eliminar foto" else "Solicitar eliminación de la foto",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isOutgoing) Color.White else BrandBlue,
+                                modifier = Modifier
+                                    .padding(bottom = 6.dp)
+                                    .clickable { onEliminarFoto(msg) }
+                            )
+                        }
                     } else {
                         Row(
                             modifier = Modifier
@@ -1002,9 +1058,11 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boole
                     )
                     if (isOutgoing) {
                         Spacer(modifier = Modifier.width(3.dp))
+                        // RF-11: reloj = guardado en el teléfono, se enviará cuando haya internet
+                        val pendiente = msg.id.startsWith("temp_")
                         Icon(
-                            imageVector = Icons.Default.DoneAll,
-                            contentDescription = "Entregado",
+                            imageVector = if (pendiente) Icons.Default.Schedule else Icons.Default.DoneAll,
+                            contentDescription = if (pendiente) "Pendiente de enviar" else "Entregado",
                             tint = Color.White.copy(alpha = 0.85f),
                             modifier = Modifier.size(13.dp)
                         )

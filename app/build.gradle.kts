@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -10,6 +12,19 @@ if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
 }
 
+// Firma del APK de release: los datos viven en keystore.properties (no se sube a git).
+// Ver docs/entrega-final.md para generar la llave.
+val firma = Properties().apply {
+    val archivo = rootProject.file("keystore.properties")
+    if (archivo.exists()) archivo.inputStream().use { load(it) }
+}
+
+// Servidor con el que se compila la app. Se puede cambiar sin tocar el código:
+//   gradlew assembleRelease -PapiUrl=https://mi-tunel.trycloudflare.com/api/v1/
+// y también desde la app (pantalla de inicio de sesión > "Servidor").
+val apiUrl = (project.findProperty("apiUrl") as String?)
+    ?: "https://point-shareholders-mart-con.trycloudflare.com/api/v1/"
+
 android {
     namespace = "com.example.etapa1"
     compileSdk {
@@ -20,10 +35,23 @@ android {
         applicationId = "com.example.etapa1"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.0.0"
+
+        buildConfigField("String", "API_URL", "\"$apiUrl\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        if (firma.getProperty("storeFile") != null) {
+            create("release") {
+                storeFile = file(firma.getProperty("storeFile"))
+                storePassword = firma.getProperty("storePassword")
+                keyAlias = firma.getProperty("keyAlias")
+                keyPassword = firma.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
@@ -31,6 +59,7 @@ android {
             optimization {
                 enable = false
             }
+            signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
     compileOptions {
@@ -40,6 +69,10 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+    testOptions {
+        // android.util.Log y similares devuelven valores vacíos en las pruebas de JVM
+        unitTests.isReturnDefaultValues = true
     }
 }
 
@@ -73,6 +106,9 @@ dependencies {
 
     // AndroidX Security (EncryptedSharedPreferences)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    // RF-13: desbloqueo con huella (BiometricPrompt)
+    implementation("androidx.biometric:biometric:1.1.0")
 
 
     testImplementation(libs.junit)

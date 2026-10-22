@@ -4,6 +4,7 @@ import com.example.etapa1.data.remote.BitacoraDiaDto
 import com.example.etapa1.data.remote.ChildDto
 import com.example.etapa1.data.remote.ChildFullProfileDto
 import com.example.etapa1.data.remote.ChildProfileUpdateDto
+import com.example.etapa1.data.remote.OfflineStore
 import com.example.etapa1.data.remote.RemoteSync
 import com.example.etapa1.data.remote.RemoteSync.bodyOrLog
 import com.example.etapa1.data.remote.SonrisasApi
@@ -35,7 +36,8 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class NetworkChildRepositoryImpl(
     private val api: SonrisasApi,
-    private val tokenManager: TokenManager? = null
+    private val tokenManager: TokenManager? = null,
+    private val cache: OfflineStore? = null
 ) : ChildRepository {
 
     private val _salaActual = MutableStateFlow<String?>(null)
@@ -83,21 +85,31 @@ class NetworkChildRepositoryImpl(
     override fun abrirSala(roomId: String) {
         if (_salaActual.value != roomId) {
             _salaActual.value = roomId
-            _childrenOfRoom.value = emptyList()
+            // RF-11: sin internet se muestra la última lista guardada en el teléfono
+            _childrenOfRoom.value = cache?.load<List<ChildDto>>(claveCache("sala_$roomId"))?.map { it.toDomain() }.orEmpty()
         }
         cargarSala(roomId)
     }
 
+    private fun claveCache(nombre: String) = "${tokenManager?.userId.orEmpty()}_$nombre"
+
     private fun cargarSala(roomId: String) {
         RemoteSync.launch("Cargar niños de la sala $roomId") {
             val lista = api.getChildrenByRoom(roomId).bodyOrLog("GET /rooms/$roomId/children") ?: return@launch
+            cache?.save(claveCache("sala_$roomId"), lista)
             if (_salaActual.value == roomId) _childrenOfRoom.value = lista.map { it.toDomain() }
         }
     }
 
     private fun cargarHijos() {
+        if (_parentChildren.value.isEmpty()) {
+            cache?.load<List<ChildDto>>(claveCache("hijos"))?.let { guardados ->
+                _parentChildren.value = guardados.map { it.toDomain() }
+            }
+        }
         RemoteSync.launch("Cargar hijos de la familia") {
             val lista = api.getMyChildren().bodyOrLog("GET /parents/me/children") ?: return@launch
+            cache?.save(claveCache("hijos"), lista)
             _parentChildren.value = lista.map { it.toDomain() }
         }
     }

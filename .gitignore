@@ -18,3 +18,14 @@ app/google-services.json
 *.db
 # Registros de errores del compilador de Kotlin
 .kotlin/
+
+# Firma del APK de release (la llave y sus contraseñas nunca se suben)
+keystore.properties
+*.jks
+*.keystore
+# Secretos del servidor y del escaneo de ZAP (el token de prueba no se sube)
+backend/.env
+backend/secretos/
+backend/zap_reports/auth.prop
+# Respaldo local de la configuración de Android Studio
+.idea_respaldo_*/

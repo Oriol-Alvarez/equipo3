@@ -1471,7 +1471,9 @@ private fun AdminLogsTab(
                 "MENSAJE" to "Mensajes",
                 "AVISO" to "Avisos",
                 "SUGERENCIA" to "Sugerencias",
-                "OBJETO" to "Objetos"
+                "OBJETO" to "Objetos",
+                // RF-14 / RF-10: quién vio cada foto y qué fotos se eliminaron
+                "FOTO" to "Fotos"
             )
             items(categories) { (key, label) ->
                 FilterChip(
@@ -1516,6 +1518,7 @@ private fun AdminLogCard(item: AdminLog) {
         "MENSAJE" -> Triple(Color(0xFFF3E8FF), Color(0xFF7E22CE), Icons.Default.Chat)
         "AVISO" -> Triple(Color(0xFFFEF3C7), Color(0xFFB45309), Icons.Default.Campaign)
         "SUGERENCIA" -> Triple(Color(0xFFE0F2FE), Color(0xFF0369A1), Icons.Default.MailOutline)
+        "FOTO" -> Triple(Color(0xFFFCE7F3), Color(0xFFBE185D), Icons.Default.PhotoCamera)
         else -> Triple(Color(0xFFF1F5F9), Color(0xFF475569), Icons.Default.Receipt)
     }
 

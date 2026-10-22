@@ -1155,15 +1155,8 @@ fun WorkerChatMessageBubble(
                     .widthIn(min = 70.dp, max = 300.dp)
                     .clickable(enabled = msg.fileUri != null) {
                         msg.fileUri?.let { uriString ->
-                            try {
-                                val intent = Intent(Intent.ACTION_VIEW).apply {
-                                    setDataAndType(Uri.parse(uriString), msg.fileMimeType ?: "*/*")
-                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
-                                context.startActivity(intent)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
+                            // Se descarga con la sesión (RF-09) y se abre desde la carpeta privada
+                            Adjuntos.abrir(context, uriString, msg.fileMimeType, msg.fileName)
                         }
                     }
             ) {
@@ -1281,15 +1274,8 @@ fun WorkerChatMessageBubble(
                         .widthIn(min = 70.dp, max = 300.dp)
                         .clickable(enabled = msg.fileUri != null) {
                             msg.fileUri?.let { uriString ->
-                                try {
-                                    val intent = Intent(Intent.ACTION_VIEW).apply {
-                                        setDataAndType(Uri.parse(uriString), msg.fileMimeType ?: "*/*")
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    context.startActivity(intent)
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                }
+                                // Se descarga con la sesión (RF-09) y se abre desde la carpeta privada
+                                Adjuntos.abrir(context, uriString, msg.fileMimeType, msg.fileName)
                             }
                         }
                 ) {
@@ -1387,15 +1373,8 @@ fun WorkerChatMessageBubble(
                         .widthIn(min = 70.dp, max = 300.dp)
                         .clickable(enabled = msg.fileUri != null) {
                             msg.fileUri?.let { uriString ->
-                                try {
-                                    val intent = Intent(Intent.ACTION_VIEW).apply {
-                                        setDataAndType(Uri.parse(uriString), msg.fileMimeType ?: "*/*")
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    context.startActivity(intent)
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                }
+                                // Se descarga con la sesión (RF-09) y se abre desde la carpeta privada
+                                Adjuntos.abrir(context, uriString, msg.fileMimeType, msg.fileName)
                             }
                         }
                 ) {

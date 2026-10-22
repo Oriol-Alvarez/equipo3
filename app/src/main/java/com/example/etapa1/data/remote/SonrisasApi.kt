@@ -6,6 +6,7 @@ import okhttp3.RequestBody
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.PATCH
 import retrofit2.http.POST
@@ -259,6 +260,49 @@ interface SonrisasApi {
         @Path("childId") childId: String,
         @Body request: QuickEventDto
     ): Response<TimelineItemDto>
+
+    // ---------------------------------------------------------------- RF-11: envíos de la cola sin conexión
+    // Llevan Idempotency-Key: si un reintento llega dos veces, el servidor no duplica el registro.
+
+    @POST("attendance/ingreso")
+    suspend fun registrarIngresoCola(
+        @Header("Idempotency-Key") llave: String,
+        @Body request: IngresoDto
+    ): Response<AttendanceResponseDto>
+
+    @POST("attendance/egreso")
+    suspend fun registrarEgresoCola(
+        @Header("Idempotency-Key") llave: String,
+        @Body request: EgresoDto
+    ): Response<AttendanceResponseDto>
+
+    @POST("children/{childId}/activities")
+    suspend fun createActivityCola(
+        @Header("Idempotency-Key") llave: String,
+        @Path("childId") childId: String,
+        @Body request: CreateActivityDto
+    ): Response<NewActivityResponseDto>
+
+    @POST("children/{childId}/timeline/events")
+    suspend fun createTimelineEventCola(
+        @Header("Idempotency-Key") llave: String,
+        @Path("childId") childId: String,
+        @Body request: QuickEventDto
+    ): Response<TimelineItemDto>
+
+    @POST("chats/bitacora/{childId}/messages")
+    suspend fun sendBitacoraMessageCola(
+        @Header("Idempotency-Key") llave: String,
+        @Path("childId") childId: String,
+        @Body request: SendBitacoraMessageDto
+    ): Response<BitacoraMessageDto>
+
+    // ---------------------------------------------------------------- RF-10: borrar una foto
+    @DELETE("media/{fileId}")
+    suspend fun eliminarArchivo(
+        @Path("fileId") fileId: String,
+        @Query("reason") motivo: String = ""
+    ): Response<EliminarArchivoDto>
 
     // ---------------------------------------------------------------- Gestión de Avisos
     @POST("announcements")

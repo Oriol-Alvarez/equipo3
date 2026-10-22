@@ -41,6 +41,17 @@ class ChatBitacoraViewModel(
         childRepository?.cargarDetalle(childId)
     }
 
+    /** RF-10: borra la foto del servidor; [alTerminar] recibe si salió bien para avisar en pantalla. */
+    fun eliminarFoto(mensaje: TimelineItem.ChatMessage, alTerminar: (Result<Unit>) -> Unit) {
+        val nino = childId ?: bitacoraRepository.childIdActual.value
+        val uri = mensaje.fileUri
+        if (nino == null || uri == null) {
+            alTerminar(Result.failure(IllegalStateException("No hay foto que eliminar")))
+            return
+        }
+        bitacoraRepository.eliminarFoto(nino, mensaje.id, uri, alTerminar = alTerminar)
+    }
+
     fun sendMessage(
         text: String,
         fileUri: String? = null,
