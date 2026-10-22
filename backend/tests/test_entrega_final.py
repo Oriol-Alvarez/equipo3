@@ -280,3 +280,25 @@ def test_direccion_consulta_quien_vio_una_foto(
     assert r.status_code == 200
     assert any(a["userId"] == familiar.id for a in r.json())
     assert cliente.get(f"/api/v1/media/{file_id}/accesses", headers=familiar.headers).status_code == 403
+
+
+def test_baja_del_alumno_borra_sus_fotos(
+    cliente: TestClient, educadora: Persona, direccion: Persona, registrar
+):
+    """Aviso de privacidad: al dar de baja a un niño no quedan sus fotos en el servidor."""
+    tutor = registrar("tutorbaja")
+    nuevo = cliente.post(
+        f"/api/v1/admin/users/{tutor.id}/children",
+        headers=direccion.headers,
+        json={"fullName": "Niño de Prueba Baja", "roomText": "Sala 1A"},
+    )
+    assert nuevo.status_code == 201, nuevo.text
+    child_id = nuevo.json()["id"]
+    file_id, _ = _foto_en_bitacora(cliente, educadora, child_id)
+
+    r = cliente.delete(f"/api/v1/admin/users/{tutor.id}/children/{child_id}", headers=direccion.headers)
+    assert r.status_code == 204
+    with SessionLocal() as db:
+        assert db.get(MediaFile, file_id) is None
+        assert db.query(PhotoDeletion).filter(PhotoDeletion.file_id == file_id).count() == 1
+    assert cliente.get(f"/api/v1/media/{file_id}", headers=direccion.headers).status_code == 404

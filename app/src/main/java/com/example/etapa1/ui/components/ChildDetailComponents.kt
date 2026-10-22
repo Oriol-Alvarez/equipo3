@@ -46,6 +46,8 @@ import androidx.compose.material.icons.filled.NightlightRound
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -588,7 +590,9 @@ fun WeeklySummaryContent(
     onSelectWeek: (Int) -> Unit = {},
     child: Child,
     onToggleReadStatus: ((WeeklySummary) -> Unit)? = null,
-    onSelectReaction: ((WeeklySummary, String) -> Unit)? = null
+    onSelectReaction: ((WeeklySummary, String) -> Unit)? = null,
+    /** RF-12: si no es null, se muestra "Guardar o compartir resumen" (solo para la familia). */
+    onCompartir: ((WeeklySummary) -> Unit)? = null
 ) {
     val currentSummary = summaries.getOrNull(selectedWeekIndex) ?: summaries.firstOrNull()
 
@@ -633,6 +637,17 @@ fun WeeklySummaryContent(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                if (onCompartir != null) {
+                    OutlinedButton(
+                        onClick = { onCompartir(currentSummary) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = null, tint = BrandBlue, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Guardar o compartir resumen", color = BrandBlue, fontWeight = FontWeight.SemiBold)
+                    }
+                }
                 // Tarjeta Principal: Síntesis Automática Inteligente
                 Card(
                     modifier = Modifier

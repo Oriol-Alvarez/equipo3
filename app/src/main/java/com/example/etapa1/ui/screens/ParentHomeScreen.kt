@@ -555,7 +555,9 @@ fun ParentHomeScreen(
                             onSelectWeek = { index -> selectedWeekIndex = index },
                             child = child,
                             onToggleReadStatus = onToggleWeeklySummaryReadStatus,
-                            onSelectReaction = onSetWeeklySummaryReaction
+                            onSelectReaction = onSetWeeklySummaryReaction,
+                            // RF-12: solo la familia guarda o comparte el resumen de SU hijo
+                            onCompartir = { resumen -> compartirResumenSemanal(context, child, resumen) }
                         )
                     }
                 }
@@ -665,4 +667,36 @@ fun ParentHomeScreenPreview() {
     Etapa1Theme {
         ParentHomeScreen()
     }
+}
+
+/**
+ * RF-12: la familia guarda o comparte el resumen semanal de su hijo (por ejemplo, en Notas o por correo).
+ * Se comparte solo texto con lo que ya ve en pantalla; no incluye fotos ni datos médicos de la ficha.
+ * La decisión de sacarlo de la app es de la familia, dueña de esos datos (ver dilemas éticos).
+ */
+fun compartirResumenSemanal(
+    context: android.content.Context,
+    child: com.example.etapa1.model.Child,
+    resumen: com.example.etapa1.model.WeeklySummary
+) {
+    val texto = buildString {
+        appendLine("Resumen semanal de ${child.fullName} — Sonrisas de Cristal")
+        appendLine(resumen.weekRangeText)
+        appendLine()
+        appendLine("Asistencia: ${resumen.attendanceDaysCount} de ${resumen.totalSchoolDays} días (${resumen.attendancePercentageText})")
+        appendLine("Llegada promedio: ${resumen.averageArrivalTime}")
+        appendLine("Alimentación: ${resumen.foodIntakePercentage}")
+        appendLine("Siesta: ${resumen.totalNapHours} (${resumen.averageNapDaily})")
+        appendLine("Ánimo: ${resumen.moodSummary}")
+        if (resumen.executiveSummary.isNotBlank()) {
+            appendLine()
+            appendLine(resumen.executiveSummary)
+        }
+    }
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_SUBJECT, "Resumen semanal de ${child.fullName}")
+        putExtra(Intent.EXTRA_TEXT, texto)
+    }
+    context.startActivity(Intent.createChooser(intent, "Guardar o compartir resumen"))
 }

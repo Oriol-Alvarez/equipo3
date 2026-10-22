@@ -367,7 +367,7 @@ def vincular_alumno_existente_admin(
 def desvincular_alumno_admin(
     user_id: str,
     child_id: str,
-    _: Identidad = Depends(requiere_direccion),
+    quien: Identidad = Depends(requiere_direccion),
     db: Session = Depends(get_db),
 ) -> Response:
     """Elimina o desvincula un alumno de la cuenta familiar. Si no pertenece a otra familia, se elimina para evitar alumnos sin vincular."""
@@ -384,6 +384,10 @@ def desvincular_alumno_admin(
     if remaining == 0:
         c = db.get(Child, child_id)
         if c:
+            # Aviso de privacidad: la baja borra también sus fotos y su certificado del almacén
+            from .media import borrar_archivos_del_nino
+
+            borrar_archivos_del_nino(child_id, quien, db)
             db.delete(c)
 
     db.commit()

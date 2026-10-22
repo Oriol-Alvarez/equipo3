@@ -90,13 +90,18 @@ data class CenterPolicy(
 private val centerPoliciesList = listOf(
     CenterPolicy(
         id = "pol_privacy",
-        title = "Política de Privacidad y Datos",
+        title = "Aviso de Privacidad",
         category = "Protección de Datos",
-        summary = "Uso de datos personales, imágenes y fotografías de los alumnos.",
-        fullContent = "En nuestro centro educativo protegemos la privacidad de los alumnos y sus familias:\n\n" +
-                "1. Tratamiento de Datos: Todos los datos personales recaudados en la matrícula y expediente digital se utilizan exclusivamente con fines educativos, médicos y de seguridad escolar.\n\n" +
-                "2. Fotografía e Imágenes: La captura y publicación de imágenes en la aplicación del centro requiere la autorización previa firmada de los tutores legales. Las imágenes no se compartirán públicamente ni en redes sociales externas sin autorización explícita.\n\n" +
-                "3. Confidencialidad: El personal del centro tiene prohibido divulgar información de los menores a terceros sin requerimiento legal.",
+        summary = "Qué datos guardamos, para qué, dónde y cómo pedir que se borren.",
+        // Debe corresponder con lo que hace el sistema (ver docs/entrega-final.md, clasificación de datos)
+        fullContent = "Aviso de privacidad simplificado (artículo 15 de la Ley Federal de Protección de Datos Personales en Posesión de los Particulares, DOF 20/03/2025).\n\n" +
+                "Responsable: Estancias Infantiles Sonrisas de Cristal. Contacto: la dirección de tu estancia.\n\n" +
+                "1. Qué datos guardamos: de la familia, nombre, correo, teléfono y parentesco; del niño, nombre, fecha de nacimiento, sala, asistencia (hora de llegada y salida, quién lo entrega y quién lo recoge), bitácora del día (comida, siesta, ánimo, observaciones), fotos de actividades, contactos de emergencia, personas autorizadas, alergias y certificados médicos. Las alergias y certificados son datos sensibles.\n\n" +
+                "2. Para qué: informarte cómo estuvo el día de tu hijo, cuidar su salud y seguridad, llevar la hoja oficial de asistencia y comunicarte con el personal. No se usan con fines comerciales ni de publicidad.\n\n" +
+                "3. Dónde se guardan: en el servidor de la estancia, con conexión cifrada (HTTPS) y contraseñas cifradas. Para trabajar sin internet la app guarda una copia cifrada en el teléfono que se borra al cerrar sesión. La app bloquea capturas de pantalla.\n\n" +
+                "4. Con quién se comparten: con nadie fuera de la estancia. Cada familia ve solo a sus hijos y una foto solo la ven el personal y las familias de los niños que aparecen en ella. Queda registrado quién consulta cada foto.\n\n" +
+                "5. Cuánto tiempo: mientras el niño esté inscrito. Al darlo de baja, la dirección borra sus registros, fotos y certificados del servidor.\n\n" +
+                "6. Tus derechos (acceso, rectificación, cancelación y oposición): consulta los datos de tu hijo en la app; corrígelos en \"Modificar ficha\" o con la dirección; borra cualquier foto donde aparezca tu hijo con \"Solicitar eliminación de la foto\" en la bitácora (se elimina del servidor para todos). Para cancelar u oponerte al resto del tratamiento, solicítalo a la dirección.",
         icon = Icons.Default.Shield,
         iconTint = Color(0xFF0D9488),
         iconBg = Color(0xFFF0FDFA)

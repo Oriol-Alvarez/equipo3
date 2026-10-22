@@ -244,6 +244,44 @@ def eliminar_archivo(
     return {"deleted": True, "fileId": fileId, "referencesCleared": limpiadas}
 
 
+def borrar_archivos_del_nino(child_id: str, quien: Identidad, db: Session) -> int:
+    """Al dar de baja a un niño se borran también las fotos y archivos de su bitácora y su certificado.
+
+    Sin esto, los mensajes se borraban en cascada pero las fotos se quedaban en el almacén.
+    Las fotos de grupos con otros niños se conservan (las familias de esos niños también las ven).
+    """
+    uris = set(
+        db.scalars(
+            select(BitacoraMessage.file_uri).where(
+                BitacoraMessage.child_id == child_id, BitacoraMessage.file_uri.is_not(None)
+            )
+        ).all()
+    )
+    perfil = db.scalar(select(ChildProfile).where(ChildProfile.child_id == child_id))
+    if perfil and perfil.medical_certificate_uri:
+        uris.add(perfil.medical_certificate_uri)
+    borrados = 0
+    for uri in uris:
+        file_id = uri.rstrip("/").rsplit("/media/", 1)[-1] if "/media/" in uri else ""
+        media = db.get(MediaFile, file_id) if _ID_VALIDO.match(file_id or "-") else None
+        if media is None:
+            continue
+        almacen.borrar(media.file_name)
+        db.add(
+            PhotoDeletion(
+                file_id=media.id,
+                requested_by_id=quien.id,
+                requested_by_name=quien.display_name or quien.email,
+                requested_by_role=quien.role,
+                reason=f"Baja del alumno {child_id}",
+                references_cleared=0,
+            )
+        )
+        db.delete(media)
+        borrados += 1
+    return borrados
+
+
 @router.get("/{fileId}/accesses")
 def consultar_accesos(
     fileId: str,
