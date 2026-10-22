@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -263,11 +264,14 @@ fun ChatBitacoraScreen(
     Scaffold(
         containerColor = AppBackground,
         bottomBar = {
-            // Barra de entrada de mensajes
+            // Barra de entrada de mensajes. imePadding: sube junto con el teclado (en Android 15+
+            // la app dibuja detrás del teclado y sin esto el cuadro de texto quedaba tapado)
             Surface(
                 color = CardBackground,
                 shadowElevation = 8.dp,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .imePadding()
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     val isGroupChat = workerChat?.let { it.isGroup || it.isGlobal } ?: false

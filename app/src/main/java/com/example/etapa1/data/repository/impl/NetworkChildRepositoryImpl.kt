@@ -137,30 +137,53 @@ class NetworkChildRepositoryImpl(
 
     // ------------------------------------------------------------------ detalle del niño
 
+    /** Momento del último intento por niño: sin internet no se reintenta en ciclo (antes eran decenas por segundo). */
+    private val ultimoIntento = ConcurrentHashMap<String, Long>()
+
     override fun cargarDetalle(childId: String) {
-        if (childId.isBlank() || !cargando.add(childId)) return
+        if (childId.isBlank()) return
+        val ahora = System.currentTimeMillis()
+        val previo = ultimoIntento[childId]
+        if (previo != null && ahora - previo < ESPERA_REINTENTO_MS && perfiles.containsKey(childId).not()) return
+        if (!cargando.add(childId)) return
+        ultimoIntento[childId] = ahora
         RemoteSync.launch("Cargar ficha de $childId") {
+            var huboCambio = false
             try {
                 api.getChildFullProfile(childId).bodyOrLog("GET /children/$childId/full-profile")?.let { dto ->
+                    cache?.save(claveCache("ficha_$childId"), dto)
                     val child = getChildById(childId)
                         ?: api.getChild(childId).bodyOrLog("GET /children/$childId")?.toDomain()
-                    if (child != null) perfiles[childId] = dto.toDomain(child)
+                    if (child != null) {
+                        perfiles[childId] = dto.toDomain(child)
+                        huboCambio = true
+                    }
                 }
                 api.getWeeklySummaries(childId).bodyOrLog("GET /children/$childId/weekly-summaries")?.let { dtos ->
                     resumenes[childId] = dtos.map { it.toDomain() }
+                    huboCambio = true
                 }
                 api.getBitacoras(childId).bodyOrLog("GET /children/$childId/bitacoras")?.let { dtos ->
                     historiales[childId] = dtos.map { it.toDomain() }
+                    huboCambio = true
                 }
             } finally {
                 cargando.remove(childId)
-                avisarCambio()
+                // Solo se pide volver a dibujar si llegó algo nuevo
+                if (huboCambio) avisarCambio()
             }
         }
     }
 
     override fun getChildFullProfile(child: Child): ChildFullProfile {
         perfiles[child.id]?.let { return it.copy(child = child) }
+        // RF-11: sin internet se muestra la ficha guardada (alergias y teléfonos de emergencia)
+        cache?.load<ChildFullProfileDto>(claveCache("ficha_${child.id}"))?.let { guardada ->
+            val perfil = guardada.toDomain(child)
+            perfiles[child.id] = perfil
+            cargarDetalle(child.id)
+            return perfil
+        }
         cargarDetalle(child.id)
         return expedienteVacio(child)
     }
@@ -348,6 +371,9 @@ class NetworkChildRepositoryImpl(
     )
 
     companion object {
+        /** Espera mínima entre intentos de cargar la ficha cuando falla (sin internet). */
+        const val ESPERA_REINTENTO_MS = 15_000L
+
         /** Expediente sin datos (alumno nuevo o mientras se carga); no usa los valores de ejemplo. */
         fun expedienteVacio(child: Child) = ChildFullProfile(
             child = child,

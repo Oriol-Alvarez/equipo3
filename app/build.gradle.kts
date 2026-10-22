@@ -60,6 +60,14 @@ android {
                 enable = false
             }
             signingConfigs.findByName("release")?.let { signingConfig = it }
+            // RF-20: el APK que se entrega siempre bloquea las capturas de pantalla
+            buildConfigField("boolean", "PERMITIR_CAPTURAS", "false")
+        }
+        debug {
+            // Solo para tomar las capturas del manual de usuario o depurar:
+            //   gradlew assembleDebug -PpermitirCapturas=true
+            val permitir = (project.findProperty("permitirCapturas") as String?) == "true"
+            buildConfigField("boolean", "PERMITIR_CAPTURAS", permitir.toString())
         }
     }
     compileOptions {

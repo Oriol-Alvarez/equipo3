@@ -254,6 +254,9 @@ open class AppContainer(val context: Context) {
     val logSheetExporter: LogSheetExporter by lazy { AndroidLogSheetExporter(context) }
 }
 
+/** Zona horaria de la estancia (Monterrey / Ciudad de México, sin horario de verano). */
+const val ZONA_ESTANCIA = "America/Mexico_City"
+
 class SonrisasApplication : Application(), ImageLoaderFactory {
 
     lateinit var container: AppContainer
@@ -261,6 +264,10 @@ class SonrisasApplication : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
+        // Todas las horas se manejan en la zona de la estancia (igual que el servidor), aunque el
+        // teléfono o el emulador tengan otra zona. En la presentación el emulador estaba en UTC y
+        // las horas que pone el teléfono salían 6 horas adelantadas respecto a las del servidor.
+        java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(ZONA_ESTANCIA))
         // Antes de cualquier petición: servidor elegido en el teléfono (si se cambió desde el login)
         NetworkClient.cargarServidorGuardado(this)
         container = AppContainer(this)

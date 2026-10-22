@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -824,11 +825,13 @@ fun WorkerChatConversationDialog(
             containerColor = AppBackground,
             contentWindowInsets = WindowInsets(0.dp),
             bottomBar = {
-                // Barra de entrada de mensajes
+                // Barra de entrada de mensajes (sube junto con el teclado)
                 Surface(
                     color = CardBackground,
                     shadowElevation = 8.dp,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .imePadding()
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         if (selectedFileUri != null) {

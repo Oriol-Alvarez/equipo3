@@ -34,7 +34,11 @@ class MainActivity : FragmentActivity() {
 
         // RF-20 / RNF-07: bloquea capturas y grabaciones de pantalla en TODAS las pantallas
         // (los diálogos de Compose heredan la bandera) y oculta la vista previa en "recientes".
-        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        // Solo una compilación de desarrollo hecha a propósito (-PpermitirCapturas=true) lo omite,
+        // para tomar las imágenes del manual de usuario.
+        if (!BuildConfig.PERMITIR_CAPTURAS) {
+            window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        }
 
         enableEdgeToEdge()
 
