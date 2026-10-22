@@ -115,8 +115,10 @@ dependencies {
     // AndroidX Security (EncryptedSharedPreferences)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
-    // RF-13: desbloqueo con huella (BiometricPrompt)
+    // RF-13: desbloqueo con huella (BiometricPrompt). Fragment 1.3+ lo exige registerForActivityResult
+    // en una FragmentActivity (biometric 1.1.0 trae una versión anterior).
     implementation("androidx.biometric:biometric:1.1.0")
+    implementation("androidx.fragment:fragment-ktx:1.8.5")
 
 
     testImplementation(libs.junit)
