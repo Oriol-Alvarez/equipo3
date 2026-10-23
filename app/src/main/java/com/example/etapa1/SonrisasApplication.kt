@@ -234,6 +234,11 @@ class SonrisasApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        NetworkClient.init(this)
+        container = AppContainer(this)
+    }
+
+    fun resetContainer() {
         container = AppContainer(this)
     }
 }

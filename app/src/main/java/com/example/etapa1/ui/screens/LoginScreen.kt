@@ -1,8 +1,10 @@
 package com.example.etapa1.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,12 +17,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -30,6 +34,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,6 +44,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -46,6 +55,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.etapa1.SonrisasApplication
+import com.example.etapa1.data.remote.NetworkClient
 import com.example.etapa1.model.UserRole
 import com.example.etapa1.ui.components.DaycareLogo
 import com.example.etapa1.ui.theme.AlertRed
@@ -134,6 +145,16 @@ fun LoginContent(
     onTogglePasswordVisibility: () -> Unit,
     onSubmitLogin: () -> Unit
 ) {
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+
+    var showCodeDialog by remember { mutableStateOf(false) }
+    var showServerDialog by remember { mutableStateOf(false) }
+    var adminCodeInput by remember { mutableStateOf("") }
+    var codeError by remember { mutableStateOf<String?>(null) }
+    var serverUrlInput by remember { mutableStateOf(NetworkClient.baseUrl) }
+    var serverUrlError by remember { mutableStateOf<String?>(null) }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = AppBackground
@@ -148,8 +169,22 @@ fun LoginContent(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Logo & Header
-            DaycareLogo(size = 76.dp)
+            // Logo & Header (mantener presionado para configurar el servidor)
+            DaycareLogo(
+                size = 76.dp,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onLongPress = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                adminCodeInput = ""
+                                codeError = null
+                                showCodeDialog = true
+                            }
+                        )
+                    }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -283,45 +318,181 @@ fun LoginContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+        }
 
-            Text(
-                text = "Acceso rápido de prueba:",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = TextSecondary
+        if (showCodeDialog) {
+            AlertDialog(
+                onDismissRequest = { showCodeDialog = false },
+                containerColor = CardBackground,
+                title = {
+                    Text(
+                        text = "Acceso de Administrador",
+                        fontWeight = FontWeight.Bold,
+                        color = BrandBlue,
+                        fontSize = 18.sp
+                    )
+                },
+                text = {
+                    Column {
+                        Text(
+                            text = "Introduce el código para configurar la URL del servidor:",
+                            fontSize = 13.sp,
+                            color = TextSecondary
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = adminCodeInput,
+                            onValueChange = {
+                                adminCodeInput = it
+                                codeError = null
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            singleLine = true,
+                            placeholder = { Text("Código de acceso") },
+                            isError = codeError != null,
+                            supportingText = {
+                                if (codeError != null) {
+                                    Text(text = codeError!!, color = AlertRed, fontSize = 12.sp)
+                                }
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White,
+                                focusedBorderColor = if (codeError != null) AlertRed else BrandBlue,
+                                unfocusedBorderColor = if (codeError != null) AlertRed else BorderSubtle,
+                                errorBorderColor = AlertRed
+                            ),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            if (adminCodeInput.trim() == "admin_equipo3_13042005") {
+                                showCodeDialog = false
+                                serverUrlInput = NetworkClient.baseUrl
+                                serverUrlError = null
+                                showServerDialog = true
+                            } else {
+                                codeError = "Código incorrecto"
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Verificar", color = Color.White)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showCodeDialog = false }) {
+                        Text("Cancelar", color = TextSecondary)
+                    }
+                }
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                SuggestionChip(
-                    onClick = {
-                        onEmailChange("direccion@sonrisas.edu")
-                        onPasswordChange("Password123!")
-                    },
-                    label = { Text("Administrador", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = BrandBlue) }
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                SuggestionChip(
-                    onClick = {
-                        onEmailChange("educadora@sonrisas.edu")
-                        onPasswordChange("Password123!")
-                    },
-                    label = { Text("Educadora", fontSize = 11.sp) }
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                SuggestionChip(
-                    onClick = {
-                        onEmailChange("familiar@sonrisas.edu")
-                        onPasswordChange("Password123!")
-                    },
-                    label = { Text("Familiar", fontSize = 11.sp) }
-                )
-            }
+        }
 
-
+        if (showServerDialog) {
+            AlertDialog(
+                onDismissRequest = { showServerDialog = false },
+                containerColor = CardBackground,
+                title = {
+                    Text(
+                        text = "Configuración del Servidor",
+                        fontWeight = FontWeight.Bold,
+                        color = BrandBlue,
+                        fontSize = 18.sp
+                    )
+                },
+                text = {
+                    Column {
+                        Text(
+                            text = "Introduce la nueva URL del backend (ej. Cloudflare, ngrok o IP local):",
+                            fontSize = 13.sp,
+                            color = TextSecondary
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = serverUrlInput,
+                            onValueChange = {
+                                serverUrlInput = it
+                                serverUrlError = null
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            singleLine = true,
+                            label = { Text("URL del Servidor") },
+                            placeholder = { Text("http://10.0.2.2:8000/api/v1/") },
+                            isError = serverUrlError != null,
+                            supportingText = {
+                                if (serverUrlError != null) {
+                                    Text(text = serverUrlError!!, color = AlertRed, fontSize = 12.sp)
+                                } else {
+                                    Text(
+                                        text = "Actual: ${NetworkClient.baseUrl}",
+                                        color = TextMuted,
+                                        fontSize = 11.sp
+                                    )
+                                }
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White,
+                                focusedBorderColor = if (serverUrlError != null) AlertRed else BrandBlue,
+                                unfocusedBorderColor = if (serverUrlError != null) AlertRed else BorderSubtle,
+                                errorBorderColor = AlertRed
+                            ),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    serverUrlInput = NetworkClient.DEFAULT_BASE_URL
+                                    serverUrlError = null
+                                }
+                            ) {
+                                Text(
+                                    text = "Restablecer por defecto",
+                                    fontSize = 12.sp,
+                                    color = BrandBlue
+                                )
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            if (serverUrlInput.isBlank()) {
+                                serverUrlError = "La URL no puede estar vacía"
+                            } else {
+                                val updatedUrl = NetworkClient.updateBaseUrl(context, serverUrlInput)
+                                (context.applicationContext as? SonrisasApplication)?.resetContainer()
+                                Toast.makeText(
+                                    context,
+                                    "Servidor actualizado:\n$updatedUrl",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                showServerDialog = false
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Guardar", color = Color.White)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showServerDialog = false }) {
+                        Text("Cancelar", color = TextSecondary)
+                    }
+                }
+            )
         }
     }
 }
