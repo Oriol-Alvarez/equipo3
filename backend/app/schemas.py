@@ -336,6 +336,32 @@ class WeeklySummaryOut(BaseModel):
     parentReaction: str | None = None
 
 
+class MonthlyReportOut(BaseModel):
+    """RF-19: reporte mensual del niño (texto redactado con IA si la estancia lo activa)."""
+
+    id: str
+    monthLabel: str
+    periodText: str
+    isCurrentMonth: bool
+    schoolDays: int
+    attendanceDays: int
+    attendancePercentageText: str
+    averageArrivalTime: str
+    foodIntakePercentage: str
+    napDays: int
+    averageNapDaily: str
+    moodSummary: str
+    activitiesRecorded: int
+    behaviorHighlights: list[str] = []
+    healthEvents: list[str] = []
+    pedagogicalHighlights: list[str] = []
+    observations: list[str] = []
+    pointsForFamily: list[str] = []
+    reportText: str
+    generatedWithAi: bool = False
+    generatedAt: str
+
+
 class WeeklySummaryFeedbackRequest(BaseModel):
     """Respuesta de la familia a un resumen semanal. Los campos ausentes no se modifican."""
 

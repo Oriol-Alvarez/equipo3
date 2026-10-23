@@ -90,6 +90,7 @@ object AppViewModelProvider {
             )
         }
         initializer { AdminViewModel(sonrisasApplication().container.adminRepository) }
+        initializer { ReporteMensualViewModel(sonrisasApplication().container.reporteMensualRepository) }
     }
 }
 

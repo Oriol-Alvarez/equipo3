@@ -181,6 +181,14 @@ open class AppContainer(val context: Context) {
     open val dailyLogRepository: DailyLogRepository
         get() = if (useMocks) mockDailyLogRepository else networkDailyLogRepository
 
+    /** RF-19: reporte mensual (la última copia de cada mes se guarda cifrada para verla sin internet). */
+    private val mockReporteMensualRepository by lazy { com.example.etapa1.data.repository.MockReporteMensualRepository() }
+    private val networkReporteMensualRepository by lazy {
+        com.example.etapa1.data.repository.NetworkReporteMensualRepository(api, offlineStore)
+    }
+    open val reporteMensualRepository: com.example.etapa1.data.repository.ReporteMensualRepository
+        get() = if (useMocks) mockReporteMensualRepository else networkReporteMensualRepository
+
     fun asegurarConexionChat() {
         val token = tokenManager.token
         if (!useMocks && !token.isNullOrBlank()) {

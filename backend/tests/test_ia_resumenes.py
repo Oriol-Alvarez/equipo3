@@ -60,10 +60,12 @@ def test_con_gemini_simulado_devuelve_texto_y_guarda_en_cache(monkeypatch):
 
     texto_ia_esperado = "Mateo tuvo una semana excelente, asistiendo los 5 días y disfrutando mucho de las actividades sensoriales."
 
-    def fake_llamar_gemini(prompt: str, api_key: str, timeout_s: float = 4.0) -> str:
+    def fake_llamar_gemini(prompt: str, api_key: str, **kwargs) -> str:
         assert api_key == "clave-falsa-de-prueba"
-        assert "Mateo" in prompt
-        return texto_ia_esperado
+        # Minimización: el proveedor de IA no recibe el nombre del niño, solo el marcador
+        assert "Mateo" not in prompt
+        assert ia_resumenes.MARCADOR_NOMBRE in prompt
+        return texto_ia_esperado.replace("Mateo", ia_resumenes.MARCADOR_NOMBRE)
 
     from app import ia_resumenes
     monkeypatch.setattr(ia_resumenes, "_llamar_gemini", fake_llamar_gemini)
@@ -107,3 +109,44 @@ def test_fallo_de_red_o_error_de_ia_degrada_con_gracia_a_none(monkeypatch):
         "nombre": "Lucía",
     })
     assert resultado is None
+
+
+def test_seudonimizar_quita_nombre_completo_y_partes():
+    from app.ia_resumenes import MARCADOR_NOMBRE, _nombres_a_ocultar, seudonimizar
+
+    ocultar = _nombres_a_ocultar(["Mateo García López", "Mateo"])
+    datos = {"a": "mateo jugó con García", "b": ["Hoy MATEO comió", "Sin nombre"], "n": 3}
+    limpio = seudonimizar(datos, ocultar)
+    assert "mateo" not in str(limpio).lower()
+    assert "garcía" not in str(limpio).lower()
+    assert limpio["a"] == f"{MARCADOR_NOMBRE} jugó con {MARCADOR_NOMBRE}"
+    assert limpio["b"][1] == "Sin nombre"
+    assert limpio["n"] == 3
+
+
+def test_reporte_mensual_con_ia_simulada_no_manda_nombre(monkeypatch):
+    from app import ia_resumenes
+
+    monkeypatch.setattr(settings, "gemini_api_key", "clave-falsa")
+    enviados: list[str] = []
+
+    def fake(prompt: str, api_key: str, **kwargs) -> str:
+        enviados.append(prompt)
+        assert kwargs.get("max_tokens", 0) >= 300
+        return f"En octubre, {ia_resumenes.MARCADOR_NOMBRE} asistió casi todos los días."
+
+    monkeypatch.setattr(ia_resumenes, "_llamar_gemini", fake)
+    texto = ia_resumenes.generar_reporte_mensual_ia(
+        {
+            "child_id": "mateo",
+            "mes_id": "2026-10",
+            "nombre": "Mateo",
+            "mes": "octubre de 2026",
+            "comentarios_bitacora": ["Pintura: Mateo pintó un sol"],
+        },
+        nombres=["Mateo García López", "Mateo"],
+    )
+    assert texto == "En octubre, Mateo asistió casi todos los días."
+    assert len(enviados) == 1
+    assert "Mateo" not in enviados[0] and "García" not in enviados[0] and "mateo" not in enviados[0]
+    assert "REPORTE MENSUAL" in enviados[0]

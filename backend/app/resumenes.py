@@ -8,6 +8,7 @@ Las fuentes son lo que captura el personal en la app:
 No hay datos inventados: si una semana o un día no tiene registros, el texto lo dice.
 """
 
+import calendar
 import json
 from datetime import date, datetime, timedelta
 from typing import Any
@@ -16,7 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .horario import hoy
-from .ia_resumenes import generar_resumen_ejecutivo_ia
+from .ia_resumenes import generar_reporte_mensual_ia, generar_resumen_ejecutivo_ia
 from .models import Activity, Child, DailyLog, DailyPlan, WeeklyObservation, WeeklySummaryFeedback
 
 SEMANAS_HISTORIAL = 4
@@ -198,40 +199,39 @@ def _feedback(db: Session, child_id: str, semana: str, quien_id: str, es_familia
     }
 
 
-def resumen_semanal(
-    db: Session, alumno: Child, lunes: date, quien_id: str, es_familia: bool
-) -> dict[str, Any]:
-    hoy_ = hoy()
-    lunes_actual = lunes_de(hoy_)
-    viernes = lunes + timedelta(days=4)
-    dias_semana = [(lunes + timedelta(days=i)).isoformat() for i in range(5)]
-    dias_semana_mex = [(lunes + timedelta(days=i)).strftime("%d/%m/%Y") for i in range(5)]
-    dias_semana_todos = set(dias_semana) | set(dias_semana_mex)
+def _registros_del_periodo(db: Session, alumno: Child, dias: list[date]):
+    """Hoja oficial y tarjetas de la bitácora de los días indicados, ya combinadas por día.
+
+    Devuelve (registros, ingresos, estadias, dias_con_actividad, actividades).
+    """
+    dias_iso = [d.isoformat() for d in dias]
+    validos = set(dias_iso)
+    dias_todos = validos | {d.strftime("%d/%m/%Y") for d in dias}
 
     registros = {
         r.date: r
         for r in db.scalars(
-            select(DailyLog).where(DailyLog.child_id == alumno.id, DailyLog.date.in_(dias_semana))
+            select(DailyLog).where(DailyLog.child_id == alumno.id, DailyLog.date.in_(dias_iso))
         ).all()
     }
     ingresos = {d: _json(r.ingreso) for d, r in registros.items() if r.ingreso}
     estadias = {d: _json(r.estadia) for d, r in registros.items() if r.estadia}
 
-    # Tarjetas de actividades de la bitácora para la misma semana
-    actividades_semana = db.scalars(
-        select(Activity).where(Activity.child_id == alumno.id, Activity.date.in_(dias_semana_todos))
+    # Tarjetas de actividades de la bitácora para el mismo periodo
+    actividades_periodo = db.scalars(
+        select(Activity).where(Activity.child_id == alumno.id, Activity.date.in_(dias_todos))
     ).all()
 
     # Días con actividades registradas: el niño estuvo presente aunque no se haya pasado asistencia
     dias_con_actividad: set[str] = set()
 
     # Integrar actividades de la bitácora en la asistencia y estadías
-    for a in actividades_semana:
+    for a in actividades_periodo:
         dia_obj = a_fecha(a.date)
         if not dia_obj:
             continue
         dia_iso = dia_obj.isoformat()
-        if dia_iso not in dias_semana:
+        if dia_iso not in validos:
             continue
 
         # Si el día no tenía ingreso registrado pero hubo actividades, se considera asistido
@@ -293,6 +293,23 @@ def resumen_semanal(
             estadias[dia_iso]["hadHealthIssue"] = True
             if a.description:
                 estadias[dia_iso]["healthIssue"] = a.description
+
+    return registros, ingresos, estadias, dias_con_actividad, actividades_periodo
+
+
+def resumen_semanal(
+    db: Session, alumno: Child, lunes: date, quien_id: str, es_familia: bool
+) -> dict[str, Any]:
+    hoy_ = hoy()
+    lunes_actual = lunes_de(hoy_)
+    viernes = lunes + timedelta(days=4)
+    dias_semana = [(lunes + timedelta(days=i)).isoformat() for i in range(5)]
+    dias_semana_mex = [(lunes + timedelta(days=i)).strftime("%d/%m/%Y") for i in range(5)]
+    dias_semana_todos = set(dias_semana) | set(dias_semana_mex)
+
+    registros, ingresos, estadias, dias_con_actividad, actividades_semana = _registros_del_periodo(
+        db, alumno, [lunes + timedelta(days=i) for i in range(5)]
+    )
 
     # Asistencia y hora de llegada
     transcurridos = dias_escolares_transcurridos(lunes, hoy_)
@@ -629,3 +646,258 @@ def historial_diario(db: Session, child_id: str, dias: int = DIAS_HISTORIAL) -> 
             "activities": filas,
         })
     return salida
+
+
+# ---------------------------------------------------------------------------
+# Reporte mensual (RF-19)
+# ---------------------------------------------------------------------------
+
+MESES_REPORTE = 12  # cuántos meses hacia atrás se pueden consultar
+
+
+def mes_de_texto(texto: str) -> tuple[int, int] | None:
+    """'2026-10' -> (2026, 10) si es el mes actual o uno de los últimos MESES_REPORTE."""
+    try:
+        anio_txt, mes_txt = texto.strip().split("-")
+        anio, mes = int(anio_txt), int(mes_txt)
+        date(anio, mes, 1)
+    except (ValueError, AttributeError):
+        return None
+    hoy_ = hoy()
+    atras = (hoy_.year - anio) * 12 + (hoy_.month - mes)
+    if atras < 0 or atras >= MESES_REPORTE:
+        return None
+    return anio, mes
+
+
+def meses_recientes(cuantos: int = 3) -> list[str]:
+    """Mes actual y anteriores en formato YYYY-MM, del más reciente al más antiguo."""
+    hoy_ = hoy()
+    anio, mes = hoy_.year, hoy_.month
+    salida: list[str] = []
+    for _ in range(cuantos):
+        salida.append(f"{anio:04d}-{mes:02d}")
+        mes -= 1
+        if mes == 0:
+            anio, mes = anio - 1, 12
+    return salida
+
+
+def reporte_mensual(db: Session, alumno: Child, anio: int, mes: int) -> dict[str, Any]:
+    """Reporte del mes con los registros reales: asistencia, comida, siesta, comportamiento,
+    salud, actividades y observaciones, más los puntos que conviene que la familia atienda."""
+    hoy_ = hoy()
+    primero = date(anio, mes, 1)
+    ultimo = date(anio, mes, calendar.monthrange(anio, mes)[1])
+    es_actual = primero <= hoy_ <= ultimo
+    habiles = [
+        primero + timedelta(days=i)
+        for i in range((ultimo - primero).days + 1)
+        if (primero + timedelta(days=i)).weekday() < 5
+    ]
+    transcurridos = [d for d in habiles if d <= hoy_]
+    registros, ingresos, estadias, dias_con_actividad, actividades = _registros_del_periodo(db, alumno, habiles)
+    nombre = alumno.short_name or alumno.full_name
+    nombre_mes = MESES[mes - 1]
+
+    # Asistencia
+    asistio = len(set(ingresos) | dias_con_actividad)
+    n_habiles = len(transcurridos)
+    porcentaje_asistencia = f"{round(asistio * 100 / n_habiles)}%" if n_habiles else "—"
+    llegadas = [m for m in (minutos_de(i.get("time")) for i in ingresos.values()) if m is not None]
+    llegada_promedio = hora_12h(round(sum(llegadas) / len(llegadas))) if llegadas else "—"
+
+    # Alimentación
+    porcentajes: list[int] = []
+    dias_comio_poco: list[str] = []
+    for d, e in sorted(estadias.items()):
+        valores = [normalizar_opcion_comida(e.get(campo)) for campo, _ in COMIDAS]
+        valores = [v for v in valores if v in PORCENTAJE_COMIDA]
+        porcentajes.extend(PORCENTAJE_COMIDA[v] for v in valores)
+        if valores and all(v in ("NADA", "POCO") for v in valores):
+            dias_comio_poco.append(d)
+    porcentaje_comida = f"{round(sum(porcentajes) / len(porcentajes))}%" if porcentajes else "—"
+
+    # Siesta
+    siestas = [
+        int(e["napMinutes"])
+        for e in estadias.values()
+        if isinstance(e.get("napMinutes"), int) and e["napMinutes"] > 0 and e.get("slept") is not False
+    ]
+    siesta_diaria = f"{duracion(round(sum(siestas) / len(siestas)))}/día" if siestas else "—"
+
+    # Comportamiento (estado de ánimo y participación)
+    animos = [e.get("mood") for e in estadias.values() if e.get("mood") in TEXTO_ANIMO]
+    conteo = {m: animos.count(m) for m in TEXTO_ANIMO}
+    participo = sum(1 for e in estadias.values() if e.get("participated") is True)
+    comportamiento: list[str] = []
+    if animos:
+        predominante = max(TEXTO_ANIMO, key=lambda m: conteo[m])
+        animo = f"Mayormente {TEXTO_ANIMO[predominante]}"
+        comportamiento = [
+            f"{TEXTO_ANIMO[m].capitalize()}: {_plural(c, 'día', 'días')}" for m, c in conteo.items() if c
+        ]
+    else:
+        animo = "Sin registros"
+    if participo:
+        comportamiento.append(f"Participó en las actividades {_plural(participo, 'día', 'días')}")
+    for e in estadias.values():
+        nota = e.get("moodNotes")
+        if isinstance(nota, str) and nota.strip() and len(comportamiento) < 8:
+            comportamiento.append(nota.strip())
+
+    # Salud y seguridad, con la fecha de cada evento
+    salud: list[str] = []
+    for d in sorted(set(ingresos) | set(estadias)):
+        etiqueta = date.fromisoformat(d).strftime("%d/%m")
+        ing = ingresos.get(d, {})
+        est = estadias.get(d, {})
+        if ing.get("isSick"):
+            salud.append(f"{etiqueta}: llegó con malestar")
+        if ing.get("hasSymptoms") and ing.get("symptoms"):
+            salud.append(f"{etiqueta}: síntomas al llegar ({ing['symptoms']})")
+        if est.get("hadAccident"):
+            salud.append(f"{etiqueta}: accidente ({est.get('accidentDescription') or 'sin descripción'})")
+        if est.get("hadHealthIssue"):
+            salud.append(f"{etiqueta}: atención de salud ({est.get('healthIssue') or 'sin detalle'})")
+
+    # Actividades pedagógicas de la planeación de su sala
+    planes = db.scalars(
+        select(DailyPlan).where(
+            DailyPlan.room_id == alumno.room_id, DailyPlan.date.in_([d.isoformat() for d in habiles])
+        )
+    ).all()
+    pedagogicas: list[str] = []
+    for plan in sorted(planes, key=lambda p: p.date):
+        try:
+            lista = json.loads(plan.activities or "[]")
+        except ValueError:
+            lista = []
+        for a in lista:
+            titulo = str(a.get("title", "")).strip() if isinstance(a, dict) else ""
+            if titulo and titulo not in pedagogicas:
+                pedagogicas.append(titulo)
+    pedagogicas = pedagogicas[:8]
+
+    # Lo que escribió la educadora en las tarjetas de la bitácora
+    comentarios: list[str] = []
+    for a in sorted(actividades, key=lambda x: (a_fecha(x.date) or primero, minutos_de(x.time) or 0)):
+        desc = (a.description or "").strip()
+        if desc and desc.lower() != (a.title or "").strip().lower():
+            comentarios.append(f"{a.title}: {desc}" if a.title else desc)
+    comentarios = comentarios[:15]
+
+    # Observaciones semanales de las semanas del mes
+    lunes_actual = lunes_de(hoy_)
+    claves: set[str] = set()
+    for lunes in sorted({lunes_de(d) for d in habiles}):
+        claves |= {texto_rango(lunes), lunes.isoformat(), etiqueta_semana(lunes, lunes_actual)}
+    observaciones = [
+        f"{'Familia' if (o.author_role or '').upper().startswith('FAMILI') else 'Educadora'}: {o.text.strip()}"
+        for o in db.scalars(
+            select(WeeklyObservation).where(
+                WeeklyObservation.child_id == alumno.id, WeeklyObservation.week_key.in_(claves)
+            )
+        ).all()
+        if (o.text or "").strip()
+    ][:6]
+
+    # Puntos que conviene que la familia atienda
+    tiene_registros = bool(registros or estadias or ingresos or actividades)
+    puntos: list[str] = []
+    if salud:
+        puntos.append(f"Situaciones de salud o accidentes registrados: {len(salud)} (ver detalle).")
+    if dias_comio_poco:
+        puntos.append(f"Comió poco o nada {_plural(len(dias_comio_poco), 'día', 'días')}.")
+    dificiles = conteo["TRISTE"] + conteo["ENOJADO"]
+    if dificiles:
+        puntos.append(f"Estuvo triste o enojado {_plural(dificiles, 'día', 'días')}; vale la pena platicarlo con su educadora.")
+    faltas = n_habiles - asistio
+    if tiene_registros and faltas > 0:
+        puntos.append(f"Faltó {_plural(faltas, 'día hábil', 'días hábiles')}.")
+    if tiene_registros and not puntos:
+        puntos.append("Nada que requiera atención especial este mes.")
+
+    # Texto del reporte
+    if not tiene_registros:
+        texto = f"Aún no hay registros de {nombre} en {nombre_mes}."
+    else:
+        oraciones = [
+            f"En {nombre_mes}, {nombre} asistió {asistio} de {_plural(n_habiles, 'día hábil', 'días hábiles')}"
+            + (f" ({porcentaje_asistencia})" if n_habiles else "")
+            + (f", con llegada promedio a las {llegada_promedio}" if llegadas else "")
+            + "."
+        ]
+        if porcentajes:
+            oraciones.append(f"Comió en promedio el {porcentaje_comida} de sus alimentos.")
+        if siestas:
+            oraciones.append(
+                f"Durmió siesta {_plural(len(siestas), 'día', 'días')}, con un promedio de {siesta_diaria.replace('/día', '')} por día."
+            )
+        if animos:
+            oraciones.append(
+                f"Su estado de ánimo fue {animo.lower()}"
+                + (f" y participó en las actividades {_plural(participo, 'día', 'días')}." if participo else ".")
+            )
+        if pedagogicas:
+            oraciones.append("En su sala se trabajó: " + ", ".join(pedagogicas[:4]) + ".")
+        oraciones.append(
+            f"Se registraron {_plural(len(salud), 'situación de salud o accidente', 'situaciones de salud o accidentes')}."
+            if salud
+            else "No se registraron accidentes ni situaciones de salud."
+        )
+        texto = " ".join(oraciones)
+
+    con_ia = False
+    if tiene_registros:
+        texto_ia = generar_reporte_mensual_ia(
+            {
+                "child_id": alumno.id,
+                "mes_id": f"{anio:04d}-{mes:02d}",
+                "nombre": nombre,
+                "mes": f"{nombre_mes} de {anio}",
+                "asistencia": f"{asistio} de {_plural(n_habiles, 'día hábil', 'días hábiles')} ({porcentaje_asistencia})",
+                "llegada_promedio": llegada_promedio,
+                "alimentacion": porcentaje_comida,
+                "dias_comio_poco": len(dias_comio_poco),
+                "siesta": f"{_plural(len(siestas), 'día', 'días')} con siesta, promedio {siesta_diaria}",
+                "comportamiento": comportamiento,
+                "salud": salud,
+                "actividades_plan": pedagogicas,
+                "comentarios_bitacora": comentarios,
+                "observaciones": observaciones,
+                "puntos_atencion": puntos,
+            },
+            nombres=[alumno.full_name, alumno.short_name],
+        )
+        if texto_ia:
+            texto, con_ia = texto_ia, True
+
+    if es_actual:
+        periodo = f"Del 1 al {hoy_.day} de {nombre_mes} de {anio} (mes en curso)"
+    else:
+        periodo = f"Del 1 al {ultimo.day} de {nombre_mes} de {anio}"
+
+    return {
+        "id": f"{anio:04d}-{mes:02d}",
+        "monthLabel": f"{nombre_mes.capitalize()} {anio}",
+        "periodText": periodo,
+        "isCurrentMonth": es_actual,
+        "schoolDays": n_habiles,
+        "attendanceDays": asistio,
+        "attendancePercentageText": porcentaje_asistencia,
+        "averageArrivalTime": llegada_promedio,
+        "foodIntakePercentage": porcentaje_comida,
+        "napDays": len(siestas),
+        "averageNapDaily": siesta_diaria,
+        "moodSummary": animo,
+        "activitiesRecorded": len(actividades),
+        "behaviorHighlights": comportamiento,
+        "healthEvents": salud,
+        "pedagogicalHighlights": pedagogicas,
+        "observations": observaciones,
+        "pointsForFamily": puntos,
+        "reportText": texto,
+        "generatedWithAi": con_ia,
+        "generatedAt": hoy_.strftime("%d/%m/%Y"),
+    }

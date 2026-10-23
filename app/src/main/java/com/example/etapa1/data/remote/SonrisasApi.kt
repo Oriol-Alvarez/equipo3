@@ -61,6 +61,16 @@ interface SonrisasApi {
     @GET("children/{childId}/weekly-summaries")
     suspend fun getWeeklySummaries(@Path("childId") childId: String): Response<List<WeeklySummaryDto>>
 
+    /** RF-19: meses disponibles (YYYY-MM) y reporte de un mes. */
+    @GET("children/{childId}/monthly-reports")
+    suspend fun getMesesReporte(@Path("childId") childId: String): Response<List<String>>
+
+    @GET("children/{childId}/monthly-reports/{month}")
+    suspend fun getReporteMensual(
+        @Path("childId") childId: String,
+        @Path("month") mes: String
+    ): Response<ReporteMensualDto>
+
     @PUT("children/{childId}/weekly-summaries/{summaryId}/feedback")
     suspend fun sendWeeklySummaryFeedback(
         @Path("childId") childId: String,

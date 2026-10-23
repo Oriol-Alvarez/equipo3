@@ -66,6 +66,32 @@ data class WeeklySummaryDto(
     val parentReaction: String? = null
 )
 
+/** RF-19: reporte mensual del niño (GET /children/{id}/monthly-reports/{YYYY-MM}). */
+@Serializable
+data class ReporteMensualDto(
+    val id: String,
+    val monthLabel: String,
+    val periodText: String = "",
+    val isCurrentMonth: Boolean = false,
+    val schoolDays: Int = 0,
+    val attendanceDays: Int = 0,
+    val attendancePercentageText: String = "—",
+    val averageArrivalTime: String = "—",
+    val foodIntakePercentage: String = "—",
+    val napDays: Int = 0,
+    val averageNapDaily: String = "—",
+    val moodSummary: String = "",
+    val activitiesRecorded: Int = 0,
+    val behaviorHighlights: List<String> = emptyList(),
+    val healthEvents: List<String> = emptyList(),
+    val pedagogicalHighlights: List<String> = emptyList(),
+    val observations: List<String> = emptyList(),
+    val pointsForFamily: List<String> = emptyList(),
+    val reportText: String = "",
+    val generatedWithAi: Boolean = false,
+    val generatedAt: String = ""
+)
+
 @Serializable
 data class WeeklySummaryFeedbackDto(
     val isRead: Boolean? = null,

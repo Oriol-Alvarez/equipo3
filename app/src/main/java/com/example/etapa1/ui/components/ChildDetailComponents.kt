@@ -592,9 +592,15 @@ fun WeeklySummaryContent(
     onToggleReadStatus: ((WeeklySummary) -> Unit)? = null,
     onSelectReaction: ((WeeklySummary, String) -> Unit)? = null,
     /** RF-12: si no es null, se muestra "Guardar o compartir resumen" (solo para la familia). */
-    onCompartir: ((WeeklySummary) -> Unit)? = null
+    onCompartir: ((WeeklySummary) -> Unit)? = null,
+    /** RF-19: muestra el botón "Ver reporte mensual" (familia y personal). */
+    conReporteMensual: Boolean = true
 ) {
     val currentSummary = summaries.getOrNull(selectedWeekIndex) ?: summaries.firstOrNull()
+    var verReporteMensual by remember { mutableStateOf(false) }
+    if (verReporteMensual) {
+        ReporteMensualDialog(child = child, onDismiss = { verReporteMensual = false })
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // Selector horizontal de semanas (igual que en Bitácora Diaria)
@@ -647,6 +653,9 @@ fun WeeklySummaryContent(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Guardar o compartir resumen", color = BrandBlue, fontWeight = FontWeight.SemiBold)
                     }
+                }
+                if (conReporteMensual) {
+                    BotonReporteMensual(onClick = { verReporteMensual = true })
                 }
                 // Tarjeta Principal: Síntesis Automática Inteligente
                 Card(
