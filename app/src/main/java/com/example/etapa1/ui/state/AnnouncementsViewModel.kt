@@ -27,4 +27,8 @@ class AnnouncementsViewModel(
     fun markAsRead(id: String) {
         announcementRepository.markAsRead(id)
     }
+
+    fun markAllAsRead() {
+        announcementRepository.markAllAsRead()
+    }
 }

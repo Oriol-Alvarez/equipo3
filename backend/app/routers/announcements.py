@@ -65,6 +65,30 @@ def contador_no_leidos(
     return UnreadCountOut(unreadCount=no_leidos)
 
 
+@router.post("/mark-all-read", response_model=UnreadCountOut)
+@router.patch("/read-all", response_model=UnreadCountOut)
+def marcar_todos_como_leidos(
+    quien: Identidad = Depends(usuario_actual),
+    db: Session = Depends(get_db),
+) -> UnreadCountOut:
+    """Marca todos los avisos como leídos para el usuario autenticado al abrir las notificaciones."""
+    avisos = db.scalars(select(Announcement.id)).all()
+    leidos_ids = set(
+        db.scalars(
+            select(AnnouncementRead.announcement_id).where(AnnouncementRead.user_id == quien.id)
+        ).all()
+    )
+    nuevos_leidos = [
+        AnnouncementRead(announcement_id=a_id, user_id=quien.id)
+        for a_id in avisos
+        if a_id not in leidos_ids
+    ]
+    if nuevos_leidos:
+        db.add_all(nuevos_leidos)
+        db.commit()
+    return UnreadCountOut(unreadCount=0)
+
+
 @router.patch("/{id}/read", response_model=ReadAnnouncementOut)
 def marcar_como_leido(
     id: str,

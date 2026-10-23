@@ -94,6 +94,9 @@ interface SonrisasApi {
     @PATCH("announcements/{id}/read")
     suspend fun markAnnouncementAsRead(@Path("id") id: String): Response<Unit>
 
+    @POST("announcements/mark-all-read")
+    suspend fun markAllAnnouncementsAsRead(): Response<UnreadCountDto>
+
     @GET("suggestions")
     suspend fun getSuggestions(
         @Query("status") status: String? = null,

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["notifications-and-websockets"])
 
 
-ROLES_PERSONAL = ("EDUCADORA", "DIRECCION")
+ROLES_PERSONAL = ("EDUCADORA", "DIRECCION", "ADMINISTRADOR", "ADMIN")
 
 # Filtro de destinatarios: recibe (user_id, role) y decide si esa conexión recibe el evento
 Destinatarios = Callable[[str, str], bool]

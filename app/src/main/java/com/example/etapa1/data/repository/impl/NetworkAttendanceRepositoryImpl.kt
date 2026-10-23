@@ -52,7 +52,15 @@ class NetworkAttendanceRepositoryImpl(
         child: Child,
         isIngreso: Boolean,
         time: String,
-        observations: String
+        observations: String,
+        personName: String?,
+        staffName: String?,
+        goodPhysicalCondition: Boolean,
+        injuryDetail: String,
+        hasSymptoms: Boolean,
+        symptomsDetail: String,
+        isClean: Boolean,
+        backpackComplete: Boolean
     ): Result<Unit> {
         val record = AttendanceRecord(
             id = "att_${System.currentTimeMillis()}",
@@ -61,33 +69,54 @@ class NetworkAttendanceRepositoryImpl(
             date = "Hoy",
             dayOfWeek = "L",
             time = time,
-            observations = observations
+            observations = observations,
+            delivererName = if (isIngreso) personName else null,
+            receiverStaffName = if (isIngreso) staffName else null,
+            receiverTutorName = if (!isIngreso) personName else null,
+            delivererStaffName = if (!isIngreso) staffName else null,
+            goodPhysicalCondition = goodPhysicalCondition,
+            injuryDetail = injuryDetail,
+            hasSymptoms = hasSymptoms,
+            symptomsDetail = symptomsDetail,
+            isClean = isClean,
+            backpackComplete = backpackComplete
         )
         _attendanceRecords.update { listOf(record) + it }
 
         val todayIso = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                if (isIngreso) {
-                    api.registrarIngreso(
-                        IngresoDto(
-                            childId = child.id,
-                            date = todayIso,
-                            entryTime = time,
-                            observations = observations
-                        )
+        RemoteSync.launch("Registrar ${if (isIngreso) "ingreso" else "egreso"} de ${child.fullName}") {
+            if (isIngreso) {
+                api.registrarIngreso(
+                    IngresoDto(
+                        childId = child.id,
+                        date = todayIso,
+                        entryTime = time,
+                        observations = observations,
+                        delivererName = personName,
+                        receiverStaffName = staffName,
+                        goodPhysicalCondition = goodPhysicalCondition,
+                        injuryDetail = injuryDetail,
+                        hasSymptoms = hasSymptoms,
+                        symptomsDetail = symptomsDetail,
+                        isClean = isClean,
+                        backpackComplete = backpackComplete
                     )
-                } else {
-                    api.registrarEgreso(
-                        EgresoDto(
-                            childId = child.id,
-                            date = todayIso,
-                            exitTime = time,
-                            observations = observations
-                        )
+                ).bodyOrLog("POST /attendance/ingreso")
+            } else {
+                api.registrarEgreso(
+                    EgresoDto(
+                        childId = child.id,
+                        date = todayIso,
+                        exitTime = time,
+                        observations = observations,
+                        receiverTutorName = personName,
+                        delivererStaffName = staffName,
+                        goodPhysicalCondition = goodPhysicalCondition,
+                        injuryDetail = injuryDetail,
+                        isClean = isClean,
+                        backpackComplete = backpackComplete
                     )
-                }
-            } catch (_: Exception) {
+                ).bodyOrLog("POST /attendance/egreso")
             }
         }
 

@@ -70,8 +70,7 @@ data class RefreshRequestDto(
 @Serializable
 data class RefreshResponseDto(
     val token: String,
-    val expiresIn: Int,
-    val refreshToken: String? = null
+    val expiresIn: Int
 )
 
 @Serializable

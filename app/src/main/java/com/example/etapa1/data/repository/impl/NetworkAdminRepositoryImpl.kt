@@ -168,7 +168,7 @@ class NetworkAdminRepositoryImpl(
                 Result.failure(Exception(NetworkErrorHelper.parseResponse(res)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(NetworkErrorHelper.parseException(e), e))
         }
     }
 
@@ -200,7 +200,7 @@ class NetworkAdminRepositoryImpl(
                 Result.failure(Exception(NetworkErrorHelper.parseResponse(res)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(NetworkErrorHelper.parseException(e), e))
         }
     }
 
@@ -214,7 +214,7 @@ class NetworkAdminRepositoryImpl(
                 Result.failure(Exception(NetworkErrorHelper.parseResponse(res)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(NetworkErrorHelper.parseException(e), e))
         }
     }
 
@@ -242,7 +242,7 @@ class NetworkAdminRepositoryImpl(
                 Result.failure(Exception(NetworkErrorHelper.parseResponse(res)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(NetworkErrorHelper.parseException(e), e))
         }
     }
 
@@ -272,7 +272,7 @@ class NetworkAdminRepositoryImpl(
                 Result.failure(Exception(NetworkErrorHelper.parseResponse(res)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(NetworkErrorHelper.parseException(e), e))
         }
     }
 
@@ -286,7 +286,7 @@ class NetworkAdminRepositoryImpl(
                 Result.failure(Exception(NetworkErrorHelper.parseResponse(res)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(NetworkErrorHelper.parseException(e), e))
         }
     }
 
@@ -336,7 +336,7 @@ class NetworkAdminRepositoryImpl(
                 Result.failure(Exception(NetworkErrorHelper.parseResponse(res)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(NetworkErrorHelper.parseException(e), e))
         }
     }
 
@@ -350,7 +350,7 @@ class NetworkAdminRepositoryImpl(
                 Result.failure(Exception(NetworkErrorHelper.parseResponse(res)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(NetworkErrorHelper.parseException(e), e))
         }
     }
 
@@ -380,7 +380,7 @@ class NetworkAdminRepositoryImpl(
                 Result.failure(Exception(NetworkErrorHelper.parseResponse(res)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(NetworkErrorHelper.parseException(e), e))
         }
     }
 
@@ -414,7 +414,7 @@ class NetworkAdminRepositoryImpl(
                 Result.failure(Exception(NetworkErrorHelper.parseResponse(res)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(NetworkErrorHelper.parseException(e), e))
         }
     }
 
@@ -428,7 +428,7 @@ class NetworkAdminRepositoryImpl(
                 Result.failure(Exception(NetworkErrorHelper.parseResponse(res)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(NetworkErrorHelper.parseException(e), e))
         }
     }
 
@@ -502,7 +502,7 @@ class NetworkAdminRepositoryImpl(
                 Result.failure(Exception(NetworkErrorHelper.parseResponse(res)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(NetworkErrorHelper.parseException(e), e))
         }
     }
 
@@ -532,7 +532,7 @@ class NetworkAdminRepositoryImpl(
                 Result.failure(Exception(NetworkErrorHelper.parseResponse(res)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(NetworkErrorHelper.parseException(e), e))
         }
     }
 
@@ -546,7 +546,7 @@ class NetworkAdminRepositoryImpl(
                 Result.failure(Exception(NetworkErrorHelper.parseResponse(res)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(NetworkErrorHelper.parseException(e), e))
         }
     }
 
@@ -560,7 +560,7 @@ class NetworkAdminRepositoryImpl(
                 Result.failure(Exception(NetworkErrorHelper.parseResponse(res)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(NetworkErrorHelper.parseException(e), e))
         }
     }
 
@@ -594,7 +594,7 @@ class NetworkAdminRepositoryImpl(
                 Result.failure(Exception(NetworkErrorHelper.parseResponse(res)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(NetworkErrorHelper.parseException(e), e))
         }
     }
 }

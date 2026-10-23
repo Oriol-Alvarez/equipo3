@@ -7,7 +7,7 @@ from .deps import Identidad
 from .errors import ApiError
 from .models import Child, ChildParent
 
-ROLES_PERSONAL = ("EDUCADORA", "DIRECCION")
+ROLES_PERSONAL = ("EDUCADORA", "DIRECCION", "ADMINISTRADOR", "ADMIN")
 
 
 def es_personal(quien: Identidad) -> bool:

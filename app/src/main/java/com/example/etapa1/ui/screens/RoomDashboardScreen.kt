@@ -114,6 +114,19 @@ fun RoomDashboardScreen(
     // La tarjeta de planeación muestra la de esta sala
     LaunchedEffect(room.id) { dailyPlanViewModel.abrirSala(room.id) }
 
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner, room.id) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                viewModel.abrirSala(room.id)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     RoomDashboardScreen(
         room = room,
         children = children,

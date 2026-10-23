@@ -1883,6 +1883,38 @@ private fun EditUserDialog(
     var role by remember { mutableStateOf(user.role) }
     var phone by remember { mutableStateOf(user.phone ?: "") }
     var password by remember { mutableStateOf("") }
+    var showPasswordConfirmDialog by remember { mutableStateOf(false) }
+
+    fun executeSave() {
+        if (name.isNotBlank() && email.isNotBlank()) {
+            onConfirm(name, email, role, phone.ifBlank { null }, password.ifBlank { null })
+        }
+    }
+
+    if (showPasswordConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showPasswordConfirmDialog = false },
+            title = { Text("Confirmar cambio de contraseña", fontWeight = FontWeight.Bold) },
+            text = {
+                Text("Has introducido una nueva contraseña para ${user.displayName}. ¿Deseas guardar los cambios y actualizar su contraseña?")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showPasswordConfirmDialog = false
+                        executeSave()
+                    }
+                ) {
+                    Text("Confirmar y Guardar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPasswordConfirmDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1938,8 +1970,10 @@ private fun EditUserDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (name.isNotBlank() && email.isNotBlank()) {
-                        onConfirm(name, email, role, phone.ifBlank { null }, password.ifBlank { null })
+                    if (password.isNotBlank()) {
+                        showPasswordConfirmDialog = true
+                    } else {
+                        executeSave()
                     }
                 },
                 enabled = name.isNotBlank() && email.isNotBlank()

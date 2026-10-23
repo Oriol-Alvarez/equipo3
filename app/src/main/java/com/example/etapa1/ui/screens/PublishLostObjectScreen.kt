@@ -4,6 +4,8 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
+import java.io.File
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -102,15 +104,27 @@ fun PublishLostObjectScreen(
     var categoryError by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+    var currentPhotoUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Abre la galería nativa de fotos de Android directamente
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            selectedImageUri = uri.toString()
+    // Abre la cámara para tomar una foto directamente
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && currentPhotoUri != null) {
+            selectedImageUri = currentPhotoUri.toString()
             photoError = false
         }
+    }
+
+    val openCamera = {
+        val photoFile = File(context.cacheDir, "lost_item_${System.currentTimeMillis()}.jpg")
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            photoFile
+        )
+        currentPhotoUri = uri
+        takePictureLauncher.launch(uri)
     }
 
     val categories = listOf("Ropa", "Juguetes", "Útiles", "Otros")
@@ -213,8 +227,8 @@ fun PublishLostObjectScreen(
                             shape = photoShape
                         )
                         .clickable {
-                            // Abrir directamente la galería nativa de imágenes
-                            galleryLauncher.launch("image/*")
+                            // Abrir directamente la cámara para capturar foto
+                            openCamera()
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -258,7 +272,7 @@ fun PublishLostObjectScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.AddAPhoto,
-                                    contentDescription = "Añadir fotografía",
+                                    contentDescription = "Hacer foto",
                                     tint = if (photoError) AlertRed else BrandBlue,
                                     modifier = Modifier.size(26.dp)
                                 )
@@ -267,7 +281,7 @@ fun PublishLostObjectScreen(
                             Spacer(modifier = Modifier.height(10.dp))
 
                             Text(
-                                text = "Añadir fotografía",
+                                text = "Hacer foto",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = if (photoError) AlertRed else BrandBlue

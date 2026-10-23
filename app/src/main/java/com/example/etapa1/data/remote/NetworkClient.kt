@@ -31,7 +31,6 @@ object NetworkClient {
                     .build()
                 chain.proceed(request)
             }
-            .authenticator(TokenAuthenticator(tokenManager) { baseUrl })
             .addInterceptor(AuthInterceptor(
                 tokenProvider = { tokenManager.token },
                 onUnauthorized = { tokenManager.notifySessionExpired() }

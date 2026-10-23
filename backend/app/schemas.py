@@ -84,7 +84,6 @@ class RefreshRequest(BaseModel):
 class RefreshResponse(BaseModel):
     token: str
     expiresIn: int
-    refreshToken: str | None = None
 
 
 # ---------------------------------------------------------------------------

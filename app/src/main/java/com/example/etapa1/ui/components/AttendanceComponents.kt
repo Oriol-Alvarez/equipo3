@@ -20,13 +20,20 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Draw
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -140,7 +147,8 @@ fun IngresoFormSection(
     onStepChange: (Int) -> Unit = {},
     onSave: () -> Unit = {},
     onDateChange: (String) -> Unit = {},
-    onDaySelected: (Int) -> Unit = {}
+    onDaySelected: (Int) -> Unit = {},
+    authorizedPersons: List<String> = emptyList()
 ) {
     val stepTitles = listOf(
         "Datos de Entrada",
@@ -474,7 +482,8 @@ fun IngresoFormSection(
                             onSignedChanged = {
                                 state.hasDelivererSignature = it
                                 stepError = null
-                            }
+                            },
+                            authorizedPersons = authorizedPersons
                         )
                     }
                     9 -> {
@@ -487,7 +496,7 @@ fun IngresoFormSection(
                                 stepError = null
                             },
                             namePlaceholder = "Nombre del personal de la E.I.",
-                            signatureLabel = "Firma del personal receptor de la E.I.:",
+                            signatureLabel = " Firma del personal receptor:",
                             isAlreadySigned = state.hasReceiverStaffSignature,
                             onSignedChanged = {
                                 state.hasReceiverStaffSignature = it
@@ -530,7 +539,8 @@ fun EgresoFormSection(
     state: EgresoFormState,
     currentStep: Int = 0,
     onStepChange: (Int) -> Unit = {},
-    onSave: () -> Unit = {}
+    onSave: () -> Unit = {},
+    authorizedPersons: List<String> = emptyList()
 ) {
     val stepTitles = listOf(
         "Estado Físico al Egreso",
@@ -731,7 +741,8 @@ fun EgresoFormSection(
                             onSignedChanged = {
                                 state.hasReceiverTutorSignature = it
                                 stepError = null
-                            }
+                            },
+                            authorizedPersons = authorizedPersons
                         )
                     }
                     6 -> {
@@ -860,6 +871,196 @@ fun AttendanceTextField(
     }
 }
 
+data class AuthorizedPersonOption(
+    val name: String,
+    val relationship: String? = null,
+    val phone: String? = null
+) {
+    val subtitle: String?
+        get() {
+            val parts = mutableListOf<String>()
+            if (!relationship.isNullOrBlank()) {
+                parts.add(relationship)
+            }
+            if (!phone.isNullOrBlank()) {
+                parts.add("Tel: $phone")
+            }
+            return if (parts.isNotEmpty()) parts.joinToString(" • ") else null
+        }
+}
+
+private fun parseAuthorizedPersonOption(raw: String): AuthorizedPersonOption {
+    // 1. Extraer nombre limpio (antes de '(', '-', '•', '·', 'Tel:')
+    val cleanName = raw.substringBefore("(")
+        .substringBefore(" -")
+        .substringBefore(" •")
+        .substringBefore(" ·")
+        .substringBefore("Tel:")
+        .trim()
+
+    // 2. Extraer parentesco entre paréntesis si existe: ej. (Madre), (Abuela materna)
+    val relMatch = Regex("""\(([^)]+)\)""").find(raw)
+    val relationship = relMatch?.groupValues?.get(1)?.trim()
+
+    // 3. Extraer teléfono: busca prefijos comunes como 'Tel:', 'Teléfono:', 'Cel:'
+    // y captura el número de teléfono sin CURP ni otros datos
+    val phoneMatch = Regex("""(?:Tel|Teléfono|Cel)[:.\s]+([+0-9\s-]+)""", RegexOption.IGNORE_CASE).find(raw)
+    val phone = phoneMatch?.groupValues?.get(1)
+        ?.substringBefore("•")
+        ?.substringBefore("·")
+        ?.substringBefore(";")
+        ?.trim()
+        ?.trimEnd('.', ',', '-', ' ', '·', '•')
+
+    return AuthorizedPersonOption(
+        name = cleanName.ifBlank { raw.trim() },
+        relationship = relationship,
+        phone = phone
+    )
+}
+
+@Composable
+fun AttendanceAuthorizedDropdownTextField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String = "",
+    authorizedPersons: List<String> = emptyList()
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    // Procesar personas autorizadas deduplicando por nombre y extrayendo parentesco y teléfono sin CURP
+    val options = remember(authorizedPersons) {
+        val map = linkedMapOf<String, AuthorizedPersonOption>()
+        for (raw in authorizedPersons) {
+            if (raw.isBlank()) continue
+            val parsed = parseAuthorizedPersonOption(raw)
+            val key = parsed.name.lowercase().trim()
+            if (key.isBlank()) continue
+
+            val existing = map[key]
+            if (existing == null) {
+                map[key] = parsed
+            } else {
+                map[key] = existing.copy(
+                    relationship = existing.relationship ?: parsed.relationship,
+                    phone = existing.phone ?: parsed.phone
+                )
+            }
+        }
+        map.values.toList()
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = label,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = TextPrimary
+        )
+
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(
+                value = value,
+                onValueChange = {},
+                readOnly = true,
+                placeholder = if (placeholder.isNotEmpty()) {
+                    { Text(placeholder, fontSize = 13.sp, color = TextSecondary) }
+                } else null,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                trailingIcon = {
+                    if (options.isNotEmpty()) {
+                        Icon(
+                            imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                            contentDescription = "Mostrar personas autorizadas",
+                            tint = BrandBlue
+                        )
+                    }
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    focusedBorderColor = BrandBlue,
+                    unfocusedBorderColor = BorderSubtle
+                )
+            )
+
+            // Superposición que intercepta los clics para desplegar las opciones
+            // impidiendo la escritura manual y el teclado en pantalla
+            if (options.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { expanded = !expanded }
+                )
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .background(Color.White)
+                ) {
+                    Text(
+                        text = "Personas autorizadas",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = BrandBlue,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                    )
+                    options.forEach { option ->
+                        val isSelected = option.name.equals(value.trim(), ignoreCase = true)
+                        DropdownMenuItem(
+                            text = {
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Text(
+                                        text = option.name,
+                                        fontSize = 13.5.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                        color = if (isSelected) BrandBlue else TextPrimary
+                                    )
+                                    option.subtitle?.let { subtitle ->
+                                        Text(
+                                            text = subtitle,
+                                            fontSize = 11.5.sp,
+                                            color = TextSecondary,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = BrandBlue,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            },
+                            trailingIcon = if (isSelected) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "Seleccionado",
+                                        tint = BrandBlue,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            } else null,
+                            onClick = {
+                                onValueChange(option.name)
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 /**
  * Agrupación de nombre de persona y su lienzo de firma digital.
  */
@@ -871,15 +1072,26 @@ fun SignatureFieldGroup(
     namePlaceholder: String,
     signatureLabel: String,
     isAlreadySigned: Boolean = false,
-    onSignedChanged: (Boolean) -> Unit = {}
+    onSignedChanged: (Boolean) -> Unit = {},
+    authorizedPersons: List<String> = emptyList()
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        AttendanceTextField(
-            label = title,
-            value = name,
-            onValueChange = onNameChange,
-            placeholder = namePlaceholder
-        )
+        if (authorizedPersons.isNotEmpty()) {
+            AttendanceAuthorizedDropdownTextField(
+                label = title,
+                value = name,
+                onValueChange = onNameChange,
+                placeholder = namePlaceholder,
+                authorizedPersons = authorizedPersons
+            )
+        } else {
+            AttendanceTextField(
+                label = title,
+                value = name,
+                onValueChange = onNameChange,
+                placeholder = namePlaceholder
+            )
+        }
         SignaturePad(
             label = signatureLabel,
             isAlreadySigned = isAlreadySigned,

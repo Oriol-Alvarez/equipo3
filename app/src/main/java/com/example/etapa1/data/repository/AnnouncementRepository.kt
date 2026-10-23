@@ -7,6 +7,7 @@ interface AnnouncementRepository {
     val announcements: StateFlow<List<Announcement>>
     val unreadCount: StateFlow<Int>
     fun markAsRead(id: String)
+    fun markAllAsRead()
 
     /** Vuelve a pedir los datos al servidor. */
     fun refresh() {}

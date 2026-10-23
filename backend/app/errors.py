@@ -67,7 +67,7 @@ def instalar(app: FastAPI) -> None:
     async def sqlalchemy_error_handler(_: Request, e: SQLAlchemyError) -> JSONResponse:
         logger.warning(f"Database error (SQLAlchemyError): {e}")
         return JSONResponse(
-            {"error": "Conflicto o dato inválido para la base de datos.", "code": "db_error"},
+            {"error": "Error de conexión.", "code": "db_error"},
             status_code=400
         )
 
@@ -75,6 +75,6 @@ def instalar(app: FastAPI) -> None:
     async def global_exception_handler(_: Request, e: Exception) -> JSONResponse:
         logger.exception(f"Unhandled exception: {e}")
         return JSONResponse(
-            {"message": "No se pudo procesar la solicitud debido a datos malformados o estado no válido.", "code": "request_error"},
+            {"message": "Error de conexión.", "error": "Error de conexión.", "code": "request_error"},
             status_code=400
         )

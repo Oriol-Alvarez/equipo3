@@ -26,4 +26,11 @@ class MockAnnouncementRepositoryImpl : AnnouncementRepository {
         }
         _unreadCount.value = _announcements.value.count { it.isUnread }
     }
+
+    override fun markAllAsRead() {
+        _announcements.update { list ->
+            list.map { it.copy(isUnread = false) }
+        }
+        _unreadCount.value = 0
+    }
 }

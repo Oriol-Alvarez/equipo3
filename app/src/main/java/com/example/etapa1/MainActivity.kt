@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
         }
 
         // El teléfono se registra para notificaciones push al iniciar sesión (SonrisasApp).
-        // Además, cada 15 min se revisan anuncios y mensajes aunque la app esté cerrada
+        // Además, una vez al día se revisan anuncios y mensajes aunque la app esté cerrada
         // (funciona aunque Firebase no esté configurado).
         SyncWorker.setupPeriodicSync(this)
 

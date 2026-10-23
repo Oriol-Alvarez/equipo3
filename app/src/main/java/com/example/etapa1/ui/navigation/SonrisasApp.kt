@@ -20,16 +20,6 @@ import com.example.etapa1.ui.state.SesionViewModel
 fun SonrisasApp() {
     val sesionViewModel: SesionViewModel = viewModel(factory = AppViewModelProvider.Factory)
     val estado by sesionViewModel.estado.collectAsState()
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val app = context.applicationContext as? com.example.etapa1.SonrisasApplication
-
-    LaunchedEffect(Unit) {
-        app?.container?.tokenManager?.sessionExpired?.collect {
-            app.container.desconectarChat()
-            app.container.limpiarTodo()
-            sesionViewModel.salir()
-        }
-    }
 
     when (val actual = estado) {
         SesionEstado.Cargando -> {
@@ -49,11 +39,22 @@ fun SonrisasApp() {
         }
 
         is SesionEstado.Activa -> {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val app = context.applicationContext as? com.example.etapa1.SonrisasApplication
+
             androidx.compose.runtime.LaunchedEffect(actual.sesion) {
                 app?.container?.asegurarConexionChat()
                 // Datos del usuario que acaba de entrar (no los de una sesión anterior)
                 app?.container?.recargarTodo()
                 app?.container?.registrarTelefonoParaPush()
+            }
+
+            LaunchedEffect(Unit) {
+                app?.container?.tokenManager?.sessionExpired?.collect {
+                    app.container.desconectarChat()
+                    app.container.limpiarTodo()
+                    sesionViewModel.salir()
+                }
             }
 
             SonrisasNavHost(

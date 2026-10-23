@@ -78,18 +78,26 @@ def obtener_linea_de_tiempo(
 
     # 1. Asistencia como chips de inicio/salida
     stmt_att = select(AttendanceRecord).where(AttendanceRecord.child_id == childId)
-    if date:
-        stmt_att = stmt_att.where(AttendanceRecord.date == date)
     asistencias = db.scalars(stmt_att).all()
+    if date:
+        fecha_req = a_fecha(date)
+        asistencias = [
+            att for att in asistencias
+            if (a_fecha(att.date) == fecha_req) or (att.date == date)
+        ]
     for att in asistencias:
         texto = f"{'Ingreso' if att.is_ingreso else 'Egreso'}: {att.time}"
         icono = "entry" if att.is_ingreso else "exit"
+        fecha_display = att.date
+        fecha_dt = a_fecha(att.date)
+        if fecha_dt:
+            fecha_display = fecha_dt.strftime("%d/%m/%Y")
         items.append(
             TimelineItemOut(
                 type="EVENT_CHIP",
                 id=att.id,
                 time=att.time,
-                date=att.date,
+                date=fecha_display,
                 text=texto,
                 iconType=icono,
             )

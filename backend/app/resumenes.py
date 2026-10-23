@@ -9,6 +9,7 @@ No hay datos inventados: si una semana o un día no tiene registros, el texto lo
 """
 
 import json
+import re
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -134,12 +135,20 @@ def minutos_de(hora: str | None) -> int | None:
     if not hora:
         return None
     limpio = hora.strip().upper().replace(".", "")
+    limpio = re.sub(r"\s*HRS?\.?$", "", limpio).strip()
     for formato in ("%H:%M", "%I:%M %p", "%I:%M%p"):
         try:
             t = datetime.strptime(limpio, formato)
             return t.hour * 60 + t.minute
         except ValueError:
             pass
+    # Si viene en 24h pero con sufijo AM/PM pegado erróneamente (ej: "19:15 AM" o "19:15 PM")
+    sin_ampm = re.sub(r"\s*[AP]M$", "", limpio).strip()
+    try:
+        t = datetime.strptime(sin_ampm, "%H:%M")
+        return t.hour * 60 + t.minute
+    except ValueError:
+        pass
     return None
 
 

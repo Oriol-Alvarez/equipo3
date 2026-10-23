@@ -17,15 +17,20 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -86,6 +91,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import java.io.File
@@ -802,9 +808,17 @@ fun WorkerChatConversationDialog(
         }
     }
 
-    // Auto scroll to bottom when messages change
+    // Auto scroll to bottom when messages change or keyboard opens
     LaunchedEffect(chat.messages.size) {
         if (chat.messages.isNotEmpty()) {
+            listState.animateScrollToItem(chat.messages.size - 1)
+        }
+    }
+
+    val density = LocalDensity.current
+    val isImeVisible = WindowInsets.ime.getBottom(density) > 0
+    LaunchedEffect(isImeVisible) {
+        if (isImeVisible && chat.messages.isNotEmpty()) {
             listState.animateScrollToItem(chat.messages.size - 1)
         }
     }
@@ -820,7 +834,7 @@ fun WorkerChatConversationDialog(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
-                .navigationBarsPadding(),
+                .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime)),
             containerColor = AppBackground,
             contentWindowInsets = WindowInsets(0.dp),
             bottomBar = {
@@ -976,6 +990,7 @@ fun WorkerChatConversationDialog(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
+                    .consumeWindowInsets(paddingValues)
             ) {
                 // TopBar de la conversación idéntica a ChatBitacoraScreen (sin botón de asistencia ni teléfono rojo)
                 Surface(

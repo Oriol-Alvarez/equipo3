@@ -19,13 +19,58 @@ class AttendanceViewModel(
     /** Niños de la sala abierta (la misma del tablero). */
     val children: StateFlow<List<Child>> = childRepository.childrenOfRoom
 
-    fun saveAttendance(child: Child, isIngreso: Boolean, time: String, notes: String) {
-        val statusText = if (isIngreso) "$time • Presente" else "$time • Egresado(a)"
-        childRepository.updateChildAttendance(child.id, isPresent = isIngreso, time = time, statusText = statusText)
-        attendanceRepository.registerAttendance(child, isIngreso, time, notes)
-        DailyLogValidator.attendanceFormTime(time)?.let { time24 ->
-            dailyLogRepository?.recordAttendanceTime(child.id, SimpleDate.today(), isIngreso, time24, notes)
-        }
-        // El aviso "Ingreso/Egreso" de la bitácora lo crea el servidor con la asistencia
+    /** Obtiene el expediente completo (con autorizados cargados desde el backend/caché). */
+    fun getChildFullProfile(child: Child) = childRepository.getChildFullProfile(child)
+
+    fun cargarDetalle(childId: String) = childRepository.cargarDetalle(childId)
+
+    val cambios: StateFlow<Int> = childRepository.cambios
+
+    fun saveAttendance(
+        child: Child,
+        isIngreso: Boolean,
+        time: String,
+        notes: String,
+        personName: String? = null,
+        staffName: String? = null,
+        goodPhysicalCondition: Boolean = true,
+        injuryDetail: String = "",
+        hasSymptoms: Boolean = false,
+        symptomsDetail: String = "",
+        isClean: Boolean = true,
+        backpackComplete: Boolean = true
+    ) {
+        val cleanTime = DailyLogValidator.attendanceFormTime(time) ?: time.trim()
+        val statusText = if (isIngreso) "$cleanTime • Presente" else "$cleanTime • Retirado(a)"
+        childRepository.updateChildAttendance(child.id, isPresent = isIngreso, time = cleanTime, statusText = statusText)
+        attendanceRepository.registerAttendance(
+            child = child,
+            isIngreso = isIngreso,
+            time = cleanTime,
+            observations = notes,
+            personName = personName,
+            staffName = staffName,
+            goodPhysicalCondition = goodPhysicalCondition,
+            injuryDetail = injuryDetail,
+            hasSymptoms = hasSymptoms,
+            symptomsDetail = symptomsDetail,
+            isClean = isClean,
+            backpackComplete = backpackComplete
+        )
+        dailyLogRepository?.recordAttendanceTime(
+            childId = child.id,
+            date = SimpleDate.today(),
+            isIngreso = isIngreso,
+            time = cleanTime,
+            observations = notes,
+            personName = personName,
+            staffName = staffName,
+            goodPhysicalCondition = goodPhysicalCondition,
+            injuryDetail = injuryDetail,
+            hasSymptoms = hasSymptoms,
+            symptomsDetail = symptomsDetail,
+            isClean = isClean,
+            backpackComplete = backpackComplete
+        )
     }
 }

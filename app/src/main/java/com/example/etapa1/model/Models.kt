@@ -186,7 +186,17 @@ data class AttendanceRecord(
     val date: String,
     val dayOfWeek: String, // L, M, M, J, V
     val time: String,
-    val observations: String = ""
+    val observations: String = "",
+    val delivererName: String? = null,
+    val receiverStaffName: String? = null,
+    val receiverTutorName: String? = null,
+    val delivererStaffName: String? = null,
+    val goodPhysicalCondition: Boolean = true,
+    val injuryDetail: String = "",
+    val hasSymptoms: Boolean = false,
+    val symptomsDetail: String = "",
+    val isClean: Boolean = true,
+    val backpackComplete: Boolean = true
 )
 
 sealed interface TimelineItem {

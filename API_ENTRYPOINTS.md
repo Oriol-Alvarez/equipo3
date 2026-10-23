@@ -916,7 +916,18 @@
   }
   ```
 
-### 10.4 Publicar Nuevo Aviso
+### 10.4 Marcar Todos los Avisos como Leídos
+* **Método:** `POST` o `PATCH`
+* **Ruta:** `/announcements/mark-all-read` (o `/announcements/read-all`)
+* **Rol requerido:** Ambos
+* **Response (200 OK):**
+  ```json
+  {
+    "unreadCount": 0
+  }
+  ```
+
+### 10.5 Publicar Nuevo Aviso
 * **Método:** `POST`
 * **Ruta:** `/announcements`
 * **Rol requerido:** `DIRECCION`

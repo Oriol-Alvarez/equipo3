@@ -1,5 +1,5 @@
 # Backend para Sonrisas:
-#   docker compose up -d                   base de datos, almacén S3 y API FastAPI (http://localhost:8000)
+#   docker compose up -d                   base de datos, almacén S3, API FastAPI (http://localhost:8000) y túnel ngrok
 #   docker compose exec api uv run --no-sync pytest   ejecutar pruebas unitarias en el contenedor
 #   docker compose --profile tunel up -d   habilitar túnel HTTPS Cloudflare
 services:
@@ -35,7 +35,9 @@ services:
 
   api:
     build: .
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
     environment:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/sonrisas
       S3_ENDPOINT: http://almacen:9000
@@ -43,8 +45,6 @@ services:
     volumes:
       - ./app:/code/app
       - ./tests:/code/tests
-      # Credenciales privadas (p. ej. Firebase). La carpeta está en .gitignore.
-      - ./secretos:/code/secretos:ro
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
@@ -54,12 +54,24 @@ services:
         condition: service_healthy
 
   tunel:
-    image: cloudflare/cloudflared:latest
-    restart: unless-stopped
-    command: ["tunnel", "--no-autoupdate", "run", "--token", "${CLOUDFLARE_TUNNEL_TOKEN}"]
+    image: cloudflare/cloudflared:2026.9.3
+    command: ["tunnel", "--no-autoupdate", "--protocol", "http2", "--url", "http://api:8000"]
     depends_on:
       - api
     profiles: ["tunel"]
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    restart: unless-stopped
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN:-3L0OyGYMVlaic8vY8jfkgjNJ7Hs_6onEv4oEEipv5e74KTzzv}
+    command:
+      - "http"
+      - "api:8000"
+      - "--url"
+      - "https://dormitory-landlady-detract.ngrok-free.dev"
+    depends_on:
+      - api
 
 volumes:
   pgdata:

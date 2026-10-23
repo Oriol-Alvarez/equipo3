@@ -10,7 +10,15 @@ interface AttendanceRepository {
         child: Child,
         isIngreso: Boolean,
         time: String,
-        observations: String = ""
+        observations: String = "",
+        personName: String? = null,
+        staffName: String? = null,
+        goodPhysicalCondition: Boolean = true,
+        injuryDetail: String = "",
+        hasSymptoms: Boolean = false,
+        symptomsDetail: String = "",
+        isClean: Boolean = true,
+        backpackComplete: Boolean = true
     ): Result<Unit>
 
     /** Vuelve a pedir los datos al servidor. */

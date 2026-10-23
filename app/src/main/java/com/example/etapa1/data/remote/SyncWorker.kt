@@ -11,7 +11,7 @@ import com.example.etapa1.SonrisasApplication
 
 /**
  * Worker en segundo plano (WorkManager) para revisar nuevos mensajes o anuncios
- * cuando la app est├í cerrada o en background (alternativa local a Firebase Cloud Messaging).
+ * cuando la app está cerrada o en background (revisa una vez al día).
  */
 class SyncWorker(
     appContext: Context,
@@ -78,12 +78,12 @@ class SyncWorker(
 
     companion object {
         fun setupPeriodicSync(context: Context) {
-            val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES)
+            val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(1, TimeUnit.DAYS)
                 .build()
 
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 "SonrisasSyncWorker",
-                androidx.work.ExistingPeriodicWorkPolicy.KEEP,
+                androidx.work.ExistingPeriodicWorkPolicy.UPDATE,
                 syncRequest
             )
         }

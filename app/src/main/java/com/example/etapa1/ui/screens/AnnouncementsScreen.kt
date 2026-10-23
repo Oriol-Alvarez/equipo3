@@ -62,6 +62,14 @@ fun AnnouncementsScreen(
         viewModel.refresh()
     }
     val announcements by viewModel.announcements.collectAsState()
+
+    // Si hay notificaciones nuevas al abrir la pantalla, se marcan como leídas automáticamente
+    androidx.compose.runtime.LaunchedEffect(announcements) {
+        if (announcements.any { it.isUnread }) {
+            viewModel.markAllAsRead()
+        }
+    }
+
     AnnouncementsScreen(
         announcements = announcements,
         onAnnouncementClick = { viewModel.markAsRead(it.id) },

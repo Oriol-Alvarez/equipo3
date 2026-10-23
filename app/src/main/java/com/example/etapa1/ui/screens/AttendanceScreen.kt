@@ -33,6 +33,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -78,14 +79,71 @@ fun AttendanceScreen(
     onBack: () -> Unit
 ) {
     val children by viewModel.children.collectAsState()
+    val targetChild = initialChild ?: children.firstOrNull() ?: MockDataRepository.mateoGarcia
+
+    LaunchedEffect(targetChild.id) {
+        viewModel.cargarDetalle(targetChild.id)
+    }
+
+    val cambios by viewModel.cambios.collectAsState()
+    val fullProfile = remember(targetChild.id, cambios) {
+        viewModel.getChildFullProfile(targetChild)
+    }
+
+    val authorizedPersons = remember(fullProfile) {
+        val list = mutableListOf<String>()
+        val existingNames = mutableSetOf<String>()
+
+        fun addIfNew(raw: String, name: String) {
+            val key = name.lowercase().trim()
+            if (key.isNotBlank() && existingNames.add(key)) {
+                list.add(raw)
+            }
+        }
+
+        if (!fullProfile.motherName.isNullOrBlank()) {
+            val phone = if (!fullProfile.motherPhone.isNullOrBlank()) " • Tel: ${fullProfile.motherPhone.trim()}" else ""
+            addIfNew("${fullProfile.motherName.trim()} (Madre)$phone", fullProfile.motherName.trim())
+        }
+        if (!fullProfile.fatherName.isNullOrBlank()) {
+            val phone = if (!fullProfile.fatherPhone.isNullOrBlank()) " • Tel: ${fullProfile.fatherPhone.trim()}" else ""
+            addIfNew("${fullProfile.fatherName.trim()} (Padre)$phone", fullProfile.fatherName.trim())
+        }
+        fullProfile.authorizedPickups.forEach { pickup ->
+            if (pickup.isNotBlank()) {
+                val cleanName = pickup.substringBefore("(")
+                    .substringBefore(" -")
+                    .substringBefore(" •")
+                    .substringBefore(" ·")
+                    .substringBefore("Tel:")
+                    .trim()
+                addIfNew(pickup.trim(), cleanName)
+            }
+        }
+        list
+    }
 
     AttendanceScreen(
         room = room,
         children = children,
         initialChild = initialChild,
         onBack = onBack,
-        onSaveAttendance = { child, isIngreso, time, notes ->
-            viewModel.saveAttendance(child, isIngreso, time, notes)
+        authorizedPersons = authorizedPersons,
+        onSaveAttendance = { child, isIngreso, time, notes, personName, staffName, goodCondition, injury, hasSymptoms, symptoms, isClean, backpack ->
+            viewModel.saveAttendance(
+                child = child,
+                isIngreso = isIngreso,
+                time = time,
+                notes = notes,
+                personName = personName,
+                staffName = staffName,
+                goodPhysicalCondition = goodCondition,
+                injuryDetail = injury,
+                hasSymptoms = hasSymptoms,
+                symptomsDetail = symptoms,
+                isClean = isClean,
+                backpackComplete = backpack
+            )
         }
     )
 }
@@ -96,7 +154,21 @@ fun AttendanceScreen(
     children: List<Child> = MockDataRepository.childrenSala1A,
     initialChild: Child? = null,
     onBack: () -> Unit,
-    onSaveAttendance: (child: Child, isIngreso: Boolean, time: String, notes: String) -> Unit = { _, _, _, _ -> }
+    authorizedPersons: List<String> = emptyList(),
+    onSaveAttendance: (
+        child: Child,
+        isIngreso: Boolean,
+        time: String,
+        notes: String,
+        personName: String?,
+        staffName: String?,
+        goodPhysicalCondition: Boolean,
+        injuryDetail: String,
+        hasSymptoms: Boolean,
+        symptomsDetail: String,
+        isClean: Boolean,
+        backpackComplete: Boolean
+    ) -> Unit = { _, _, _, _, _, _, _, _, _, _, _, _ -> }
 ) {
     val selectedChild = initialChild ?: children.firstOrNull() ?: MockDataRepository.mateoGarcia
     var activeTab by remember { mutableIntStateOf(0) } // 0 = Ingreso, 1 = Egreso
@@ -196,9 +268,31 @@ fun AttendanceScreen(
                 }
             }
         } else {
-            val timeStr = if (isIngreso) "${ingresoState.entryTime} AM" else "${egresoState.exitTime} PM"
+            val timeStr = if (isIngreso) ingresoState.entryTime.trim() else egresoState.exitTime.trim()
             val notes = if (isIngreso) ingresoState.observations else egresoState.observations
-            onSaveAttendance(selectedChild, isIngreso, timeStr, notes)
+            val personName = if (isIngreso) ingresoState.delivererName else egresoState.receiverTutorName
+            val staffName = if (isIngreso) ingresoState.receiverStaffName else egresoState.delivererStaffName
+            val goodCondition = if (isIngreso) ingresoState.goodPhysicalCondition else egresoState.goodPhysicalCondition
+            val injury = if (isIngreso) ingresoState.injuryDetail else egresoState.injuryDetail
+            val hasSymptoms = if (isIngreso) ingresoState.hasSymptoms else false
+            val symptoms = if (isIngreso) ingresoState.symptomsDetail else ""
+            val isClean = if (isIngreso) ingresoState.isClean else egresoState.isClean
+            val backpack = if (isIngreso) ingresoState.backpackComplete else egresoState.backpackComplete
+
+            onSaveAttendance(
+                selectedChild,
+                isIngreso,
+                timeStr,
+                notes,
+                personName,
+                staffName,
+                goodCondition,
+                injury,
+                hasSymptoms,
+                symptoms,
+                isClean,
+                backpack
+            )
             successDialogMessage = if (isIngreso) {
                 "Se registró exitosamente el Ingreso de ${selectedChild.fullName} a las ${ingresoState.entryTime} hrs."
             } else {
@@ -330,14 +424,16 @@ fun AttendanceScreen(
                         state = ingresoState,
                         currentStep = ingresoStep,
                         onStepChange = { ingresoStep = it },
-                        onSave = handleSave
+                        onSave = handleSave,
+                        authorizedPersons = authorizedPersons
                     )
                 } else {
                     EgresoFormSection(
                         state = egresoState,
                         currentStep = egresoStep,
                         onStepChange = { egresoStep = it },
-                        onSave = handleSave
+                        onSave = handleSave,
+                        authorizedPersons = authorizedPersons
                     )
                 }
 

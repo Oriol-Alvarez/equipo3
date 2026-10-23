@@ -10,13 +10,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -27,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.automirrored.filled.FactCheck
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AttachFile
@@ -57,6 +64,7 @@ import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.FileProvider
 import java.io.File
@@ -99,6 +107,7 @@ import com.example.etapa1.ui.theme.CardBackground
 import com.example.etapa1.ui.theme.ChatEventChipBg
 import com.example.etapa1.ui.theme.ChatEventChipText
 import com.example.etapa1.ui.theme.ChatOutgoingBubble
+import com.example.etapa1.ui.theme.StatusAbsentOrange
 import com.example.etapa1.ui.theme.StatusPresentGreen
 import com.example.etapa1.ui.theme.TextMuted
 import com.example.etapa1.ui.theme.TextPrimary
@@ -122,6 +131,19 @@ fun ChatBitacoraScreen(
     val conexionEstado by viewModel.conexionEstado.collectAsState()
     val cambiosFicha by viewModel.cambiosFicha.collectAsState()
     val perfil = remember(child.id, cambiosFicha) { viewModel.perfil(child) }
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner, child.id) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                viewModel.abrir(child.id)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     ChatBitacoraScreen(
         child = child,
@@ -201,7 +223,7 @@ fun ChatBitacoraScreen(
         }
     }
 
-    // Auto scroll to bottom when items change
+    // Auto scroll to bottom when items change or keyboard opens
     val currentItemCount = if (workerChat != null) workerChat.messages.size else timelineItems.size
     LaunchedEffect(currentItemCount) {
         if (currentItemCount > 0) {
@@ -209,7 +231,18 @@ fun ChatBitacoraScreen(
         }
     }
 
+    val density = LocalDensity.current
+    val isImeVisible = WindowInsets.ime.getBottom(density) > 0
+    LaunchedEffect(isImeVisible) {
+        if (isImeVisible && currentItemCount > 0) {
+            listState.animateScrollToItem(currentItemCount - 1)
+        }
+    }
+
     Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime)),
         containerColor = AppBackground,
         bottomBar = {
             // Barra de entrada de mensajes
@@ -381,6 +414,7 @@ fun ChatBitacoraScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .consumeWindowInsets(paddingValues)
         ) {
             // Top Bar
             Surface(
@@ -839,6 +873,14 @@ private fun TimelineChip(chip: TimelineItem.EventChip) {
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
                         tint = StatusPresentGreen,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+                "exit" -> {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Logout,
+                        contentDescription = null,
+                        tint = StatusAbsentOrange,
                         modifier = Modifier.size(15.dp)
                     )
                 }

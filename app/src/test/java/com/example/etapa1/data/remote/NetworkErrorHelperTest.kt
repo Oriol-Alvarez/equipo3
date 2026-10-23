@@ -17,37 +17,35 @@ class NetworkErrorHelperTest {
     fun parseException_unknownHost_returnsConnectionMessage() {
         val ex = UnknownHostException("list-testament-sea-workplace.trycloudflare.com")
         val message = NetworkErrorHelper.parseException(ex)
-        assertTrue(message.contains("No se pudo conectar con el servidor"))
-        assertTrue(message.contains("conexión a internet"))
+        assertEquals("Error de conexión.", message)
     }
 
     @Test
     fun parseException_connectException_returnsServerDownMessage() {
         val ex = ConnectException("Connection refused")
         val message = NetworkErrorHelper.parseException(ex)
-        assertTrue(message.contains("No se pudo establecer conexión"))
-        assertTrue(message.contains("servidor esté encendido"))
+        assertEquals("Error de conexión.", message)
     }
 
     @Test
     fun parseException_socketTimeout_returnsTimeoutMessage() {
         val ex = SocketTimeoutException("timeout")
         val message = NetworkErrorHelper.parseException(ex)
-        assertTrue(message.contains("Tiempo de espera agotado"))
+        assertEquals("Error de conexión.", message)
     }
 
     @Test
     fun parseException_sslException_returnsSecurityMessage() {
         val ex = SSLException("Handshake failed")
         val message = NetworkErrorHelper.parseException(ex)
-        assertTrue(message.contains("SSL/HTTPS"))
+        assertEquals("Error de conexión.", message)
     }
 
     @Test
     fun parseException_ioExceptionWithTimeout_returnsTimeoutMessage() {
         val ex = IOException("Read timed out")
         val message = NetworkErrorHelper.parseException(ex)
-        assertTrue(message.contains("Tiempo de espera agotado"))
+        assertEquals("Error de conexión.", message)
     }
 
     @Test
@@ -77,10 +75,22 @@ class NetworkErrorHelperTest {
     }
 
     @Test
-    fun parseHttpError_502_returnsGatewayOfflineMessage() {
+    fun parseHttpError_502_returnsConnectionErrorMessage() {
         val message = NetworkErrorHelper.parseHttpError(502, null)
-        assertTrue(message.contains("servidor no está disponible"))
-        assertTrue(message.contains("túnel"))
+        assertEquals("Error de conexión.", message)
+    }
+
+    @Test
+    fun parseHttpError_500_withCustomServerJson_returnsConnectionError() {
+        val json = """{"error": "Internal Database Error", "detail": "traceback..."}"""
+        val message = NetworkErrorHelper.parseHttpError(500, json)
+        assertEquals("Error de conexión.", message)
+    }
+
+    @Test
+    fun parseHttpError_503_returnsConnectionError() {
+        val message = NetworkErrorHelper.parseHttpError(503, null)
+        assertEquals("Error de conexión.", message)
     }
 
     @Test

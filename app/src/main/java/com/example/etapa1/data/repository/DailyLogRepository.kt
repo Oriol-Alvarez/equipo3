@@ -46,7 +46,15 @@ interface DailyLogRepository {
         date: SimpleDate,
         isIngreso: Boolean,
         time: String,
-        observations: String = ""
+        observations: String = "",
+        personName: String? = null,
+        staffName: String? = null,
+        goodPhysicalCondition: Boolean = true,
+        injuryDetail: String = "",
+        hasSymptoms: Boolean = false,
+        symptomsDetail: String = "",
+        isClean: Boolean = true,
+        backpackComplete: Boolean = true
     ): Result<DailyLog>
 
     /** Vuelve a cargar los datos del servidor. En la versión en memoria no hace nada. */

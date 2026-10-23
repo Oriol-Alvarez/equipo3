@@ -128,6 +128,17 @@ def test_admin_announcements_crud(client, admin_token):
     assert r.status_code == 204
 
 
+def test_mark_all_announcements_as_read(client, familiar):
+    headers = {"Authorization": f"Bearer {familiar.token}"}
+    r = client.post("/api/v1/announcements/mark-all-read", headers=headers)
+    assert r.status_code == 200
+    assert r.json()["unreadCount"] == 0
+
+    r_count = client.get("/api/v1/announcements/unread-count", headers=headers)
+    assert r_count.status_code == 200
+    assert r_count.json()["unreadCount"] == 0
+
+
 def test_admin_manage_children_for_parent(client, admin_token):
     headers = {"Authorization": f"Bearer {admin_token}"}
 

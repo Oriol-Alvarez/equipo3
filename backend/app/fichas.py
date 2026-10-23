@@ -92,10 +92,21 @@ def fichas(alumnos: Iterable[Child], db: Session) -> list[ChildOut]:
         r = registros.get(a.id)
         llegada = _hora(r.ingreso) if r else None
         salida_hora = _hora(r.egreso) if r else None
-        if salida_hora:
+
+        min_llegada = minutos_de(llegada) if llegada else None
+        min_salida = minutos_de(salida_hora) if salida_hora else None
+
+        if min_llegada is not None and min_salida is not None:
+            if min_llegada >= min_salida:
+                presente, estado = True, f"{llegada} • Presente"
+            else:
+                presente, estado = False, f"{salida_hora} • Retirado(a)"
+        elif salida_hora:
             presente, estado = False, f"{salida_hora} • Retirado(a)"
         elif llegada:
             presente, estado = True, f"{llegada} • Presente"
+        elif a.status_text and a.status_text != "No ha ingresado":
+            presente, estado = a.is_present, a.status_text
         else:
             presente, estado = False, "No ha ingresado"
         salida.append(

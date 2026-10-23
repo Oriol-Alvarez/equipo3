@@ -27,31 +27,21 @@ object NetworkErrorHelper {
      * en un mensaje de error claro y comprensible.
      */
     fun parseException(throwable: Throwable?): String {
-        if (throwable == null) return "Ha ocurrido un error inesperado."
+        if (throwable == null) return "Error de conexión."
 
         return when (throwable) {
-            is UnknownHostException ->
-                "No se pudo conectar con el servidor. Verifica tu conexión a internet o si la dirección del servidor ha cambiado."
-            is ConnectException ->
-                "No se pudo establecer conexión con el servidor. Asegúrate de que el servidor esté encendido y accesible."
-            is SocketTimeoutException ->
-                "Tiempo de espera agotado al conectar con el servidor. Comprueba tu conexión a internet."
-            is SSLException ->
-                "Error de seguridad en la conexión segura (SSL/HTTPS)."
+            is UnknownHostException -> "Error de conexión."
+            is ConnectException -> "Error de conexión."
+            is SocketTimeoutException -> "Error de conexión."
+            is SSLException -> "Error de conexión."
             is IOException -> {
                 val msg = throwable.message.orEmpty().lowercase()
                 when {
-                    msg.contains("timeout") || msg.contains("time out") || msg.contains("timed out") ->
-                        "Tiempo de espera agotado al conectar con el servidor."
-                    msg.contains("failed to connect") || msg.contains("connection refused") || msg.contains("unreachable") ->
-                        "No se pudo conectar con el servidor. Verifica tu conexión o el estado del servidor."
-                    msg.contains("canceled") ->
-                        "Petición cancelada."
-                    else ->
-                        "Error de conexión: No se pudo comunicar con el servidor."
+                    msg.contains("canceled") -> "Petición cancelada."
+                    else -> "Error de conexión."
                 }
             }
-            else -> throwable.message?.takeIf { it.isNotBlank() } ?: "Error inesperado."
+            else -> "Error de conexión."
         }
     }
 
@@ -61,14 +51,13 @@ object NetworkErrorHelper {
     fun parseHttpError(code: Int, errorBody: String?): String {
         val serverMessage = parseServerErrorMessage(errorBody)
 
-        return when (code) {
-            401 -> serverMessage ?: "Correo o contraseña incorrectos."
-            403 -> serverMessage ?: "Tu cuenta no tiene permisos para realizar esta acción o usar este rol."
-            404 -> serverMessage ?: "El recurso solicitado no fue encontrado en el servidor."
-            422 -> serverMessage ?: "Los datos introducidos son inválidos o están incompletos."
-            500 -> serverMessage ?: "Error interno del servidor. Inténtalo de nuevo más tarde."
-            502, 503, 504 -> "El servidor no está disponible en este momento (Código $code). Verifica si el contenedor o el túnel están encendidos."
-            else -> serverMessage ?: "Error del servidor (Código $code)."
+        return when {
+            code == 401 -> serverMessage ?: "Correo o contraseña incorrectos."
+            code == 403 -> serverMessage ?: "Tu cuenta no tiene permisos para realizar esta acción o usar este rol."
+            code == 404 -> serverMessage ?: "El recurso solicitado no fue encontrado."
+            code == 422 -> serverMessage ?: "Los datos introducidos son inválidos o están incompletos."
+            code in 500..599 -> "Error de conexión."
+            else -> "Error de conexión."
         }
     }
 

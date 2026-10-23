@@ -79,4 +79,30 @@ class NetworkAnnouncementRepositoryImpl(
             }
         }
     }
+
+    override fun markAllAsRead() {
+        val unreadList = _announcements.value.filter { it.isUnread }
+        if (unreadList.isEmpty()) return
+
+        _announcements.update { list ->
+            list.map { it.copy(isUnread = false) }
+        }
+        _unreadCount.value = 0
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val res = api.markAllAnnouncementsAsRead()
+                if (!res.isSuccessful) {
+                    unreadList.forEach { api.markAnnouncementAsRead(it.id) }
+                }
+            } catch (_: Exception) {
+                unreadList.forEach {
+                    try {
+                        api.markAnnouncementAsRead(it.id)
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+        }
+    }
 }

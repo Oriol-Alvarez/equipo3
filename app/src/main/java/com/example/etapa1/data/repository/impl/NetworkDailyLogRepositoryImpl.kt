@@ -108,7 +108,15 @@ class NetworkDailyLogRepositoryImpl(
         date: SimpleDate,
         isIngreso: Boolean,
         time: String,
-        observations: String
+        observations: String,
+        personName: String?,
+        staffName: String?,
+        goodPhysicalCondition: Boolean,
+        injuryDetail: String,
+        hasSymptoms: Boolean,
+        symptomsDetail: String,
+        isClean: Boolean,
+        backpackComplete: Boolean
     ): Result<DailyLog> {
         val normalized = DailyLogValidator.normalizeTime(time)
             ?: return Result.failure(IllegalArgumentException("Hora no válida: $time"))
@@ -116,10 +124,34 @@ class NetworkDailyLogRepositoryImpl(
         val updated = upsert(childId, date) { log ->
             if (isIngreso) {
                 val base = log.ingreso ?: IngresoLog(time = normalized)
-                log.copy(ingreso = base.copy(time = normalized, observations = notes.ifEmpty { base.observations }))
+                log.copy(
+                    ingreso = base.copy(
+                        time = normalized,
+                        observations = notes.ifEmpty { base.observations },
+                        deliveredBy = personName ?: base.deliveredBy,
+                        receivedBy = staffName ?: base.receivedBy,
+                        goodPhysicalCondition = goodPhysicalCondition,
+                        injuries = injuryDetail,
+                        hasSymptoms = hasSymptoms,
+                        symptoms = symptomsDetail,
+                        arrivedClean = isClean,
+                        backpackComplete = backpackComplete
+                    )
+                )
             } else {
                 val base = log.egreso ?: EgresoLog(time = normalized)
-                log.copy(egreso = base.copy(time = normalized, observations = notes.ifEmpty { base.observations }))
+                log.copy(
+                    egreso = base.copy(
+                        time = normalized,
+                        observations = notes.ifEmpty { base.observations },
+                        collectedBy = personName ?: base.collectedBy,
+                        deliveredByStaff = staffName ?: base.deliveredByStaff,
+                        goodPhysicalCondition = goodPhysicalCondition,
+                        injuries = injuryDetail,
+                        deliveredClean = isClean,
+                        belongingsComplete = backpackComplete
+                    )
+                )
             }
         }
         if (isIngreso) updated.ingreso?.let { pushIngreso(childId, date, it) }
