@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.etapa1.data.repository.AuthRepository
 import com.example.etapa1.domain.Sesion
 import com.example.etapa1.model.UserRole
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -18,9 +19,13 @@ sealed interface SesionEstado {
     data class Activa(val sesion: Sesion) : SesionEstado
 }
 
-class SesionViewModel(private val authRepository: AuthRepository) : ViewModel() {
+class SesionViewModel(
+    private val authRepository: AuthRepository,
+    coroutineScope: CoroutineScope? = null
+) : ViewModel() {
 
-    private val _isLoggedIn = MutableStateFlow(false)
+    private val scope = coroutineScope ?: viewModelScope
+    private val _isLoggedIn = MutableStateFlow(authRepository.isLoggedIn())
 
     val estado: StateFlow<SesionEstado> = combine(
         authRepository.currentUserRole,
@@ -32,9 +37,13 @@ class SesionViewModel(private val authRepository: AuthRepository) : ViewModel() 
             SesionEstado.Anonimo
         }
     }.stateIn(
-        scope = viewModelScope,
+        scope = scope,
         started = SharingStarted.WhileSubscribed(5_000L),
-        initialValue = SesionEstado.Anonimo
+        initialValue = if (authRepository.isLoggedIn()) {
+            SesionEstado.Activa(Sesion(role = authRepository.currentUserRole.value))
+        } else {
+            SesionEstado.Anonimo
+        }
     )
 
     fun iniciarSesion(role: UserRole) {

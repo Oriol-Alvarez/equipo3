@@ -22,7 +22,6 @@ class RegisterRequest(BaseModel):
     role: str = "FAMILIAR"
     displayName: str
     phone: str | None = None
-    codigoProfesor: str | None = None
 
 
 class AdminChildSummary(BaseModel):

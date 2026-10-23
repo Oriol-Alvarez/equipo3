@@ -63,6 +63,23 @@ class MockBitacoraRepositoryImpl : BitacoraRepository {
         )
     }
 
+    override fun deletePhoto(childId: String, messageId: String) {
+        val lista = porNino[childId].orEmpty()
+        val actualizada = lista.mapNotNull { item ->
+            if (item is TimelineItem.ChatMessage && item.id == messageId) {
+                if (item.message.isNotBlank()) {
+                    item.copy(fileUri = null, fileName = null, fileMimeType = null)
+                } else {
+                    null
+                }
+            } else {
+                item
+            }
+        }
+        porNino[childId] = actualizada
+        if (_childIdActual.value == childId) _timeline.value = actualizada
+    }
+
     override fun addEventChip(childId: String, time: String, text: String, iconType: String, date: String?) {
         agregar(
             childId,

@@ -9,4 +9,5 @@ interface AuthRepository {
     suspend fun login(email: String, password: String, role: UserRole): Result<UserRole>
     fun setRole(role: UserRole)
     fun logout()
+    fun isLoggedIn(): Boolean
 }

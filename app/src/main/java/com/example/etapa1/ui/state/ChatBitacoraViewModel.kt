@@ -71,4 +71,9 @@ class ChatBitacoraViewModel(
             )
         }
     }
+
+    fun deletePhoto(messageId: String, childId: String? = null) {
+        val nino = childId ?: this.childId ?: return
+        bitacoraRepository.deletePhoto(nino, messageId)
+    }
 }

@@ -49,11 +49,14 @@ import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material3.FloatingActionButton
 import com.example.etapa1.model.WorkerChat
 import com.example.etapa1.model.WorkerChatMessage
+import com.example.etapa1.ui.components.ChatMessagePhotoAttachment
+import com.example.etapa1.ui.components.isImageMimeOrUri
 import com.example.etapa1.ui.components.WorkerChatMessageBubble
 import com.example.etapa1.ui.components.ActivityTimelineCard
 import com.example.etapa1.ui.components.parseGroupActivityMessage
@@ -164,7 +167,8 @@ fun ChatBitacoraScreen(
                 senderRole = if (isWorkerRole) com.example.etapa1.model.UserRole.EDUCADORA else com.example.etapa1.model.UserRole.FAMILIAR,
                 childId = child.id
             )
-        }
+        },
+        onDeletePhoto = { msgId -> viewModel.deletePhoto(msgId, child.id) }
     )
 }
 
@@ -183,7 +187,8 @@ fun ChatBitacoraScreen(
     /** Expediente real para los teléfonos del botón de llamar; null usa los datos de ejemplo (vista previa). */
     childProfile: com.example.etapa1.model.ChildFullProfile? = null,
     onSendMessage: (String, Uri?, String?, String?) -> Unit,
-    onSendActivity: ((category: String, badge: String, description: String) -> Unit)? = null
+    onSendActivity: ((category: String, badge: String, description: String) -> Unit)? = null,
+    onDeletePhoto: ((messageId: String) -> Unit)? = null
 ) {
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -589,7 +594,8 @@ fun ChatBitacoraScreen(
                     items(workerChat.messages, key = { it.id }) { msg ->
                         WorkerChatMessageBubble(
                             msg = msg,
-                            isGroupChat = workerChat.isGroup || workerChat.isGlobal
+                            isGroupChat = workerChat.isGroup || workerChat.isGlobal,
+                            onDeletePhoto = onDeletePhoto
                         )
                     }
                 } else {
@@ -611,7 +617,7 @@ fun ChatBitacoraScreen(
                                     TimelineChip(item)
                                 }
                                 is TimelineItem.ChatMessage -> {
-                                    ChatMessageBubble(item, isWorkerRole)
+                                    ChatMessageBubble(item, isWorkerRole, onDeletePhoto = onDeletePhoto)
                                 }
                                 is TimelineItem.ActivityCard -> {
                                     ActivityTimelineCard(item)
@@ -913,7 +919,11 @@ private fun TimelineChip(chip: TimelineItem.EventChip) {
 }
 
 @Composable
-private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boolean = true) {
+private fun ChatMessageBubble(
+    msg: TimelineItem.ChatMessage,
+    isWorkerRole: Boolean = true,
+    onDeletePhoto: ((String) -> Unit)? = null
+) {
     val actData = remember(msg.message) { parseGroupActivityMessage(msg.message) }
     val isOutgoing = if (msg.senderRole != null) {
         if (isWorkerRole) msg.senderRole == com.example.etapa1.model.UserRole.EDUCADORA
@@ -970,16 +980,11 @@ private fun ChatMessageBubble(msg: TimelineItem.ChatMessage, isWorkerRole: Boole
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp)
             ) {
                 if (msg.fileUri != null) {
-                    if (msg.fileMimeType?.startsWith("image/") == true) {
-                        AsyncImage(
-                            model = msg.fileUri,
-                            contentDescription = "Imagen adjunta",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(190.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
-                            contentScale = ContentScale.Crop
+                    if (isImageMimeOrUri(msg.fileMimeType, msg.fileUri)) {
+                        ChatMessagePhotoAttachment(
+                            fileUri = msg.fileUri,
+                            hasTextMessage = msg.message.isNotBlank(),
+                            onDeletePhoto = onDeletePhoto?.let { cb -> { cb(msg.id) } }
                         )
                     } else {
                         Row(

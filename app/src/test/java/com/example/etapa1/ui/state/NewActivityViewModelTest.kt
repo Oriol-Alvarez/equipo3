@@ -255,7 +255,21 @@ class NewActivityViewModelTest {
                 return Result.success(dummyLog)
             }
             override fun saveEgreso(childId: String, date: com.example.etapa1.domain.SimpleDate, egreso: com.example.etapa1.model.EgresoLog) = Result.failure<com.example.etapa1.model.DailyLog>(NotImplementedError())
-            override fun recordAttendanceTime(childId: String, date: com.example.etapa1.domain.SimpleDate, isArrival: Boolean, time24h: String, recordedBy: String) = Result.failure<com.example.etapa1.model.DailyLog>(NotImplementedError())
+            override fun recordAttendanceTime(
+                childId: String,
+                date: com.example.etapa1.domain.SimpleDate,
+                isIngreso: Boolean,
+                time: String,
+                observations: String,
+                personName: String?,
+                staffName: String?,
+                goodPhysicalCondition: Boolean,
+                injuryDetail: String,
+                hasSymptoms: Boolean,
+                symptomsDetail: String,
+                isClean: Boolean,
+                backpackComplete: Boolean
+            ) = Result.failure<com.example.etapa1.model.DailyLog>(NotImplementedError())
         }
 
         val viewModel = NewActivityViewModel(bitacoraRepo, dailyLogRepository = fakeDailyLogRepo)

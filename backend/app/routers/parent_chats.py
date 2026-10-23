@@ -13,7 +13,7 @@ from ..lecturas import clave_bitacora, marcar_leido, momento_utc, no_leidos_bita
 from ..horario import ahora, hoy
 from ..deps import Identidad, requiere_educadora, usuario_actual
 from ..errors import ApiError
-from ..models import BitacoraMessage, Child, ChildParent, Usuario
+from ..models import BitacoraMessage, Child, ChildParent, MediaFile, Usuario
 from ..schemas import (
     BitacoraMessageOut,
     ParentChatSummaryOut,
@@ -170,3 +170,42 @@ def marcar_chat_bitacora_leido(
     """Marca como leídos los mensajes del chat de bitácora de este niño para el usuario actual."""
     exigir_alumno_visible(quien, childId, db)
     marcar_leido(db, quien.id, clave_bitacora(childId))
+
+
+@router.delete("/chats/bitacora/{childId}/messages/{messageId}/photo", status_code=204)
+@router.delete("/chats/bitacora/{childId}/messages/{messageId}", status_code=204)
+def eliminar_foto_o_mensaje_bitacora(
+    childId: str,
+    messageId: str,
+    quien: Identidad = Depends(usuario_actual),
+    db: Session = Depends(get_db),
+) -> None:
+    """Permite a familias y personal eliminar fotos o mensajes en el chat de bitácora."""
+    exigir_alumno_visible(quien, childId, db)
+
+    msg = db.get(BitacoraMessage, messageId)
+    if msg is None or msg.child_id != childId:
+        raise ApiError(404, f"No existe el mensaje con id {messageId}", "mensaje_inexistente")
+
+    if msg.file_uri:
+        from .media import eliminar_archivo_media
+        eliminar_archivo_media(db, msg.file_uri)
+
+        if msg.message and msg.message.strip():
+            msg.file_uri = None
+            msg.file_name = None
+            msg.file_mime_type = None
+        else:
+            db.delete(msg)
+    else:
+        db.delete(msg)
+
+    db.commit()
+
+    from .ws_notifications import familias_de, personal_y_usuarios, ws_manager
+    ws_manager.broadcast_sync(
+        "chat:bitacora:delete",
+        {"childId": childId, "chatId": childId, "messageId": messageId},
+        personal_y_usuarios(familias_de(db, {childId})),
+    )
+

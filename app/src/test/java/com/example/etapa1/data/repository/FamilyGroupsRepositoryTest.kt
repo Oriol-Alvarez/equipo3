@@ -5,6 +5,8 @@ import com.example.etapa1.model.FamilyGroupsSampleData
 import com.example.etapa1.model.MessageAttachment
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -110,6 +112,36 @@ class FamilyGroupsRepositoryTest {
         repository.sendMessage(first.id, educadora, "Hola", null)
 
         assertEquals(listOf("Primero", "Segundo"), repository.groups.value.map { it.title })
+    }
+
+    @Test
+    fun deletePhoto_withText_keepsTextAndRemovesAttachment() {
+        val group = repository.createGroup("Paseo", listOf("mateo_garcia"), educadora).getOrThrow()
+        val photo = MessageAttachment("content://foto/1", "foto.jpg", "image/jpeg")
+        repository.sendMessage(group.id, familiaGarcia, "Foto de Mateo", photo)
+
+        val msgId = repository.groups.value.first().messages.last().id
+        val deleted = repository.deletePhoto(group.id, msgId)
+
+        assertTrue(deleted)
+        val msg = repository.groups.value.first().messages.find { it.id == msgId }
+        assertNotNull(msg)
+        assertEquals("Foto de Mateo", msg?.text)
+        assertNull(msg?.attachment)
+    }
+
+    @Test
+    fun deletePhoto_onlyAttachment_removesEntireMessage() {
+        val group = repository.createGroup("Paseo", listOf("mateo_garcia"), educadora).getOrThrow()
+        val photo = MessageAttachment("content://foto/1", "foto.jpg", "image/jpeg")
+        repository.sendMessage(group.id, familiaGarcia, "", photo)
+
+        val msgId = repository.groups.value.first().messages.last().id
+        val deleted = repository.deletePhoto(group.id, msgId)
+
+        assertTrue(deleted)
+        val msg = repository.groups.value.first().messages.find { it.id == msgId }
+        assertNull(msg)
     }
 
     @Test

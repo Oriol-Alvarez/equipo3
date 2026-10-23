@@ -96,3 +96,37 @@ def descargar_archivo(
             "Content-Length": str(objeto["ContentLength"]),
         },
     )
+
+
+def eliminar_archivo_media(db: Session, uri: str | None) -> bool:
+    """Busca y elimina el archivo multimedia tanto de la base de datos como de RustFS/S3."""
+    if not uri:
+        return False
+    from sqlalchemy import select
+    raw_id = uri.split("?")[0].split("/")[-1]
+    media = db.get(MediaFile, raw_id)
+    if not media:
+        media = db.scalar(select(MediaFile).where(MediaFile.url == uri))
+    if not media and raw_id:
+        media = db.scalar(select(MediaFile).where(MediaFile.url.endswith(raw_id)))
+    if media:
+        almacen.borrar(media.file_name)
+        db.delete(media)
+        return True
+    return False
+
+
+@router.delete("/{fileId}", status_code=204)
+def eliminar_archivo(
+    fileId: str,
+    quien: Identidad = Depends(usuario_actual),
+    db: Session = Depends(get_db),
+) -> None:
+    """Elimina el archivo multimedia del almacén RustFS/S3 y de la base de datos."""
+    media = db.get(MediaFile, fileId)
+    if media is None:
+        raise ApiError(404, "El archivo solicitado no existe", "archivo_inexistente")
+    almacen.borrar(media.file_name)
+    db.delete(media)
+    db.commit()
+

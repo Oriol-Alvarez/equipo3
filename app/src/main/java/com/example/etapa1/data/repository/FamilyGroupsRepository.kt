@@ -32,6 +32,11 @@ interface FamilyGroupsRepository {
     ): Boolean
 
     /**
+     * Elimina una foto o adjunto de un mensaje del grupo.
+     */
+    fun deletePhoto(groupId: String, messageId: String): Boolean = false
+
+    /**
      * Quién tiene la sesión iniciada según el servidor (id y nombre reales). La versión en memoria
      * devuelve null y la pantalla usa los participantes de ejemplo.
      */

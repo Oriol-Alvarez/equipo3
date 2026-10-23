@@ -12,7 +12,6 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/sonrisas"
     jwt_secret: str = "super-secret-jwt-key-for-sonrisas-app-tc2007b"
-    codigo_profesor: str = "sonrisas-docente-2026"
 
     # Tiempos de vida del token (en segundos)
     access_ttl_s: int = 24 * 60 * 60  # 24 horas por defecto

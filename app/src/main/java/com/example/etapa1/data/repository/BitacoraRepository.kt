@@ -29,6 +29,8 @@ interface BitacoraRepository {
         date: String? = null
     )
 
+    fun deletePhoto(childId: String, messageId: String) {}
+
     fun addEventChip(childId: String, time: String, text: String, iconType: String, date: String? = null)
 
     fun addActivityCard(

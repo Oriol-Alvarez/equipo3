@@ -145,6 +145,12 @@ interface SonrisasApi {
         @Body request: SendFamilyGroupMessageDto
     ): Response<FamilyGroupMessageDto>
 
+    @DELETE("family-groups/{groupId}/messages/{messageId}/photo")
+    suspend fun deleteFamilyGroupMessagePhoto(
+        @Path("groupId") groupId: String,
+        @Path("messageId") messageId: String
+    ): Response<Unit>
+
     @Multipart
     @POST("media/upload")
     suspend fun uploadMedia(
@@ -244,6 +250,12 @@ interface SonrisasApi {
         @Path("childId") childId: String,
         @Body request: SendBitacoraMessageDto
     ): Response<BitacoraMessageDto>
+
+    @DELETE("chats/bitacora/{childId}/messages/{messageId}/photo")
+    suspend fun deleteBitacoraMessagePhoto(
+        @Path("childId") childId: String,
+        @Path("messageId") messageId: String
+    ): Response<Unit>
 
     @PUT("chats/bitacora/{childId}/read")
     suspend fun markBitacoraChatRead(@Path("childId") childId: String): Response<Unit>

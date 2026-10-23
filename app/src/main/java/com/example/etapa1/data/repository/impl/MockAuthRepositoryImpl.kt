@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.asStateFlow
 class MockAuthRepositoryImpl : AuthRepository {
     private val _currentUserRole = MutableStateFlow(UserRole.EDUCADORA)
     override val currentUserRole: StateFlow<UserRole> = _currentUserRole.asStateFlow()
+    private var _isLoggedIn: Boolean = false
+
+    override fun isLoggedIn(): Boolean = _isLoggedIn
 
     override suspend fun login(email: String, password: String, role: UserRole): Result<UserRole> {
         val resolvedRole = when {
@@ -17,14 +20,17 @@ class MockAuthRepositoryImpl : AuthRepository {
             else -> role
         }
         _currentUserRole.value = resolvedRole
+        _isLoggedIn = true
         return Result.success(resolvedRole)
     }
 
     override fun setRole(role: UserRole) {
         _currentUserRole.value = role
+        _isLoggedIn = true
     }
 
     override fun logout() {
+        _isLoggedIn = false
         _currentUserRole.value = UserRole.EDUCADORA
     }
 }

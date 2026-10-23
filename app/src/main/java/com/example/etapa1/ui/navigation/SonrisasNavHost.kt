@@ -290,7 +290,12 @@ fun SonrisasNavHost(
                             { cat, badge, desc ->
                                 familyGroupsVm.sendGroupActivity(currentWorkerChat.id, cat, badge, desc)
                             }
-                        } else null
+                        } else null,
+                        onDeletePhoto = { msgId ->
+                            if (isFamilyGroup) {
+                                familyGroupsVm.deletePhoto(currentWorkerChat.id, msgId)
+                            }
+                        }
                     )
                 } else {
                     val vm: ChatBitacoraViewModel = viewModel(factory = AppViewModelProvider.Factory)

@@ -44,6 +44,7 @@ import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Group
@@ -61,12 +62,14 @@ import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.InsertDriveFile
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.TextButton
 import com.example.etapa1.model.TimelineItem
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -752,7 +755,8 @@ fun WorkerChatConversationDialog(
     onDismiss: () -> Unit,
     canShareActivity: Boolean = true,
     onSendMessage: (String, Uri?, String?, String?) -> Unit,
-    onSendActivity: ((category: String, badge: String, description: String) -> Unit)? = null
+    onSendActivity: ((category: String, badge: String, description: String) -> Unit)? = null,
+    onDeletePhoto: ((String) -> Unit)? = null
 ) {
     var avisoChat by remember { mutableStateOf<AvisoChat?>(null) }
     when (avisoChat) {
@@ -1103,7 +1107,8 @@ fun WorkerChatConversationDialog(
                     items(chat.messages, key = { it.id }) { msg ->
                         WorkerChatMessageBubble(
                             msg = msg,
-                            isGroupChat = chat.isGroup || chat.isGlobal
+                            isGroupChat = chat.isGroup || chat.isGlobal,
+                            onDeletePhoto = onDeletePhoto
                         )
                     }
                 }
@@ -1127,6 +1132,87 @@ fun WorkerChatConversationDialog(
 }
 
 /**
+ * Vista de foto adjunta con botón para que las familias (y personal) puedan eliminar la foto.
+ */
+@Composable
+fun ChatMessagePhotoAttachment(
+    fileUri: String,
+    hasTextMessage: Boolean,
+    onDeletePhoto: (() -> Unit)? = null
+) {
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = {
+                Text(text = "¿Eliminar foto?", fontWeight = FontWeight.Bold, color = TextPrimary)
+            },
+            text = {
+                Text(
+                    text = "¿Deseas eliminar esta foto de la conversación? Esta acción no se puede deshacer.",
+                    color = TextSecondary
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDeletePhoto?.invoke()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AlertRed)
+                ) {
+                    Text("Eliminar", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Cancelar", color = BrandBlue)
+                }
+            }
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(190.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .padding(bottom = if (hasTextMessage) 6.dp else 0.dp)
+    ) {
+        AsyncImage(
+            model = fileUri,
+            contentDescription = "Imagen adjunta",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+        if (onDeletePhoto != null) {
+            IconButton(
+                onClick = { showDeleteConfirm = true },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(6.dp)
+                    .size(32.dp)
+                    .background(Color.Black.copy(alpha = 0.55f), CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Eliminar foto",
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
+}
+
+fun isImageMimeOrUri(mimeType: String?, uri: String?): Boolean {
+    if (mimeType?.startsWith("image/") == true) return true
+    val u = uri?.lowercase() ?: return false
+    return u.endsWith(".jpg") || u.endsWith(".jpeg") || u.endsWith(".png") || u.endsWith(".webp") || u.contains("image")
+}
+
+/**
  * Burbuja de mensaje para trabajadores y chats grupales o individuales.
  * Si el mensaje corresponde a una actividad registrada ([ACTIVIDAD]), se renderiza mediante
  * [ActivityTimelineCard], viéndose exactamente igual que en el expediente individual.
@@ -1134,7 +1220,8 @@ fun WorkerChatConversationDialog(
 @Composable
 fun WorkerChatMessageBubble(
     msg: WorkerChatMessage,
-    isGroupChat: Boolean
+    isGroupChat: Boolean,
+    onDeletePhoto: ((String) -> Unit)? = null
 ) {
     // Si el mensaje es una actividad, mostrar la tarjeta uniforme y limpia
     val actData = remember(msg.message) { parseGroupActivityMessage(msg.message) }
@@ -1186,16 +1273,11 @@ fun WorkerChatMessageBubble(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp)
                 ) {
                     if (msg.fileUri != null) {
-                        if (msg.fileMimeType?.startsWith("image/") == true) {
-                            AsyncImage(
-                                model = msg.fileUri,
-                                contentDescription = "Imagen adjunta",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(190.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
-                                contentScale = ContentScale.Crop
+                        if (isImageMimeOrUri(msg.fileMimeType, msg.fileUri)) {
+                            ChatMessagePhotoAttachment(
+                                fileUri = msg.fileUri,
+                                hasTextMessage = msg.message.isNotBlank(),
+                                onDeletePhoto = onDeletePhoto?.let { cb -> { cb(msg.id) } }
                             )
                         } else {
                             Row(
@@ -1320,16 +1402,11 @@ fun WorkerChatMessageBubble(
                         )
 
                         if (msg.fileUri != null) {
-                            if (msg.fileMimeType?.startsWith("image/") == true) {
-                                AsyncImage(
-                                    model = msg.fileUri,
-                                    contentDescription = "Imagen adjunta",
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(190.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
-                                    contentScale = ContentScale.Crop
+                            if (isImageMimeOrUri(msg.fileMimeType, msg.fileUri)) {
+                                ChatMessagePhotoAttachment(
+                                    fileUri = msg.fileUri,
+                                    hasTextMessage = msg.message.isNotBlank(),
+                                    onDeletePhoto = onDeletePhoto?.let { cb -> { cb(msg.id) } }
                                 )
                             } else {
                                 Row(
@@ -1418,16 +1495,11 @@ fun WorkerChatMessageBubble(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp)
                     ) {
                         if (msg.fileUri != null) {
-                            if (msg.fileMimeType?.startsWith("image/") == true) {
-                                AsyncImage(
-                                    model = msg.fileUri,
-                                    contentDescription = "Imagen adjunta",
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(190.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .padding(bottom = if (msg.message.isNotBlank()) 6.dp else 0.dp),
-                                    contentScale = ContentScale.Crop
+                            if (isImageMimeOrUri(msg.fileMimeType, msg.fileUri)) {
+                                ChatMessagePhotoAttachment(
+                                    fileUri = msg.fileUri,
+                                    hasTextMessage = msg.message.isNotBlank(),
+                                    onDeletePhoto = onDeletePhoto?.let { cb -> { cb(msg.id) } }
                                 )
                             } else {
                                 Row(

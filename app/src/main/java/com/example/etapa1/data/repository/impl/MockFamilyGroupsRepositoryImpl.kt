@@ -99,6 +99,24 @@ class MockFamilyGroupsRepositoryImpl(
         return true
     }
 
+    override fun deletePhoto(groupId: String, messageId: String): Boolean {
+        val group = _groups.value.find { it.id == groupId } ?: return false
+        val updatedMessages = group.messages.mapNotNull { msg ->
+            if (msg.id == messageId) {
+                if (msg.text.isNotBlank()) {
+                    msg.copy(attachment = null)
+                } else {
+                    null
+                }
+            } else {
+                msg
+            }
+        }
+        val updatedGroup = group.copy(messages = updatedMessages)
+        _groups.update { list -> list.map { if (it.id == groupId) updatedGroup else it } }
+        return true
+    }
+
     companion object {
         const val MAX_TITLE_LENGTH = 40
 

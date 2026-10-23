@@ -63,6 +63,15 @@ sealed interface EventoServidor {
         val title: String = ""
     ) : EventoServidor
 
+    /** Notificación de mensaje o foto eliminada en bitácora o grupo. */
+    @Serializable
+    data class MensajeEliminado(
+        val chatId: String = "",
+        val childId: String = "",
+        val groupId: String = "",
+        val messageId: String = ""
+    ) : EventoServidor
+
     /** Evento no tipado o genérico recibido desde el servidor. */
     data class Desconocido(val raw: String) : EventoServidor
 }
@@ -178,6 +187,11 @@ object ChatProtocolo {
                     } else {
                         json.decodeFromJsonElement<EventoServidor.NuevoAviso>(root)
                     }
+                }
+
+                "chat:bitacora:delete", "group:message:delete" -> {
+                    val src = (dataObj as? JsonObject) ?: root
+                    json.decodeFromJsonElement<EventoServidor.MensajeEliminado>(src)
                 }
 
                 // Compatibilidad con formato de la práctica 12

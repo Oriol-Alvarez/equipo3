@@ -54,8 +54,8 @@ def test_contrasena_hasheada_con_argon2(familiar: Persona):
         assert user.password_hash.startswith("$argon2id$")
 
 
-def test_registro_docente_sin_codigo_se_degrada_a_familiar(cliente: TestClient):
-    # El usuario intenta auto-asignarse rol DIRECCION sin el código secreto
+def test_registro_publico_siempre_asigna_rol_familiar(cliente: TestClient):
+    # Cualquier intento de auto-asignarse rol DIRECCION mediante registro público se fuerza a FAMILIAR
     email = f"tramposo.{uuid.uuid4().hex[:6]}@sonrisas.edu"
     r = cliente.post(
         "/api/v1/auth/register",
@@ -64,7 +64,6 @@ def test_registro_docente_sin_codigo_se_degrada_a_familiar(cliente: TestClient):
             "password": "Password123!",
             "role": "DIRECCION",
             "displayName": "Usuario Tramposo",
-            "codigoProfesor": "codigo_incorrecto",
         },
     )
     assert r.status_code == 201

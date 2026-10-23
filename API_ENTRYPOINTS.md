@@ -769,6 +769,13 @@
   ```
 * **Response (201 Created):** Objeto `ChatMessage`.
 
+### 8.4 Eliminar Foto de Mensaje en Chat de Bitácora
+* **Método:** `DELETE`
+* **Ruta:** `/chats/bitacora/{childId}/messages/{messageId}/photo` (también disponible como `/chats/bitacora/{childId}/messages/{messageId}`)
+* **Rol requerido:** Ambos (familias y personal autorizados)
+* **Descripción:** Permite a las familias y educadoras eliminar una fotografía del chat. Si el mensaje tenía texto además de la foto, la foto se elimina pero se conserva el texto; si el mensaje solo contenía la foto, el mensaje completo se elimina.
+* **Response (204 No Content)**
+
 ---
 
 ## Módulo 9: Grupos Familiares (`/family-groups`)
@@ -869,6 +876,13 @@
   `POST /media/upload` y se manda la `url` que regresa (`/api/v1/media/{fileId}`).
 * **Orden:** `GET /family-groups` regresa los grupos del más reciente al más antiguo según su último mensaje;
   `GET /family-groups/{groupId}/messages` regresa los mensajes del más viejo al más nuevo.
+
+### 9.6 Eliminar Foto o Adjunto en un Grupo Familiar
+* **Método:** `DELETE`
+* **Ruta:** `/family-groups/{groupId}/messages/{messageId}/photo` (también disponible como `/family-groups/{groupId}/messages/{messageId}`)
+* **Rol requerido:** Ambos (miembros del grupo)
+* **Descripción:** Permite a las familias y educadoras miembros del grupo eliminar una fotografía o adjunto de un mensaje del grupo. Si el mensaje tenía texto además del adjunto, se elimina el adjunto y se conserva el texto; si el mensaje solo contenía el adjunto, se elimina el mensaje completo.
+* **Response (204 No Content)**
 
 ---
 

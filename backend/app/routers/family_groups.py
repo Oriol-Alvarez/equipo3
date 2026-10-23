@@ -19,6 +19,7 @@ from ..models import (
     FamilyGroup,
     FamilyGroupMember,
     FamilyGroupMessage,
+    MediaFile,
     Usuario,
 )
 from ..schemas import (
@@ -280,6 +281,62 @@ def enviar_mensaje_grupo_familiar(
         text=body.text,
         time=hora_actual,
         attachment=body.attachment,
+    )
+
+
+@router.delete("/{groupId}/messages/{messageId}/photo", status_code=204)
+@router.delete("/{groupId}/messages/{messageId}", status_code=204)
+def eliminar_foto_o_mensaje_grupo_familiar(
+    groupId: str,
+    messageId: str,
+    quien: Identidad = Depends(usuario_actual),
+    db: Session = Depends(get_db),
+) -> None:
+    """Permite eliminar la foto o el mensaje en el grupo familiar."""
+    _grupo_visible(groupId, quien, db)
+
+    msg = db.get(FamilyGroupMessage, messageId)
+    if msg is None or msg.group_id != groupId:
+        raise ApiError(404, f"No existe el mensaje con id {messageId}", "mensaje_inexistente")
+
+    if msg.attachment_uri:
+        from .media import eliminar_archivo_media
+        eliminar_archivo_media(db, msg.attachment_uri)
+
+        if msg.text and msg.text.strip():
+            msg.attachment_uri = None
+            msg.attachment_name = None
+            msg.attachment_mime_type = None
+        else:
+            db.delete(msg)
+    else:
+        db.delete(msg)
+
+    grupo = db.get(FamilyGroup, groupId)
+    if grupo:
+        ultimo = db.scalars(
+            select(FamilyGroupMessage)
+            .where(FamilyGroupMessage.group_id == groupId)
+            .order_by(FamilyGroupMessage.created_at.desc())
+        ).first()
+        if ultimo:
+            grupo.last_message = ultimo.text.strip() or (f"📎 {ultimo.attachment_name}" if ultimo.attachment_name else "📎 Archivo adjunto")
+            grupo.last_message_time = ultimo.time
+        else:
+            grupo.last_message = "Sin mensajes aún."
+
+    db.commit()
+
+    from .ws_notifications import familias_de, personal_y_usuarios, ws_manager
+    ws_manager.broadcast_sync(
+        "group:message:delete",
+        {"groupId": groupId, "chatId": groupId, "messageId": messageId},
+        personal_y_usuarios(
+            familias_de(
+                db,
+                set(db.scalars(select(FamilyGroupMember.child_id).where(FamilyGroupMember.group_id == groupId)).all()),
+            )
+        ),
     )
 
 

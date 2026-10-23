@@ -60,6 +60,7 @@ class LoginViewModelTest {
             }
             override fun setRole(role: UserRole) {}
             override fun logout() {}
+            override fun isLoggedIn(): Boolean = false
         }
         val failingVm = LoginViewModel(failingRepo)
         failingVm.onEmailChanged("educadora@sonrisas.com")

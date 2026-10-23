@@ -118,13 +118,9 @@ def register(request: Request, body: RegisterRequest, db: Session = Depends(get_
             "Inicia sesión con POST /auth/login.",
         )
 
-    # El rol DIRECCION o EDUCADORA solo se asigna si coincide el código del centro
+    # En el autoregistro público el rol siempre es FAMILIAR.
+    # Los roles docentes (EDUCADORA/DIRECCION) se gestionan desde el panel de administración (/admin).
     rol = "FAMILIAR"
-    if body.role in ("EDUCADORA", "DIRECCION"):
-        if body.codigoProfesor == settings.codigo_profesor:
-            rol = body.role
-        else:
-            rol = "FAMILIAR"
 
     nuevo_id = f"usr_{uuid.uuid4().hex[:12]}"
     user = Usuario(

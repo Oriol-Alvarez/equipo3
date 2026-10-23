@@ -64,6 +64,8 @@ class NetworkAuthRepositoryImpl(
         tokenManager.userRole = role.name
     }
 
+    override fun isLoggedIn(): Boolean = !tokenManager.token.isNullOrBlank()
+
     override fun logout() {
         val refresh = tokenManager.refreshToken
         val tokenSesion = tokenManager.token

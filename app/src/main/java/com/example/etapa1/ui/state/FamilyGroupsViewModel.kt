@@ -157,4 +157,8 @@ class FamilyGroupsViewModel(
     fun clearError() {
         errorMessage.value = null
     }
+
+    fun deletePhoto(groupId: String, messageId: String) {
+        familyGroupsRepository.deletePhoto(groupId, messageId)
+    }
 }

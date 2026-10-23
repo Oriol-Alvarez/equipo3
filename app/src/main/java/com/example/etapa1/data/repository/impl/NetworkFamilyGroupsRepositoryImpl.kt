@@ -74,6 +74,20 @@ class NetworkFamilyGroupsRepositoryImpl(
                             } else group
                         }
                     }
+                } else if (evento is EventoServidor.MensajeEliminado) {
+                    val gid = evento.groupId.ifEmpty { evento.chatId }
+                    _groups.update { current ->
+                        current.map { group ->
+                            if (gid.isEmpty() || group.id == gid) {
+                                val updatedMsgs = group.messages.mapNotNull { m ->
+                                    if (m.id == evento.messageId) {
+                                        if (m.text.isNotBlank()) m.copy(attachment = null) else null
+                                    } else m
+                                }
+                                group.copy(messages = updatedMsgs)
+                            } else group
+                        }
+                    }
                 }
             }
         }
@@ -190,6 +204,28 @@ class NetworkFamilyGroupsRepositoryImpl(
                 return@enqueue
             }
             replaceMessage(groupId, pending.id, sent.toDomain())
+        }
+        return true
+    }
+
+    override fun deletePhoto(groupId: String, messageId: String): Boolean {
+        val group = _groups.value.find { it.id == groupId } ?: return false
+        val updatedMessages = group.messages.mapNotNull { msg ->
+            if (msg.id == messageId) {
+                if (msg.text.isNotBlank()) {
+                    msg.copy(attachment = null)
+                } else {
+                    null
+                }
+            } else {
+                msg
+            }
+        }
+        val updatedGroup = group.copy(messages = updatedMessages)
+        _groups.update { list -> list.map { if (it.id == groupId) updatedGroup else it } }
+
+        writes.enqueue("Eliminar foto del grupo") {
+            api.deleteFamilyGroupMessagePhoto(groupId, messageId).bodyOrLog("DELETE foto grupo $messageId")
         }
         return true
     }

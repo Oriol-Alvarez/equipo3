@@ -172,6 +172,23 @@ class NetworkBitacoraRepositoryImpl(
                             }
                         }
                     }
+                    is EventoServidor.MensajeEliminado -> {
+                        val cid = evento.childId.ifEmpty { evento.chatId }
+                        if (cid.isNotEmpty() && !esActual(cid)) return@collect
+                        _timeline.update { actual ->
+                            actual.mapNotNull { item ->
+                                if (item is TimelineItem.ChatMessage && item.id == evento.messageId) {
+                                    if (item.message.isNotBlank()) {
+                                        item.copy(fileUri = null, fileName = null, fileMimeType = null)
+                                    } else {
+                                        null
+                                    }
+                                } else {
+                                    item
+                                }
+                            }
+                        }
+                    }
                     else -> Unit
                 }
             }
@@ -239,6 +256,27 @@ class NetworkBitacoraRepositoryImpl(
                     fileUri = uriServidor?.let(RemoteSync::absoluteUrl)
                 )
             )
+        }
+    }
+
+    override fun deletePhoto(childId: String, messageId: String) {
+        if (esActual(childId)) {
+            _timeline.update { actual ->
+                actual.mapNotNull { item ->
+                    if (item is TimelineItem.ChatMessage && item.id == messageId) {
+                        if (item.message.isNotBlank()) {
+                            item.copy(fileUri = null, fileName = null, fileMimeType = null)
+                        } else {
+                            null
+                        }
+                    } else {
+                        item
+                    }
+                }
+            }
+        }
+        RemoteSync.launch("Eliminar foto de bitácora en $childId") {
+            api.deleteBitacoraMessagePhoto(childId, messageId).bodyOrLog("DELETE foto $messageId")
         }
     }
 

@@ -11,7 +11,6 @@ from fastapi.testclient import TestClient
 
 # Asegurar configuración para entorno de pruebas
 os.environ["JWT_SECRET"] = "super-secret-jwt-key-for-sonrisas-app-tc2007b"
-os.environ["CODIGO_PROFESOR"] = "sonrisas-docente-2026"
 
 import socket
 
@@ -105,8 +104,6 @@ def registrar(cliente: TestClient) -> Callable[..., Persona]:
             "role": role,
             "displayName": f"Usuario {nombre.capitalize()}",
         }
-        if role in ("EDUCADORA", "DIRECCION"):
-            cuerpo["codigoProfesor"] = settings.codigo_profesor
 
         r = cliente.post("/api/v1/auth/register", json=cuerpo)
         assert r.status_code == 201, r.text
